@@ -1,7 +1,6 @@
 # Util
 
 > Ringkasan
->
 > - Fungsi: Menyediakan koleksi utilitas pembantu internal untuk pemformatan string, inspeksi objek mendalam, konversi fungsi asinkron, dan pengecekan tipe data tingkat rendah.
 > - Digunakan saat: Memodernisasi fungsi callback warisan ke Promise, mencetak struktur objek yang memiliki referensi melingkar tanpa memicu crash, serta memvalidasi kesetaraan objek kompleks.
 > - Aturan praktis: Selalu gunakan `util.promisify` saat mengintegrasikan pustaka berbasis callback `(err, value)` ke dalam basis kode modern berbasis `async/await`.
@@ -51,23 +50,23 @@ flowchart TD
 Fungsi `format()` menyusun string dengan menggantikan placeholder penentu format (_specifier_) menggunakan nilai argumen yang diberikan. Fungsi ini menjadi fondasi pemformatan pesan pada `console.log`.
 
 ```javascript
-import util from "node:util";
+import util from 'node:util';
 
-const pesan = util.format("Pengguna %s (ID: %d) memiliki saldo: $%d", "Santoso", 102, 500);
+const message = util.format('User %s (ID: %d) has balance: $%d', 'Santoso', 102, 500);
 
-console.log(pesan);
-// Output: Pengguna Santoso (ID: 102) memiliki saldo: $500
+console.log(message);
+// Output: User Santoso (ID: 102) has balance: $500
 ```
 
 Kasus lain: Melewatkan placeholder `%j` untuk merender objek ke format JSON langsung di tengah string.
 
 ```javascript
-import util from "node:util";
+import util from 'node:util';
 
-const teksJson = util.format("Status event: %j", { aktif: true, kode: 200 });
+const jsonText = util.format('Event status: %j', { active: true, code: 200 });
 
-console.log(teksJson);
-// Output: Status event: {"aktif":true,"kode":200}
+console.log(jsonText);
+// Output: Event status: {"active":true,"code":200}
 ```
 
 ### `inspect()`
@@ -75,25 +74,25 @@ console.log(teksJson);
 Fungsi `inspect()` menghasilkan string diagnostik dari suatu objek, membedah struktur internalnya hingga tingkat kedalaman tertentu. Fungsi ini kebal terhadap referensi melingkar yang biasanya menggagalkan `JSON.stringify`.
 
 ```javascript
-import util from "node:util";
+import util from 'node:util';
 
-const dataInduk = { nama: "Induk" };
-dataInduk.lingkaran = dataInduk; // Circular reference
+const rootObject = { name: 'Root' };
+rootObject.circularRef = rootObject;
 
-const cetak = util.inspect(dataInduk, { depth: 2 });
-console.log(cetak.includes("[Circular"));
+const inspected = util.inspect(rootObject, { depth: 2 });
+console.log(inspected.includes('[Circular'));
 // Output: true
 ```
 
 Kasus lain: Menggunakan opsi `depth: null` untuk membuka seluruh struktur hierarki objek bersarang tanpa batas pemotongan.
 
 ```javascript
-import util from "node:util";
+import util from 'node:util';
 
-const strukturDalam = { a: { b: { c: { d: "target" } } } };
-const hasil = util.inspect(strukturDalam, { depth: null });
+const deeplyNested = { a: { b: { c: { d: 'target' } } } };
+const result = util.inspect(deeplyNested, { depth: null });
 
-console.log(hasil.includes("target"));
+console.log(result.includes('target'));
 // Output: true
 ```
 
@@ -102,39 +101,39 @@ console.log(hasil.includes("target"));
 Fungsi `promisify()` mengambil fungsi yang mengikuti konvensi callback _error-first_ Node.js `(err, value)` dan mengembalikannya sebagai fungsi berbasis Promise yang dapat dipanggil dengan `await`.
 
 ```javascript
-import util from "node:util";
+import util from 'node:util';
 
-function ambilProfilPengguna(id, callback) {
+function fetchUserProfile(id, callback) {
   if (id <= 0) {
-    callback(new Error("ID tidak valid"));
+    callback(new Error('Invalid user ID'));
     return;
   }
-  callback(null, { id, nama: "Budi" });
+  callback(null, { id, name: 'John' });
 }
 
-const ambilProfilAsync = util.promisify(ambilProfilPengguna);
-const profil = await ambilProfilAsync(10);
+const fetchUserProfileAsync = util.promisify(fetchUserProfile);
+const profile = await fetchUserProfileAsync(10);
 
-console.log(profil.nama);
-// Output: Budi
+console.log(profile.name);
+// Output: John
 ```
 
 Kasus lain: Menangkap penolakan Promise ketika fungsi callback mengembalikan parameter error.
 
 ```javascript
-import util from "node:util";
+import util from 'node:util';
 
-function operasiGagal(callback) {
-  callback(new Error("Koneksi gagal"));
+function failOperation(callback) {
+  callback(new Error('Connection failed'));
 }
 
-const operasiAsync = util.promisify(operasiGagal);
+const failOperationAsync = util.promisify(failOperation);
 
 try {
-  await operasiAsync();
+  await failOperationAsync();
 } catch (error) {
   console.log(error.message);
-  // Output: Koneksi gagal
+  // Output: Connection failed
 }
 ```
 
@@ -143,16 +142,16 @@ try {
 Fungsi `callbackify()` adalah kebalikan dari `promisify`. Fungsi ini membungkus fungsi `async` atau fungsi pengembali Promise agar dapat menerima argumen callback `(err, result)` sebagai parameter penutup.
 
 ```javascript
-import util from "node:util";
+import util from 'node:util';
 
-async function hitungDiskonAsync(harga) {
-  return harga * 0.9;
+async function calculateDiscountAsync(price) {
+  return price * 0.9;
 }
 
-const hitungDiskonCallback = util.callbackify(hitungDiskonAsync);
+const calculateDiscountCallback = util.callbackify(calculateDiscountAsync);
 
-hitungDiskonCallback(100000, (err, hasil) => {
-  console.log(hasil);
+calculateDiscountCallback(100000, (err, result) => {
+  console.log(result);
   // Output: 90000
 });
 ```
@@ -160,17 +159,17 @@ hitungDiskonCallback(100000, (err, hasil) => {
 Kasus lain: Meneruskan galat yang dilempar dari fungsi async ke parameter pertama fungsi callback.
 
 ```javascript
-import util from "node:util";
+import util from 'node:util';
 
-async function lemparGalatAsync() {
-  throw new Error("Kegagalan komputasi");
+async function throwAsyncError() {
+  throw new Error('Computation failure');
 }
 
-const fungsiCallback = util.callbackify(lemparGalatAsync);
+const callbackFn = util.callbackify(throwAsyncError);
 
-fungsiCallback((err, _hasil) => {
+callbackFn((err, _result) => {
   console.log(err.message);
-  // Output: Kegagalan komputasi
+  // Output: Computation failure
 });
 ```
 
@@ -179,28 +178,28 @@ fungsiCallback((err, _hasil) => {
 Fungsi `deprecate()` membungkus fungsi yang sudah tidak direkomendasikan dan mencetak peringatan _deprecation warning_ ke stream `process.stderr` saat pertama kali fungsi tersebut dipanggil oleh runtime.
 
 ```javascript
-import util from "node:util";
+import util from 'node:util';
 
-const tambahLama = util.deprecate(
+const legacyAdd = util.deprecate(
   (a, b) => a + b,
-  "tambahLama() telah usang. Gunakan kalkulator modern.",
-  "DEP_TAMBAH_001"
+  'legacyAdd() is deprecated. Use modern calculator.',
+  'DEP_ADD_001'
 );
 
-const hasil = tambahLama(5, 10);
-console.log(hasil);
+const sum = legacyAdd(5, 10);
+console.log(sum);
 // Output: 15
 ```
 
 Kasus lain: Pemanggilan kedua dan seterusnya tidak akan mencetak peringatan berulang ke konsol guna mencegah polusi log.
 
 ```javascript
-import util from "node:util";
+import util from 'node:util';
 
-const prosesLama = util.deprecate((x) => x * 2, "prosesLama usang");
-console.log(prosesLama(4));
+const legacyProcess = util.deprecate((x) => x * 2, 'legacyProcess is deprecated');
+console.log(legacyProcess(4));
 // Output: 8
-console.log(prosesLama(5));
+console.log(legacyProcess(5));
 // Output: 10
 ```
 
@@ -209,7 +208,7 @@ console.log(prosesLama(5));
 Sub-objek `util.types` menyediakan serangkaian fungsi predikat untuk mengidentifikasi tipe data internal V8 secara akurat, mengatasi keterbatasan operator bawaan `typeof` yang sering kali ambigu.
 
 ```javascript
-import util from "node:util";
+import util from 'node:util';
 
 console.log(util.types.isDate(new Date()));
 // Output: true
@@ -222,11 +221,11 @@ console.log(util.types.isMap(new Map()));
 Kasus lain: Membedakan objek galat native dari objek literal biasa.
 
 ```javascript
-import util from "node:util";
+import util from 'node:util';
 
-console.log(util.types.isNativeError(new TypeError("Tipe salah")));
+console.log(util.types.isNativeError(new TypeError('Invalid type')));
 // Output: true
-console.log(util.types.isNativeError({ message: "Bukan error native" }));
+console.log(util.types.isNativeError({ message: 'Not a native error' }));
 // Output: false
 ```
 
@@ -235,21 +234,21 @@ console.log(util.types.isNativeError({ message: "Bukan error native" }));
 Fungsi `isDeepStrictEqual()` membandingkan dua nilai secara mendalam dan ketat. Fungsi ini memverifikasi kesetaraan struktur objek, elemen array, kesamaan tipe primitif, dan prototipe.
 
 ```javascript
-import util from "node:util";
+import util from 'node:util';
 
-const objekA = { tags: ["nodejs", "backend"], konfigurasi: { aktif: true } };
-const objekB = { tags: ["nodejs", "backend"], konfigurasi: { aktif: true } };
+const objA = { tags: ['nodejs', 'backend'], config: { active: true } };
+const objB = { tags: ['nodejs', 'backend'], config: { active: true } };
 
-console.log(util.isDeepStrictEqual(objekA, objekB));
+console.log(util.isDeepStrictEqual(objA, objB));
 // Output: true
 ```
 
 Kasus lain: Mendeteksi ketidaksamaan jika urutan elemen dalam array berbeda atau ada perbedaan tipe data primitif.
 
 ```javascript
-import util from "node:util";
+import util from 'node:util';
 
-const arrayA = [1, 2, "3"];
+const arrayA = [1, 2, '3'];
 const arrayB = [1, 2, 3];
 
 console.log(util.isDeepStrictEqual(arrayA, arrayB));
@@ -261,9 +260,9 @@ console.log(util.isDeepStrictEqual(arrayA, arrayB));
 Fungsi `debuglog()` menghasilkan fungsi logging yang hanya akan mencetak pesan ke terminal jika variabel lingkungan `NODE_DEBUG` memuat nama bagian (_section_) yang ditentukan.
 
 ```javascript
-import util from "node:util";
+import util from 'node:util';
 
-const debugServer = util.debuglog("http-server");
+const debugServer = util.debuglog('http-server');
 
 console.log(typeof debugServer);
 // Output: function
@@ -272,9 +271,9 @@ console.log(typeof debugServer);
 Kasus lain: Memeriksa properti `enabled` pada fungsi debuglog untuk mengecek apakah logging bagian tersebut sedang aktif.
 
 ```javascript
-import util from "node:util";
+import util from 'node:util';
 
-const debugDb = util.debuglog("database");
+const debugDb = util.debuglog('database');
 console.log(typeof debugDb.enabled);
 // Output: boolean
 ```
@@ -284,23 +283,23 @@ console.log(typeof debugDb.enabled);
 Fungsi `styleText()` menerapkan format warna, garis bawah, atau ketebalan font teks terminal menggunakan kode escape ANSI standar tanpa membutuhkan dependensi pustaka pihak ketiga.
 
 ```javascript
-import util from "node:util";
+import util from 'node:util';
 
-const teksTebal = util.styleText("bold", "Pemberitahuan Sistem");
+const boldText = util.styleText('bold', 'System Notification');
 
-console.log(typeof teksTebal);
+console.log(typeof boldText);
 // Output: string
-console.log(teksTebal.includes("Pemberitahuan Sistem"));
+console.log(boldText.includes('System Notification'));
 // Output: true
 ```
 
 Kasus lain: Menerapkan beberapa gaya visual sekaligus menggunakan format array.
 
 ```javascript
-import util from "node:util";
+import util from 'node:util';
 
-const teksMerahGarisBawah = util.styleText(["red", "underline"], "Kesalahan Fatal");
-console.log(typeof teksMerahGarisBawah);
+const styledText = util.styleText(['red', 'underline'], 'Fatal Error');
+console.log(typeof styledText);
 // Output: string
 ```
 
@@ -323,18 +322,18 @@ Fungsi `util.promisify` mengasumsikan callback selalu berada di parameter terakh
 
 ```javascript
 // Salah
-function operasiKuno(callback, nilai) {
-  callback(nilai); // Parameter callback tidak di akhir dan tanpa error-first
+function legacyOperation(callback, value) {
+  callback(value); // Parameter callback tidak di akhir dan tanpa error-first
 }
-const salahPromisify = util.promisify(operasiKuno);
+const badPromisify = util.promisify(legacyOperation);
 ```
 
 ```javascript
 // Benar
-function operasiStandar(nilai, callback) {
-  callback(null, nilai); // Mengikuti konvensi (err, result) di parameter akhir
+function standardOperation(value, callback) {
+  callback(null, value); // Mengikuti konvensi (err, result) di parameter akhir
 }
-const operasiBenar = util.promisify(operasiStandar);
+const correctPromisify = util.promisify(standardOperation);
 ```
 
 ### Menggunakan `JSON.stringify` untuk Inspeksi Objek Circular
@@ -343,16 +342,16 @@ Mencoba mencetak objek yang mereferensikan dirinya sendiri atau hubungan induk-a
 
 ```javascript
 // Salah
-const parent = { name: "Induk" };
+const parent = { name: 'Parent' };
 parent.self = parent;
 console.log(JSON.stringify(parent)); // Melempar TypeError fatal!
 ```
 
 ```javascript
 // Benar
-import util from "node:util";
+import util from 'node:util';
 
-const parent = { name: "Induk" };
+const parent = { name: 'Parent' };
 parent.self = parent;
 console.log(util.inspect(parent, { depth: 2 }));
 ```
@@ -363,16 +362,16 @@ Operator `typeof` mengembalikan string `'object'` untuk tipe Date, RegExp, Map, 
 
 ```javascript
 // Salah
-function validasiTanggal(input) {
-  return typeof input === "object"; // Masih meloloskan objek biasa {}, [], atau null
+function validateDate(input) {
+  return typeof input === 'object'; // Masih meloloskan objek biasa {}, [], atau null
 }
 ```
 
 ```javascript
 // Benar
-import util from "node:util";
+import util from 'node:util';
 
-function validasiTanggal(input) {
+function validateDate(input) {
   return util.types.isDate(input); // Akurat memvalidasi instance Date V8 native
 }
 ```
@@ -384,54 +383,54 @@ function validasiTanggal(input) {
 Skenario: Membangun modul adaptor klien basis data warisan (_legacy database client adapter_) yang memodernisasi fungsi-fungsi berbasis callback kuno menjadi antarmuka modern berbasis `async/await`, memvalidasi tipe data masukan secara presisi menggunakan `util.types`, serta menyediakan representasi log inspeksi yang aman terhadap referensi melingkar.
 
 ```javascript
-import util from "node:util";
+import util from 'node:util';
 
-class KlienDatabaseKuno {
-  kueri(sql, callback) {
-    if (!sql || typeof sql !== "string") {
-      callback(new TypeError("Perintah SQL harus berupa string valid"));
+class LegacyDatabaseClient {
+  query(sql, callback) {
+    if (!sql || typeof sql !== 'string') {
+      callback(new TypeError('SQL query must be a valid string'));
       return;
     }
     // Simulasi respons basis data yang memiliki referensi relasional melingkar
-    const baris = { id: 1, kueri: sql };
-    const transaksi = { idTrx: "TRX-99", entri: baris };
-    baris.transaksi = transaksi; // Hubungan melingkar
+    const row = { id: 1, query: sql };
+    const transaction = { transactionId: 'TRX-99', entry: row };
+    row.transaction = transaction; // Hubungan melingkar
 
-    callback(null, [baris]);
+    callback(null, [row]);
   }
 }
 
 class ModernDatabaseAdapter {
-  #klienKuno;
-  #kueriAsync;
+  #legacyClient;
+  #queryAsync;
 
-  constructor(klienKuno) {
-    this.#klienKuno = klienKuno;
+  constructor(legacyClient) {
+    this.#legacyClient = legacyClient;
     // Konversi metode callback ke Promise dengan binding konteks instance
-    this.#kueriAsync = util.promisify(this.#klienKuno.kueri.bind(this.#klienKuno));
+    this.#queryAsync = util.promisify(this.#legacyClient.query.bind(this.#legacyClient));
   }
 
-  async eksekusiKueri(sql) {
-    const hasil = await this.#kueriAsync(sql);
-    return hasil;
+  async executeQuery(sql) {
+    const result = await this.#queryAsync(sql);
+    return result;
   }
 
-  cetakAuditHasil(hasil) {
+  formatAuditResult(result) {
     // Inspeksi aman tanpa risiko crash akibat circular structure
-    return util.inspect(hasil, { depth: 3, compact: true });
+    return util.inspect(result, { depth: 3, compact: true });
   }
 }
 
-const adaptor = new ModernDatabaseAdapter(new KlienDatabaseKuno());
-const data = await adaptor.eksekusiKueri("SELECT * FROM pengguna");
+const adapter = new ModernDatabaseAdapter(new LegacyDatabaseClient());
+const data = await adapter.executeQuery('SELECT * FROM users');
 
 console.log(Array.isArray(data));
 // Output: true
 console.log(data[0].id);
 // Output: 1
 
-const logTercetak = adaptor.cetakAuditHasil(data);
-console.log(logTercetak.includes("[Circular"));
+const auditLog = adapter.formatAuditResult(data);
+console.log(auditLog.includes('[Circular'));
 // Output: true
 ```
 
@@ -443,92 +442,83 @@ Desain ini dipilih karena memadukan `util.promisify` untuk menjembatani integras
 
 ### Soal 1 (Dasar)
 
-Buat fungsi `susunPesanAudit(kodeModul, namaTindakan, payloadData)` yang menggunakan `util.format` untuk merangkai string log terstruktur dengan format `"[MODUL:%s] Tindakan '%s' dieksekusi dengan payload: %j"`.
+Buat fungsi `formatAuditMessage(moduleCode, actionName, payload)` yang menggunakan `util.format` untuk merangkai string log terstruktur dengan format `"[MODULE:%s] Action '%s' executed with payload: %j"`.
 
 Contoh masukan:
-
 ```javascript
-susunPesanAudit("AUTH", "LOGIN_GAGAL", { ip: "127.0.0.1", percobaan: 3 });
+formatAuditMessage('AUTH', 'LOGIN_FAILURE', { ip: '127.0.0.1', attempts: 3 });
 ```
 
 Contoh keluaran yang diharapkan:
-
 ```javascript
-"[MODUL:AUTH] Tindakan 'LOGIN_GAGAL' dieksekusi dengan payload: {\"ip\":\"127.0.0.1\",\"percobaan\":3}"
+"[MODULE:AUTH] Action 'LOGIN_FAILURE' executed with payload: {\"ip\":\"127.0.0.1\",\"attempts\":3}"
 ```
 
-Batasan: Gunakan modul bawaan `node:util` tanpa string concatenation manual.
+Batasan: Gunakan modul bawaan `node:util` tanpa penggabungan string manual.
 
 ### Soal 2 (Menengah)
 
-Buat fungsi `moderenisasiKlien(klienCallback)` yang menerima objek dengan metode callback legacy `ambilData(kunci, callback)` dan `simpanData(kunci, nilai, callback)`. Fungsi harus mengembalikan objek baru yang memiliki metode modern `ambilDataAsync(kunci)` dan `simpanDataAsync(kunci, nilai)` berbasis Promise menggunakan `util.promisify`. Selain itu, tambahkan peringatan usang via `util.deprecate` jika pemanggil masih mengakses metode callback aslinya.
+Buat fungsi `modernizeClient(callbackClient)` yang menerima objek dengan metode callback legacy `fetchData(key, callback)` dan `saveData(key, value, callback)`. Fungsi harus mengembalikan objek baru yang memiliki metode modern `fetchDataAsync(key)` dan `saveDataAsync(key, value)` berbasis Promise menggunakan `util.promisify`. Selain itu, tambahkan peringatan usang via `util.deprecate` jika pemanggil masih mengakses metode callback aslinya.
 
 Contoh masukan:
-
 ```javascript
-const klienLama = {
-  ambilData(kunci, cb) { cb(null, "nilai-" + kunci); },
-  simpanData(kunci, val, cb) { cb(null, true); }
+const legacyClient = {
+  fetchData(key, cb) { cb(null, 'value-' + key); },
+  saveData(key, val, cb) { cb(null, true); }
 };
 
-const klienModern = moderenisasiKlien(klienLama);
-await klienModern.ambilDataAsync("pengaturan");
+const modernClient = modernizeClient(legacyClient);
+await modernClient.fetchDataAsync('settings');
 ```
 
 Contoh keluaran yang diharapkan:
-
 ```javascript
-'nilai-pengaturan'
+'value-settings'
 ```
 
 Batasan: Gunakan `util.promisify` dan `util.deprecate` dari `node:util`.
 
 ### Soal 3 (Menantang)
 
-Buat fungsi penganalisis integritas status aplikasi (_state change auditor_) bernama `auditPerubahanStatus(statusLama, statusBaru)`.
+Buat fungsi penganalisis integritas status aplikasi (_state change auditor_) bernama `auditStateChange(oldState, newState)`.
 
 Ketentuan pemrosesan:
-
-- Gunakan `util.isDeepStrictEqual` untuk memeriksa apakah kedua status benar-benar identik. Jika ya, kembalikan objek `{ mengalamiPerubahan: false, ringkasan: 'Status identik' }`.
+- Gunakan `util.isDeepStrictEqual` untuk memeriksa apakah kedua status benar-benar identik. Jika ya, kembalikan objek `{ hasChanged: false, summary: 'States are identical' }`.
 - Jika mengalami perubahan, periksa kunci-kunci pada level pertama:
   - Bandingkan kesamaan nilai pada masing-masing kunci menggunakan `util.isDeepStrictEqual`.
   - Jika nilainya berupa objek khusus V8 (seperti `Date`, `Map`, atau `Promise`), gunakan `util.types` untuk mencatat tipe spesifiknya ke dalam metadata laporan.
   - Jika objek memuat referensi melingkar (_circular reference_), gunakan `util.inspect` dengan batasan kedalaman `depth: 2` untuk menghasilkan representasi string ringkas tanpa melempar galat runtime.
-- Kembalikan objek `{ mengalamiPerubahan: true, daftarKunciBerubah: [...], representasiInspeksi: '<string>' }`.
+- Kembalikan objek `{ hasChanged: true, changedKeys: [...], inspectedSummary: '<string>' }`.
 
 Contoh masukan 1:
-
 ```javascript
-const s1 = { tanggal: new Date("2026-01-01"), counter: 5 };
-const s2 = { tanggal: new Date("2026-01-01"), counter: 5 };
-auditPerubahanStatus(s1, s2);
+const s1 = { date: new Date('2026-01-01'), counter: 5 };
+const s2 = { date: new Date('2026-01-01'), counter: 5 };
+auditStateChange(s1, s2);
 ```
 
 Contoh keluaran 1:
-
 ```javascript
 {
-  mengalamiPerubahan: false,
-  ringkasan: 'Status identik'
+  hasChanged: false,
+  summary: 'States are identical'
 }
 ```
 
 Contoh masukan 2:
-
 ```javascript
-const objA = { peran: "tamu" };
-const objB = { peran: "admin", waktu: new Date("2026-10-12") };
-objB.diri = objB; // Circular reference
-auditPerubahanStatus(objA, objB);
+const objA = { role: 'guest' };
+const objB = { role: 'admin', timestamp: new Date('2026-10-12') };
+objB.self = objB;
+auditStateChange(objA, objB);
 ```
 
 Contoh keluaran 2:
-
 ```javascript
 {
-  mengalamiPerubahan: true,
-  daftarKunciBerubah: [ 'peran', 'waktu', 'diri' ],
-  representasiInspeksi: "{ peran: 'admin', waktu: 2026-10-12T00:00:00.000Z, diri: [Circular] }"
+  hasChanged: true,
+  changedKeys: [ 'role', 'timestamp', 'self' ],
+  inspectedSummary: "<ref *1> { role: 'admin', timestamp: 2026-10-12T00:00:00.000Z, self: [Circular *1] }"
 }
 ```
 

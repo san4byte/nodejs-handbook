@@ -1,7 +1,6 @@
 # Timer
 
 > Ringkasan
->
 > - Fungsi: Mengatur penjadwalan eksekusi kode tertunda, pengulangan berkala, dan jeda asinkron non-blocking pada runtime Node.js.
 > - Digunakan saat: Menjadwalkan tugas latar belakang, membatasi durasi operasi, menerapkan jeda percobaan ulang, atau iterasi interval waktu.
 > - Aturan praktis: Prioritaskan modul `node:timers/promises` bersama kata kunci `await` untuk sintaks linier, dan selalu batalkan timer menggunakan pembatalan yang tepat agar tidak menahan proses.
@@ -35,42 +34,42 @@ flowchart TD
 
 ## Referensi
 
-| Item                    | Fungsi                                                                 | Catatan                                                                          |
-| :---------------------- | :--------------------------------------------------------------------- | :------------------------------------------------------------------------------- |
-| **`setTimeout()`**      | Menunda eksekusi kode selama durasi waktu tertentu dalam milidetik     | Versi `node:timers/promises` mengembalikan Promise yang dapat di-await           |
-| **`setInterval()`**     | Menjalankan eksekusi secara berulang dengan interval waktu tetap       | Versi `node:timers/promises` mengembalikan async iterable untuk `for await...of` |
-| **`setImmediate()`**    | Menjadwalkan eksekusi segera setelah fase polling I/O saat ini selesai | Memecah komputasi panjang agar tidak memblokir Event Loop                        |
-| **`clearTimeout()`**    | Membatalkan timer penundaan `setTimeout` sebelum waktu habis           | Mencegah pemanggilan fungsi dan membebaskan alokasi handle timer                 |
-| **`clearInterval()`**   | Menghentikan pengulangan berkala dari instance `setInterval`           | Wajib dipanggil untuk mencegah proses Node.js menggantung tanpa henti            |
-| **`scheduler.yield()`** | Menyerahkan giliran eksekusi sementara ke thread utama                 | Fitur modern `node:timers/promises` untuk membagi prioritas giliran kerja        |
+| Item | Fungsi | Catatan |
+| :--- | :----- | :------ |
+| **`setTimeout()`** | Menunda eksekusi kode selama durasi waktu tertentu dalam milidetik | Versi `node:timers/promises` mengembalikan Promise yang dapat di-await |
+| **`setInterval()`** | Menjalankan eksekusi secara berulang dengan interval waktu tetap | Versi `node:timers/promises` mengembalikan async iterable untuk `for await...of` |
+| **`setImmediate()`** | Menjadwalkan eksekusi segera setelah fase polling I/O saat ini selesai | Memecah komputasi panjang agar tidak memblokir Event Loop |
+| **`clearTimeout()`** | Membatalkan timer penundaan `setTimeout` sebelum waktu habis | Mencegah pemanggilan fungsi dan membebaskan alokasi handle timer |
+| **`clearInterval()`** | Menghentikan pengulangan berkala dari instance `setInterval` | Wajib dipanggil untuk mencegah proses Node.js menggantung tanpa henti |
+| **`scheduler.yield()`** | Menyerahkan giliran eksekusi sementara ke thread utama | Fitur modern `node:timers/promises` untuk membagi prioritas giliran kerja |
 
 ### `setTimeout()`
 
 Fungsi `setTimeout()` dari modul `node:timers/promises` menunda kelanjutan eksekusi kode selama durasi milidetik yang ditentukan tanpa memerlukan pembungkus Promise manual.
 
 ```javascript
-import { setTimeout } from "node:timers/promises";
+import { setTimeout } from 'node:timers/promises';
 
-console.log("Mulai tunggu");
-const hasil = await setTimeout(50, "selesai");
+console.log('Start wait');
+const result = await setTimeout(50, 'done');
 
-console.log(hasil);
-// Output: Mulai tunggu
-// selesai
+console.log(result);
+// Output: Start wait
+// done
 ```
 
 Kasus lain: Membatalkan penundaan waktu di tengah jalan menggunakan `AbortController` yang melempar galat `AbortError`.
 
 ```javascript
-import { setTimeout } from "node:timers/promises";
+import { setTimeout } from 'node:timers/promises';
 
 const ac = new AbortController();
-const janji = setTimeout(1000, "tidak terpanggil", { signal: ac.signal });
+const timerPromise = setTimeout(1000, 'unreachable', { signal: ac.signal });
 
 ac.abort();
 
 try {
-  await janji;
+  await timerPromise;
 } catch (error) {
   console.log(error.name);
   // Output: AbortError
@@ -82,35 +81,35 @@ try {
 Fungsi `setInterval()` dari modul `node:timers/promises` menghasilkan sebuah iterator asinkron yang dapat diiterasi menggunakan sintaks `for await...of` pada setiap detak waktu.
 
 ```javascript
-import { setInterval } from "node:timers/promises";
+import { setInterval } from 'node:timers/promises';
 
-const tik = [];
-for await (const waktu of setInterval(20, "ketukan")) {
-  tik.push(waktu);
-  if (tik.length === 3) break;
+const ticks = [];
+for await (const time of setInterval(20, 'tick')) {
+  ticks.push(time);
+  if (ticks.length === 3) break;
 }
 
-console.log(tik);
-// Output: [ 'ketukan', 'ketukan', 'ketukan' ]
+console.log(ticks);
+// Output: [ 'tick', 'tick', 'tick' ]
 ```
 
 Kasus lain: Menghentikan perulangan interval asinkron dari luar perulangan menggunakan `signal` dari `AbortController`.
 
 ```javascript
-import { setInterval } from "node:timers/promises";
+import { setInterval } from 'node:timers/promises';
 
 const ac = new AbortController();
-const riwayat = [];
+const history = [];
 
 try {
-  for await (const waktu of setInterval(10, Date.now(), {
+  for await (const time of setInterval(10, Date.now(), {
     signal: ac.signal,
   })) {
-    riwayat.push("tik");
-    if (riwayat.length === 2) ac.abort();
+    history.push('tick');
+    if (history.length === 2) ac.abort();
   }
 } catch (error) {
-  console.log(error.name, riwayat.length);
+  console.log(error.name, history.length);
   // Output: AbortError 2
 }
 ```
@@ -120,26 +119,26 @@ try {
 Fungsi `setImmediate()` menjadwalkan eksekusi segera setelah fase penanganan I/O yang sedang aktif selesai dievaluasi oleh Libuv.
 
 ```javascript
-import { setImmediate } from "node:timers/promises";
+import { setImmediate } from 'node:timers/promises';
 
-console.log("Sebelum");
-const nilai = await setImmediate("segera tiba");
-console.log(nilai);
-// Output: Sebelum
-// segera tiba
+console.log('Before');
+const value = await setImmediate('immediate arrival');
+console.log(value);
+// Output: Before
+// immediate arrival
 ```
 
 Kasus lain: Menggunakan versi callback `setImmediate` dari modul `node:timers` untuk penjadwalan tanpa Promise.
 
 ```javascript
-import { setImmediate } from "node:timers";
+import { setImmediate } from 'node:timers';
 
-let terpanggil = false;
+let isCalled = false;
 setImmediate(() => {
-  terpanggil = true;
+  isCalled = true;
 });
 
-console.log(terpanggil);
+console.log(isCalled);
 // Output: false
 ```
 
@@ -148,27 +147,27 @@ console.log(terpanggil);
 Fungsi `clearTimeout()` membatalkan eksekusi callback timer yang sebelumnya dijadwalkan oleh pemanggilan `setTimeout` berbasis callback.
 
 ```javascript
-import { setTimeout, clearTimeout } from "node:timers";
+import { setTimeout, clearTimeout } from 'node:timers';
 
-let status = "tidak berubah";
+let status = 'unchanged';
 const timerId = setTimeout(() => {
-  status = "berubah";
+  status = 'changed';
 }, 50);
 
 clearTimeout(timerId);
 
 console.log(status);
-// Output: tidak berubah
+// Output: unchanged
 ```
 
 Kasus lain: Memanggil `clearTimeout()` dengan nilai parameter `undefined` tidak memicu galat runtime.
 
 ```javascript
-import { clearTimeout } from "node:timers";
+import { clearTimeout } from 'node:timers';
 
 clearTimeout(undefined);
-console.log("Aman");
-// Output: Aman
+console.log('Safe');
+// Output: Safe
 ```
 
 ### `clearInterval()`
@@ -176,31 +175,33 @@ console.log("Aman");
 Fungsi `clearInterval()` menghentikan siklus pengulangan berkala yang dihasilkan oleh metode `setInterval` berbasis callback tradisional.
 
 ```javascript
-import { setInterval, clearInterval } from "node:timers";
+import { setInterval, clearInterval } from 'node:timers';
 
-let hitung = 0;
+let count = 0;
 const intervalId = setInterval(() => {
-  hitung++;
+  count++;
 }, 10);
 
 clearInterval(intervalId);
 
-console.log(hitung);
+console.log(count);
 // Output: 0
 ```
 
 Kasus lain: Menghentikan perulangan interval dari dalam fungsi callback berdasarkan evaluasi kondisi tertentu.
 
 ```javascript
-import { setInterval, clearInterval } from "node:timers";
+import { setInterval, clearInterval } from 'node:timers';
 
-let hitungan = 0;
+let counter = 0;
 const timer = setInterval(() => {
-  hitungan++;
-  if (hitungan >= 2) {
+  counter++;
+  if (counter >= 2) {
     clearInterval(timer);
+    console.log('Stopped at:', counter);
   }
 }, 5);
+// Output: Stopped at: 2
 ```
 
 ### `scheduler.yield()`
@@ -208,42 +209,42 @@ const timer = setInterval(() => {
 Objek `scheduler.yield()` dari `node:timers/promises` menangguhkan eksekusi fungsi asinkron saat ini untuk memberikan kesempatan kepada tugas lain di Event Loop berjalan.
 
 ```javascript
-import { scheduler } from "node:timers/promises";
+import { scheduler } from 'node:timers/promises';
 
-const jejak = [];
-jejak.push("awal");
+const trace = [];
+trace.push('start');
 
 await scheduler.yield();
-jejak.push("akhir");
+trace.push('end');
 
-console.log(jejak);
-// Output: [ 'awal', 'akhir' ]
+console.log(trace);
+// Output: [ 'start', 'end' ]
 ```
 
 Kasus lain: Menggunakan `scheduler.yield()` di dalam iterasi komputasi panjang agar tidak memonopoli thread utama.
 
 ```javascript
-import { scheduler } from "node:timers/promises";
+import { scheduler } from 'node:timers/promises';
 
-let iterasi = 0;
-while (iterasi < 3) {
-  iterasi++;
+let iteration = 0;
+while (iteration < 3) {
+  iteration++;
   await scheduler.yield();
 }
 
-console.log("Selesai iterasi:", iterasi);
-// Output: Selesai iterasi: 3
+console.log('Iterations completed:', iteration);
+// Output: Iterations completed: 3
 ```
 
 ### Perbandingan: Mekanisme Asinkron dan Timer di Node.js
 
-| Metode                     | Kategori Antrean         | Waktu Eksekusi                                                  |
-| :------------------------- | :----------------------- | :-------------------------------------------------------------- |
-| **`process.nextTick()`**   | Microtask Queue          | Segera setelah operasi JavaScript saat ini selesai, sebelum I/O |
-| **`Promise.then()`**       | Microtask Queue          | Bersama antrean microtask lainnya, mendahului seluruh macrotask |
-| **`setImmediate()`**       | Macrotask (Check Phase)  | Tepat setelah fase Poll I/O selesai dievaluasi                  |
-| **`setTimeout()`**         | Macrotask (Timers Phase) | Setelah durasi tunda milidetik terlampaui                       |
-| **`node:timers/promises`** | Modern Promise API       | Mengembalikan Promise yang diselesaikan pada siklus timer       |
+| Metode | Kategori Antrean | Waktu Eksekusi |
+| :--- | :--- | :--- |
+| **`process.nextTick()`** | Microtask Queue | Segera setelah operasi JavaScript saat ini selesai, sebelum I/O |
+| **`Promise.then()`** | Microtask Queue | Bersama antrean microtask lainnya, mendahului seluruh macrotask |
+| **`setImmediate()`** | Macrotask (Check Phase) | Tepat setelah fase Poll I/O selesai dievaluasi |
+| **`setTimeout()`** | Macrotask (Timers Phase) | Setelah durasi tunda milidetik terlampaui |
+| **`node:timers/promises`** | Modern Promise API | Mengembalikan Promise yang diselesaikan pada siklus timer |
 
 ---
 
@@ -255,20 +256,20 @@ Timer Node.js tidak berjalan pada thread sistem operasi terpisah, sehingga perul
 
 ```javascript
 // Salah
-setTimeout(() => console.log("Terpanggil"), 10);
-const batas = Date.now() + 1000;
-while (Date.now() < batas) {
+setTimeout(() => console.log('Invoked'), 10);
+const deadline = Date.now() + 1000;
+while (Date.now() < deadline) {
   // Loop sinkron memblokir thread utama selama satu detik penuh
 }
 ```
 
 ```javascript
 // Benar
-import { setTimeout } from "node:timers/promises";
+import { setTimeout } from 'node:timers/promises';
 
-console.log("Menunggu tanpa memblokir thread");
+console.log('Waiting without blocking thread');
 await setTimeout(1000);
-console.log("Terpanggil tepat waktu");
+console.log('Invoked on time');
 ```
 
 ### Lupa Membatalkan `setInterval` Berbasis Callback
@@ -277,20 +278,20 @@ Mengabaikan pemanggilan `clearInterval()` menyebabkan handle timer tetap aktif d
 
 ```javascript
 // Salah
-import { setInterval } from "node:timers";
+import { setInterval } from 'node:timers';
 
 setInterval(() => {
-  console.log("Ping");
+  console.log('Ping');
 }, 1000);
 // Proses server tidak akan pernah selesai
 ```
 
 ```javascript
 // Benar
-import { setInterval, clearInterval } from "node:timers";
+import { setInterval, clearInterval } from 'node:timers';
 
 const timer = setInterval(() => {
-  console.log("Ping");
+  console.log('Ping');
 }, 1000);
 // Hentikan timer saat proses selesai
 clearInterval(timer);
@@ -308,7 +309,7 @@ await sleep(100);
 
 ```javascript
 // Benar
-import { setTimeout } from "node:timers/promises";
+import { setTimeout } from 'node:timers/promises';
 
 await setTimeout(100);
 ```
@@ -320,42 +321,42 @@ await setTimeout(100);
 Skenario: Membangun pembungkus eksekusi fungsi dengan batas waktu maksimum (_timeout guard_) menggunakan kombinasi `node:timers/promises` dan `AbortController` untuk mencegah operasi yang menggantung.
 
 ```javascript
-import { setTimeout } from "node:timers/promises";
+import { setTimeout } from 'node:timers/promises';
 
-async function eksekusiDenganBatasWaktu(fnTugas, batasMs) {
+async function executeWithTimeout(taskFn, timeoutMs) {
   const ac = new AbortController();
-  const timerBatas = setTimeout(batasMs, null, { signal: ac.signal }).then(
+  const timeoutPromise = setTimeout(timeoutMs, null, { signal: ac.signal }).then(
     () => {
-      throw new Error("TIMEOUT");
+      throw new Error('TIMEOUT');
     },
   );
 
   try {
-    const hasil = await Promise.race([fnTugas(ac.signal), timerBatas]);
+    const result = await Promise.race([taskFn(ac.signal), timeoutPromise]);
     ac.abort();
-    return hasil;
+    return result;
   } catch (error) {
     ac.abort();
     throw error;
   }
 }
 
-const sukses = await eksekusiDenganBatasWaktu(async () => {
+const successResult = await executeWithTimeout(async () => {
   await setTimeout(20);
-  return "Data Selesai";
+  return 'Data Complete';
 }, 100);
 
-console.log("Sukses:", sukses);
-// Output: Sukses: Data Selesai
+console.log('Success:', successResult);
+// Output: Success: Data Complete
 
 try {
-  await eksekusiDenganBatasWaktu(async () => {
+  await executeWithTimeout(async () => {
     await setTimeout(200);
-    return "Data Terlambat";
+    return 'Data Late';
   }, 50);
 } catch (err) {
-  console.log("Gagal:", err.message);
-  // Output: Gagal: TIMEOUT
+  console.log('Failed:', err.message);
+  // Output: Failed: TIMEOUT
 }
 ```
 
@@ -367,12 +368,12 @@ Desain ini menggunakan `Promise.race` untuk memperlombakan tugas asinkron dengan
 
 ### Soal 1 (Dasar)
 
-Buat fungsi `hitungMundur(detikAwal)` yang memanfaatkan iterator `setInterval` dari `node:timers/promises` untuk mencetak angka hitung mundur mulai dari `detikAwal` hingga `0`, lalu mengembalikan string `'Waktu Habis!'`.
+Buat fungsi `countdown(startSeconds)` yang memanfaatkan iterator `setInterval` dari `node:timers/promises` untuk mencetak angka hitung mundur mulai dari `startSeconds` hingga `0`, lalu mengembalikan string `'Time expired!'`.
 
 Contoh masukan:
 
 ```javascript
-await hitungMundur(3);
+await countdown(3);
 ```
 
 Contoh keluaran yang diharapkan:
@@ -382,39 +383,39 @@ Contoh keluaran yang diharapkan:
 // 2
 // 1
 // 0
-// 'Waktu Habis!'
+// 'Time expired!'
 ```
 
 Batasan: Wajib menggunakan `setInterval` dari modul `node:timers/promises` dengan interval waktu dan kata kunci `break` saat mencapai angka nol.
 
 ### Soal 2 (Menengah)
 
-Buat fungsi `denganBatasWaktu(promiseTugas, durasiMs)` yang memanfaatkan `setTimeout` dari `node:timers/promises` dan `Promise.race()`. Jika `promiseTugas` belum selesai sebelum `durasiMs` milidetik terlampaui, fungsi harus melempar galat dengan pesan `'Batas waktu operasi terlampaui'`.
+Buat fungsi `withTimeout(taskPromise, durationMs)` yang memanfaatkan `setTimeout` dari `node:timers/promises` dan `Promise.race()`. Jika `taskPromise` belum selesai sebelum `durationMs` milidetik terlampaui, fungsi harus melempar galat dengan pesan `'Operation timed out'`.
 
 Contoh masukan 1 (tugas selesai tepat waktu):
 
 ```javascript
-await denganBatasWaktu(Promise.resolve("Data Berhasil"), 100);
+await withTimeout(Promise.resolve('Data Retrieved'), 100);
 ```
 
 Contoh keluaran 1:
 
 ```javascript
-"Data Berhasil";
+'Data Retrieved'
 ```
 
 Contoh masukan 2 (tugas melebihi batas durasi):
 
 ```javascript
-import { setTimeout } from "node:timers/promises";
+import { setTimeout } from 'node:timers/promises';
 
-await denganBatasWaktu(setTimeout(200, "Terlambat"), 50);
+await withTimeout(setTimeout(200, 'Late Data'), 50);
 ```
 
 Contoh keluaran 2:
 
 ```javascript
-// Melempar galat Error: 'Batas waktu operasi terlampaui'
+// Melempar galat Error: 'Operation timed out'
 ```
 
 Batasan: Wajib menggunakan `Promise.race` dan modul `node:timers/promises`.
@@ -423,15 +424,14 @@ Batasan: Wajib menggunakan `Promise.race` dan modul `node:timers/promises`.
 
 Buat kelas penjadwal tugas berulang terkendali `IntervalWorker`.
 
-Spesifikasi konstruktor: menerima `fnTugas` (fungsi asinkron yang dieksekusi), `intervalMs` (durasi jeda antar-eksekusi), dan `maksEksekusi` (total batas putaran eksekusi).
+Spesifikasi konstruktor: menerima `taskFn` (fungsi asinkron yang dieksekusi), `intervalMs` (durasi jeda antar-eksekusi), dan `maxRuns` (total batas putaran eksekusi).
 
 Metode kelas:
-
-- `mulai()`: Menjalankan eksekusi tugas secara berulang menggunakan iterator `setInterval` dari `node:timers/promises`. Setiap putaran mencatat hasil kembalian tugas ke dalam array riwayat internal dalam bentuk objek `{ status: 'sukses', nilai: ... }`.
-- Jika `fnTugas` melempar galat pada putaran tertentu, tangkap galat tersebut secara internal, simpan catatan `{ status: 'gagal', kesalahan: err.message }` ke dalam riwayat, dan lanjutkan putaran berikutnya tanpa menghentikan worker.
-- `berhenti()`: Membatalkan siklus timer seketika menggunakan `AbortController` internal tanpa menunggu iterasi berikutnya.
-- Jika iterasi mencapai `maksEksekusi`, hentikan siklus secara otomatis dan kembalikan array riwayat eksekusi.
-- Sediakan metode getter `ambilRiwayat()` yang mengembalikan salinan dangkal (_shallow copy_) dari riwayat.
+- `start()`: Menjalankan eksekusi tugas secara berulang menggunakan iterator `setInterval` dari `node:timers/promises`. Setiap putaran mencatat hasil kembalian tugas ke dalam array riwayat internal dalam bentuk objek `{ status: 'success', value: ... }`.
+- Jika `taskFn` melempar galat pada putaran tertentu, tangkap galat tersebut secara internal, simpan catatan `{ status: 'failure', error: err.message }` ke dalam riwayat, dan lanjutkan putaran berikutnya tanpa menghentikan worker.
+- `stop()`: Membatalkan siklus timer seketika menggunakan `AbortController` internal tanpa menunggu iterasi berikutnya.
+- Jika iterasi mencapai `maxRuns`, hentikan siklus secara otomatis dan kembalikan array riwayat eksekusi.
+- Sediakan metode getter `getHistory()` yang mengembalikan salinan dangkal (_shallow copy_) dari riwayat.
 
 Contoh masukan:
 
@@ -440,25 +440,25 @@ let counter = 0;
 const worker = new IntervalWorker(
   async () => {
     counter++;
-    if (counter === 2) throw new Error("Gagal sementara");
-    return `Sukses putaran ${counter}`;
+    if (counter === 2) throw new Error('Temporary failure');
+    return `Success run ${counter}`;
   },
   20,
   3,
 );
 
-const hasil = await worker.mulai();
-console.log(hasil);
+const history = await worker.start();
+console.log(history);
 ```
 
 Contoh keluaran yang diharapkan:
 
 ```javascript
 [
-  { status: "sukses", nilai: "Sukses putaran 1" },
-  { status: "gagal", kesalahan: "Gagal sementara" },
-  { status: "sukses", nilai: "Sukses putaran 3" },
-];
+  { status: 'success', value: 'Success run 1' },
+  { status: 'failure', error: 'Temporary failure' },
+  { status: 'success', value: 'Success run 3' }
+]
 ```
 
 Batasan: Dilarang menggunakan pustaka pihak ketiga. Wajib mengendalikan penghentian loop menggunakan `AbortController` dan iterator `node:timers/promises`.

@@ -1,7 +1,6 @@
 # Net
 
 > Ringkasan
->
 > - Fungsi: Membangun server dan klien jaringan berbasis protokol TCP (*Transmission Control Protocol*) dengan aliran data dua arah (*bidirectional stream*).
 > - Digunakan saat: Mengembangkan layanan komunikasi tingkat rendah seperti protokol kustom, IPC (*inter-process communication*), broker pesan, atau perkakas diagnostik soket jaringan.
 > - Aturan praktis: Selalu pasang penangan event `'error'` pada server dan soket klien untuk mencegah terminasi proses mendadak saat koneksi terputus tiba-tiba.
@@ -35,7 +34,7 @@ flowchart LR
 ## Referensi
 
 | Item | Fungsi | Catatan |
-| :--- | :----- | :------ |
+| :--- | :--- | :--- |
 | **`net.createServer()`** | Membuat instans server TCP baru | Menghasilkan objek `net.Server` untuk mendengarkan koneksi masuk |
 | **`net.createConnection()`** | Membuka koneksi TCP ke server target | Menghasilkan instans soket dupleks `net.Socket` aktif |
 | **`server.listen()`** | Mengikat server pada port dan alamat host tertentu | Nilai port `0` memerintahkan sistem operasi mengalokasikan port acak |
@@ -50,21 +49,20 @@ flowchart LR
 Fungsi `net.createServer()` digunakan untuk menginisialisasi server TCP baru yang siap menangani koneksi klien yang masuk. Fungsi ini menerima argumen fungsi pendengar yang dipanggil setiap kali soket klien berhasil tersambung.
 
 ```javascript
-import net from "node:net";
+import net from 'node:net';
 
 const server = net.createServer((socket) => {
-  socket.end("Halo dari TCP Server");
+  socket.end('Hello from TCP Server');
 });
 
 server.listen(0, () => {
   const { port } = server.address();
-  const client = net.createConnection({ port }, () => {
-    client.on("data", (chunk) => {
-      console.log(chunk.toString());
-      // Output: Halo dari TCP Server
-      client.destroy();
-      server.close();
-    });
+  const client = net.createConnection({ port });
+  client.on('data', (chunk) => {
+    console.log(chunk.toString());
+    // Output: Hello from TCP Server
+    client.destroy();
+    server.close();
   });
 });
 ```
@@ -72,19 +70,19 @@ server.listen(0, () => {
 Kasus lain: Mendeteksi koneksi klien melalui pendaftaran manual listener event `'connection'`.
 
 ```javascript
-import net from "node:net";
+import net from 'node:net';
 
 const server = net.createServer();
-server.on("connection", (socket) => {
-  console.log("Koneksi masuk terdeteksi:", Boolean(socket.remoteAddress));
-  // Output: Koneksi masuk terdeteksi: true
+server.on('connection', (socket) => {
+  console.log('Incoming connection detected:', Boolean(socket.remoteAddress));
+  // Output: Incoming connection detected: true
   socket.destroy();
   server.close();
 });
 
 server.listen(0, () => {
   const client = net.createConnection({ port: server.address().port });
-  client.on("error", () => {});
+  client.on('error', () => {});
 });
 ```
 
@@ -93,18 +91,18 @@ server.listen(0, () => {
 Fungsi `net.createConnection()` digunakan untuk membuat soket klien baru dan menginisialisasi sambungan TCP ke server target. Fungsi ini menerima opsi koneksi seperti nomor port dan alamat host tujuan.
 
 ```javascript
-import net from "node:net";
+import net from 'node:net';
 
 const server = net.createServer((socket) => {
-  socket.write("Koneksi berhasil");
+  socket.write('Connection successful');
   socket.end();
 }).listen(0, () => {
   const client = net.createConnection({ port: server.address().port }, () => {
-    console.log("Status koneksi aktif:", !client.connecting);
-    // Output: Status koneksi aktif: true
+    console.log('Active connection status:', !client.connecting);
+    // Output: Active connection status: true
   });
 
-  client.on("data", () => {
+  client.on('data', () => {
     client.destroy();
     server.close();
   });
@@ -114,10 +112,10 @@ const server = net.createServer((socket) => {
 Kasus lain: Menangani galat penolakan sambungan saat server target tidak aktif melalui kode galat `ECONNREFUSED`.
 
 ```javascript
-import net from "node:net";
+import net from 'node:net';
 
 const client = net.createConnection({ port: 1 });
-client.on("error", (error) => {
+client.on('error', (error) => {
   console.log(error.code);
   // Output: ECONNREFUSED
 });
@@ -128,10 +126,10 @@ client.on("error", (error) => {
 Metode `server.listen()` digunakan untuk mengikat server TCP pada port dan alamat IP tertentu agar siap menerima koneksi jaringan luar. Jika nilai port diisi `0`, sistem operasi akan otomatis memilihkan port acak yang sedang bebas.
 
 ```javascript
-import net from "node:net";
+import net from 'node:net';
 
 const server = net.createServer();
-server.listen(0, "127.0.0.1", () => {
+server.listen(0, '127.0.0.1', () => {
   const info = server.address();
   console.log(info.address, typeof info.port);
   // Output: 127.0.0.1 number
@@ -142,13 +140,13 @@ server.listen(0, "127.0.0.1", () => {
 Kasus lain: Menangkap kode galat `EADDRINUSE` saat mencoba mengikat port yang sudah digunakan oleh proses lain.
 
 ```javascript
-import net from "node:net";
+import net from 'node:net';
 
 const server1 = net.createServer().listen(0, () => {
   const { port } = server1.address();
   const server2 = net.createServer();
   server2.listen(port, () => {});
-  server2.on("error", (error) => {
+  server2.on('error', (error) => {
     console.log(error.code);
     // Output: EADDRINUSE
     server1.close();
@@ -161,15 +159,15 @@ const server1 = net.createServer().listen(0, () => {
 Metode `server.close()` digunakan untuk menghentikan server dari menerima koneksi masuk baru. Panggilan ini tidak mematikan koneksi klien yang sudah aktif, melainkan menunggu soket klien tersebut selesai atau dihancurkan.
 
 ```javascript
-import net from "node:net";
+import net from 'node:net';
 
 const server = net.createServer();
 server.listen(0, () => {
-  console.log("Sebelum close:", server.listening);
-  // Output: Sebelum close: true
+  console.log('Before close:', server.listening);
+  // Output: Before close: true
   server.close(() => {
-    console.log("Setelah close:", server.listening);
-    // Output: Setelah close: false
+    console.log('After close:', server.listening);
+    // Output: After close: false
   });
 });
 ```
@@ -177,7 +175,7 @@ server.listen(0, () => {
 Kasus lain: Memanggil `server.close()` saat server belum dalam kondisi berjalan memicu galat runtime `ERR_SERVER_NOT_RUNNING`.
 
 ```javascript
-import net from "node:net";
+import net from 'node:net';
 
 const server = net.createServer();
 server.close((error) => {
@@ -191,20 +189,20 @@ server.close((error) => {
 Metode `socket.write()` digunakan untuk mengirimkan data berupa string atau buffer ke soket tujuan. Metode ini mengembalikan nilai boolean `false` jika buffer pengiriman lokal kernel penuh sehingga pengirim perlu menerapkan jeda aliran (*backpressure*).
 
 ```javascript
-import net from "node:net";
+import net from 'node:net';
 
 const server = net.createServer((socket) => {
-  socket.on("data", (chunk) => {
+  socket.on('data', (chunk) => {
     console.log(chunk.toString());
-    // Output: Pesan klien
+    // Output: Client message
     socket.destroy();
     server.close();
   });
 }).listen(0, () => {
   const client = net.createConnection({ port: server.address().port }, () => {
-    const statusBuffer = client.write("Pesan klien");
-    console.log("Buffer tertampung:", statusBuffer);
-    // Output: Buffer tertampung: true
+    const isBuffered = client.write('Client message');
+    console.log('Buffered:', isBuffered);
+    // Output: Buffered: true
     client.destroy();
   });
 });
@@ -213,20 +211,20 @@ const server = net.createServer((socket) => {
 Kasus lain: Menulis data ke soket yang telah ditutup memicu pemancaran event error dengan kode `ERR_STREAM_WRITE_AFTER_END`.
 
 ```javascript
-import net from "node:net";
+import net from 'node:net';
 
 const server = net.createServer((socket) => {
   socket.end();
 }).listen(0, () => {
   const client = net.createConnection({ port: server.address().port }, () => {
-    client.on("error", (error) => {
+    client.on('error', (error) => {
       console.log(error.code);
       // Output: ERR_STREAM_WRITE_AFTER_END
       client.destroy();
       server.close();
     });
     client.end();
-    client.write("Data terlambat");
+    client.write('Late data');
   });
 });
 ```
@@ -236,36 +234,36 @@ const server = net.createServer((socket) => {
 Metode `socket.end()` digunakan untuk menutup setengah jalur transmisi dari sisi lokal dengan mengirimkan paket FIN ke sisi penerima. Soket masih dapat menerima data balasan dari lawan bicara hingga pihak seberang juga menutup sambungannya.
 
 ```javascript
-import net from "node:net";
+import net from 'node:net';
 
 const server = net.createServer((socket) => {
-  socket.on("data", (chunk) => {
-    console.log("Diterima server:", chunk.toString());
-    // Output: Diterima server: Selesai mengirim
+  socket.on('data', (chunk) => {
+    console.log('Received by server:', chunk.toString());
+    // Output: Received by server: Finished sending
   });
-  socket.on("end", () => {
-    console.log("Klien mengirim sinyal end");
-    // Output: Klien mengirim sinyal end
+  socket.on('end', () => {
+    console.log('Client sent end signal');
+    // Output: Client sent end signal
     socket.end();
     server.close();
   });
 }).listen(0, () => {
   const client = net.createConnection({ port: server.address().port }, () => {
-    client.end("Selesai mengirim");
+    client.end('Finished sending');
   });
-  client.on("close", () => client.destroy());
+  client.on('close', () => client.destroy());
 });
 ```
 
 Kasus lain: Memanggil `socket.end()` tanpa argumen untuk mengirimkan sinyal penutupan transmisi tanpa membawa muatan data.
 
 ```javascript
-import net from "node:net";
+import net from 'node:net';
 
 const server = net.createServer((socket) => {
-  socket.on("end", () => {
-    console.log("Sinyal FIN diterima");
-    // Output: Sinyal FIN diterima
+  socket.on('end', () => {
+    console.log('FIN signal received');
+    // Output: FIN signal received
     socket.destroy();
     server.close();
   });
@@ -273,7 +271,7 @@ const server = net.createServer((socket) => {
   const client = net.createConnection({ port: server.address().port }, () => {
     client.end();
   });
-  client.on("close", () => client.destroy());
+  client.on('close', () => client.destroy());
 });
 ```
 
@@ -282,30 +280,30 @@ const server = net.createServer((socket) => {
 Metode `socket.destroy()` digunakan untuk memutus dan menghancurkan koneksi soket seketika pada tingkat sistem operasi. Metode ini berguna untuk penanganan darurat saat terjadi galat fatal atau batas waktu inaktivitas.
 
 ```javascript
-import net from "node:net";
+import net from 'node:net';
 
 const server = net.createServer((socket) => {
   socket.destroy();
-  console.log("Status soket hancur:", socket.destroyed);
-  // Output: Status soket hancur: true
+  console.log('Socket destroyed status:', socket.destroyed);
+  // Output: Socket destroyed status: true
   server.close();
 }).listen(0, () => {
   const client = net.createConnection({ port: server.address().port });
-  client.on("close", () => client.destroy());
+  client.on('close', () => client.destroy());
 });
 ```
 
 Kasus lain: Menghancurkan soket dengan menyertakan objek galat untuk memicu pemancaran event `'error'` secara terprogram.
 
 ```javascript
-import net from "node:net";
+import net from 'node:net';
 
 const socket = new net.Socket();
-socket.on("error", (error) => {
+socket.on('error', (error) => {
   console.log(error.message);
-  // Output: Pemutusan paksa oleh aplikasi
+  // Output: Forced close by application
 });
-socket.destroy(new Error("Pemutusan paksa oleh aplikasi"));
+socket.destroy(new Error('Forced close by application'));
 ```
 
 ### `socket.setTimeout()`
@@ -313,32 +311,32 @@ socket.destroy(new Error("Pemutusan paksa oleh aplikasi"));
 Metode `socket.setTimeout()` digunakan untuk mengatur durasi waktu hening maksimal sebelum soket memancarkan event `'timeout'`. Pemanggilan ini tidak menutup soket otomatis sehingga tindakan penutupan atau penghancuran harus ditentukan secara eksplisit.
 
 ```javascript
-import net from "node:net";
+import net from 'node:net';
 
 const server = net.createServer((socket) => {
   socket.setTimeout(50);
-  socket.on("timeout", () => {
-    console.log("Batas waktu inaktivitas tercapai");
-    // Output: Batas waktu inaktivitas tercapai
+  socket.on('timeout', () => {
+    console.log('Inactivity timeout reached');
+    // Output: Inactivity timeout reached
     socket.destroy();
     server.close();
   });
 }).listen(0, () => {
   const client = net.createConnection({ port: server.address().port });
-  client.on("close", () => client.destroy());
+  client.on('close', () => client.destroy());
 });
 ```
 
 Kasus lain: Membatalkan pewaktu inaktivitas soket dengan memberikan nilai durasi `0`.
 
 ```javascript
-import net from "node:net";
+import net from 'node:net';
 
 const socket = new net.Socket();
 socket.setTimeout(100);
 socket.setTimeout(0);
-console.log("Pewaktu dinonaktifkan");
-// Output: Pewaktu dinonaktifkan
+console.log('Timeout disabled');
+// Output: Timeout disabled
 socket.destroy();
 ```
 
@@ -362,16 +360,16 @@ Ketiadaan pendengar event `'error'` pada instans soket menyebabkan runtime Node.
 ```javascript
 // Salah
 const client = net.createConnection({ port: 8080 });
-client.write("Halo Server");
+client.write('Hello Server');
 ```
 
 ```javascript
 // Benar
 const client = net.createConnection({ port: 8080 });
-client.on("error", (error) => {
-  console.log("Koneksi gagal atau terputus:", error.message);
+client.on('error', (error) => {
+  console.log('Connection failed or closed:', error.message);
 });
-client.write("Halo Server");
+client.write('Hello Server');
 ```
 
 ### Mengasumsikan Satu Panggilan Write Menghasilkan Tepat Satu Event Data
@@ -380,21 +378,21 @@ Protokol TCP bekerja berbasis aliran byte tanpa konsep batas pesan, sehingga pem
 
 ```javascript
 // Salah
-socket.on("data", (chunk) => {
-  const pesan = JSON.parse(chunk.toString());
-  prosesPesan(pesan);
+socket.on('data', (chunk) => {
+  const message = JSON.parse(chunk.toString());
+  processMessage(message);
 });
 ```
 
 ```javascript
 // Benar
-let penampung = "";
-socket.on("data", (chunk) => {
-  penampung += chunk.toString();
-  const baris = penampung.split("\n");
-  penampung = baris.pop();
-  for (const item of baris) {
-    if (item.trim()) prosesPesan(JSON.parse(item));
+let buffer = '';
+socket.on('data', (chunk) => {
+  buffer += chunk.toString();
+  const lines = buffer.split('\n');
+  buffer = lines.pop();
+  for (const line of lines) {
+    if (line.trim()) processMessage(JSON.parse(line));
   }
 });
 ```
@@ -406,16 +404,16 @@ Event `'timeout'` hanya bertindak sebagai sinyal peringatan dan tidak memutus sa
 ```javascript
 // Salah
 socket.setTimeout(5000);
-socket.on("timeout", () => {
-  console.log("Koneksi idle terdeteksi");
+socket.on('timeout', () => {
+  console.log('Idle connection detected');
 });
 ```
 
 ```javascript
 // Benar
 socket.setTimeout(5000);
-socket.on("timeout", () => {
-  socket.destroy(new Error("Batas waktu koneksi terlampaui"));
+socket.on('timeout', () => {
+  socket.destroy(new Error('Connection timeout exceeded'));
 });
 ```
 
@@ -426,38 +424,38 @@ socket.on("timeout", () => {
 Skenario: Membangun server gema pesan berbasis pembatas baris baru (*newline-delimited JSON echo server*) mandiri dengan proteksi validasi muatan data, pemulihan galat parsing, dan penutupan sambungan teratur.
 
 ```javascript
-import net from "node:net";
+import net from 'node:net';
 
-function buatServerGema() {
+function createEchoServer() {
   const server = net.createServer((socket) => {
-    let penyangga = "";
+    let buffer = '';
 
-    socket.on("data", (chunk) => {
-      penyangga += chunk.toString("utf-8");
-      const baris = penyangga.split("\n");
-      penyangga = baris.pop();
+    socket.on('data', (chunk) => {
+      buffer += chunk.toString('utf-8');
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
 
-      for (const barisTeks of baris) {
-        if (!barisTeks.trim()) continue;
+      for (const line of lines) {
+        if (!line.trim()) continue;
         try {
-          const payload = JSON.parse(barisTeks);
-          const balasan = JSON.stringify({
-            status: "OK",
-            gema: payload.pesan,
-            panjang: payload.pesan.length,
+          const payload = JSON.parse(line);
+          const response = JSON.stringify({
+            status: 'OK',
+            echo: payload.message,
+            length: payload.message.length,
           });
-          socket.write(balasan + "\n");
+          socket.write(response + '\n');
         } catch {
-          const pesanGalat = JSON.stringify({
-            status: "ERR",
-            pesan: "Format JSON tidak valid",
+          const errorMessage = JSON.stringify({
+            status: 'ERR',
+            message: 'Invalid JSON format',
           });
-          socket.write(pesanGalat + "\n");
+          socket.write(errorMessage + '\n');
         }
       }
     });
 
-    socket.on("error", () => {
+    socket.on('error', () => {
       socket.destroy();
     });
   });
@@ -465,23 +463,23 @@ function buatServerGema() {
   return server;
 }
 
-const server = buatServerGema();
+const server = createEchoServer();
 server.listen(0, () => {
   const { port } = server.address();
   const client = net.createConnection({ port }, () => {
-    client.write(JSON.stringify({ pesan: "Halo TCP" }) + "\n");
+    client.write(JSON.stringify({ message: 'Hello TCP' }) + '\n');
   });
 
-  client.on("data", (chunk) => {
-    const balasan = JSON.parse(chunk.toString().trim());
-    console.log("Status:", balasan.status);
-    console.log("Gema:", balasan.gema);
-    console.log("Panjang:", balasan.panjang);
+  client.on('data', (chunk) => {
+    const response = JSON.parse(chunk.toString().trim());
+    console.log('Status:', response.status);
+    console.log('Echo:', response.echo);
+    console.log('Length:', response.length);
     client.destroy();
     server.close();
   });
 
-  client.on("error", () => {
+  client.on('error', () => {
     client.destroy();
     server.close();
   });
@@ -489,8 +487,8 @@ server.listen(0, () => {
 
 // Output:
 // Status: OK
-// Gema: Halo TCP
-// Panjang: 8
+// Echo: Hello TCP
+// Length: 9
 ```
 
 Desain ini dipilih karena memisahkan akumulasi aliran byte menggunakan pembatas baris baru `\n`, menjamin pesan diuraikan secara utuh meskipun tiba dalam beberapa pecahan paket terpisah, serta mengisolasi galat parsing agar soket tidak tertutup tiba-tiba saat menerima format pesan yang salah.
@@ -501,12 +499,12 @@ Desain ini dipilih karena memisahkan akumulasi aliran byte menggunakan pembatas 
 
 ### Soal 1 (Dasar)
 
-Buat fungsi `cekPortAktif(host, port, timeoutMs)` yang memeriksa apakah port TCP pada host tertentu terbuka dan menerima koneksi sebelum batas waktu tercapai. Fungsi mengembalikan Promise bernilai boolean `true` jika koneksi berhasil, atau `false` jika koneksi gagal atau waktu habis.
+Buat fungsi `checkActivePort(host, port, timeoutMs)` yang memeriksa apakah port TCP pada host tertentu terbuka dan menerima koneksi sebelum batas waktu tercapai. Fungsi mengembalikan Promise bernilai boolean `true` jika koneksi berhasil, atau `false` jika koneksi gagal atau batas waktu habis.
 
 Contoh masukan:
 
 ```javascript
-await cekPortAktif("127.0.0.1", 80, 200);
+await checkActivePort('127.0.0.1', 80, 200);
 ```
 
 Contoh keluaran yang diharapkan:
@@ -519,20 +517,20 @@ Batasan: Gunakan modul bawaan `node:net` tanpa pustaka eksternal. Soket harus di
 
 ### Soal 2 (Menengah)
 
-Buat fungsi `uraiFramePesan(penyanggaAwal, potonganData, pemisah)` yang memproses aliran potongan data TCP yang terfragmentasi. Fungsi menerima sisa teks yang belum selesai dari pembacaan sebelumnya, potongan data baru yang baru tiba, serta string karakter pemisah pesan. Fungsi harus mengembalikan objek berisi daftar pesan lengkap yang sudah berhasil dipisahkan dan sisa teks yang belum memiliki pemisah penutup.
+Buat fungsi `parseMessageFrames(initialBuffer, chunk, delimiter)` yang memproses aliran potongan data TCP yang terfragmentasi. Fungsi menerima sisa teks yang belum selesai dari pembacaan sebelumnya (`initialBuffer`), potongan data baru yang baru tiba (`chunk`), serta string karakter pemisah pesan (`delimiter`). Fungsi harus mengembalikan objek berisi daftar pesan lengkap yang sudah berhasil dipisahkan dan sisa teks yang belum memiliki pemisah penutup.
 
 Contoh masukan:
 
 ```javascript
-uraiFramePesan("data_awal", "_lanjutan\npesan_kedua\npesan_ketiga_belum", "\n");
+parseMessageFrames('initial_part', '_continuation\nsecond_msg\npending_third', '\n');
 ```
 
 Contoh keluaran yang diharapkan:
 
 ```javascript
 {
-  pesanLengkap: [ 'data_awal_lanjutan', 'pesan_kedua' ],
-  sisaPenyangga: 'pesan_ketiga_belum'
+  completeMessages: [ 'initial_part_continuation', 'second_msg' ],
+  remainingBuffer: 'pending_third'
 }
 ```
 
@@ -540,32 +538,32 @@ Batasan: Gunakan fungsi murni berbasis manipulasi string tanpa dependensi luar. 
 
 ### Soal 3 (Menantang)
 
-Buat fungsi `buatPusatPerintahTCP()` yang menghasilkan server TCP pengelola perintah teks berbaris (`\n`). Server harus mampu mengelola banyak klien konkuren dengan ketentuan berikut:
+Buat fungsi `createTcpCommandServer()` yang menghasilkan server TCP pengelola perintah teks berbaris (`\n`). Server harus mampu mengelola banyak klien konkuren dengan ketentuan berikut:
 
-1. Klien mengirim perintah teks berformat `PERINTAH:NILAI\n`.
-2. Jika perintah berupa `SET:kunci=nilai`, simpan pasangan kunci dan nilai ke penyimpanan internal server, lalu balas dengan `OK:DISIMPAN\n`.
-3. Jika perintah berupa `GET:kunci`, ambil nilai dari kunci tersebut dan balas dengan `VAL:nilai\n`. Jika kunci tidak ditemukan, balas dengan `ERR:TIDAK_DITEMUKAN\n`.
-4. Jika perintah berupa `COUNT`, balas dengan jumlah total kunci yang tersimpan dengan pola `VAL:jumlah\n`.
-5. Jika perintah berupa `KELUAR`, tutup soket klien tersebut secara teratur.
+1. Klien mengirim perintah teks berformat `COMMAND:VALUE\n`.
+2. Jika perintah berupa `SET:key=value`, simpan pasangan kunci dan nilai ke penyimpanan internal server, lalu balas dengan `OK:STORED\n`.
+3. Jika perintah berupa `GET:key`, ambil nilai dari kunci tersebut dan balas dengan `VAL:value\n`. Jika kunci tidak ditemukan, balas dengan `ERR:NOT_FOUND\n`.
+4. Jika perintah berupa `COUNT`, balas dengan jumlah total kunci yang tersimpan dengan pola `VAL:count\n`.
+5. Jika perintah berupa `QUIT`, tutup soket klien tersebut secara teratur.
 6. Ketentuan penanganan kasus tepi:
-   - Jika format baris tidak memuat karakter titik dua `:` atau perintah tidak dikenali, balas dengan `ERR:PERINTAH_TIDAK_VALID\n`.
-   - Batasi panjang buffer per klien maksimal 256 karakter. Jika sebuah baris data belum memiliki `\n` dan telah melampaui 256 karakter, balas dengan `ERR:MUATAN_TERLALU_BESAR\n` dan hancurkan soket klien tersebut seketika untuk mencegah serangan kehabisan memori.
+   - Jika format baris tidak memuat karakter titik dua `:` atau perintah tidak dikenali, balas dengan `ERR:INVALID_COMMAND\n`.
+   - Batasi panjang buffer per klien maksimal 256 karakter. Jika sebuah baris data belum memiliki `\n` dan telah melampaui 256 karakter, balas dengan `ERR:PAYLOAD_TOO_LARGE\n` dan hancurkan soket klien tersebut seketika untuk mencegah serangan kehabisan memori.
    - Tangani penutupan soket mendadak (`error` dan `close`) agar tidak menimbulkan kebocoran sumber daya pada server.
 
 Contoh skenario interaksi klien:
 
 ```javascript
-// Klien mengirim: "SET:bahasa=javascript\n"
-// Balasan server: "OK:DISIMPAN\n"
+// Client sends: "SET:language=javascript\n"
+// Server response: "OK:STORED\n"
 
-// Klien mengirim: "GET:bahasa\n"
-// Balasan server: "VAL:javascript\n"
+// Client sends: "GET:language\n"
+// Server response: "VAL:javascript\n"
 
-// Klien mengirim: "GET:versi\n"
-// Balasan server: "ERR:TIDAK_DITEMUKAN\n"
+// Client sends: "GET:version\n"
+// Server response: "ERR:NOT_FOUND\n"
 
-// Klien mengirim: "FORMAT_SALAH\n"
-// Balasan server: "ERR:PERINTAH_TIDAK_VALID\n"
+// Client sends: "INVALID_FORMAT\n"
+// Server response: "ERR:INVALID_COMMAND\n"
 ```
 
 Batasan: Seluruh server harus dibangun menggunakan `node:net` murni, mandiri, dan bebas dependensi luar.

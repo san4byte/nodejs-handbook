@@ -1,7 +1,6 @@
 # Debugger
 
 > Ringkasan
->
 > - Fungsi: Menghentikan sementara alur eksekusi program pada titik tertentu, memeriksa nilai variabel secara langsung, dan menelusuri kode baris demi baris menggunakan protokol V8 Inspector.
 > - Digunakan saat: Menginvestigasi galat logika rumit yang sulit ditemukan dengan logging biasa, menganalisis kebocoran memori, atau melakukan profiling performa CPU.
 > - Aturan praktis: Jangan pernah membuka port debugger ke alamat publik (`0.0.0.0`) karena protokol V8 Inspector tidak memiliki otentikasi bawaan dan membuka celah eksekusi kode berbahaya jarak jauh (_Remote Code Execution_).
@@ -50,17 +49,17 @@ flowchart LR
 Pernyataan `debugger;` menginstruksikan mesin V8 untuk menghentikan eksekusi kode ketika sesi debugging sedang aktif. Jika program dijalankan secara biasa (`node file.js`), pernyataan ini diabaikan tanpa menimbulkan galat.
 
 ```javascript
-function hitungTotalBelanja(hargaSatuan, jumlahBarang) {
-  const subtotal = hargaSatuan * jumlahBarang;
+function calculateTotalPrice(unitPrice, quantity) {
+  const subtotal = unitPrice * quantity;
 
   // Titik henti terprogram
   debugger;
 
-  const pajak = subtotal * 0.11;
-  return subtotal + pajak;
+  const tax = subtotal * 0.11;
+  return subtotal + tax;
 }
 
-const total = hitungTotalBelanja(25000, 4);
+const total = calculateTotalPrice(25000, 4);
 console.log(total);
 // Output: 111000
 ```
@@ -68,13 +67,13 @@ console.log(total);
 Kasus lain: Menempatkan beberapa pernyataan `debugger;` untuk memeriksa perubahan nilai variabel pada setiap iterasi loop.
 
 ```javascript
-let akumulasi = 0;
+let accumulator = 0;
 for (let i = 1; i <= 3; i++) {
-  akumulasi += i;
+  accumulator += i;
   debugger; // Berhenti pada setiap putaran loop
 }
 
-console.log(akumulasi);
+console.log(accumulator);
 // Output: 6
 ```
 
@@ -84,7 +83,7 @@ Perintah terminal `node inspect` menjalankan aplikasi di bawah antarmuka debuggi
 
 ```bash
 # Menjalankan berkas di bawah debugger terminal
-node inspect aplikasi.js
+node inspect app.js
 ```
 
 Di dalam antarmuka debugger terminal, perintah navigasi utama meliputi:
@@ -97,7 +96,7 @@ Di dalam antarmuka debugger terminal, perintah navigasi utama meliputi:
 | **`o`** | _out_ | Melangkah keluar dari fungsi saat ini (_Step Out_) |
 | **`repl`** | _eval_ | Membuka shell evaluasi interaktif untuk memeriksa variabel |
 
-Kasus lain: Mengetikkan `watch('namaVariabel')` di sesi `node inspect` untuk memantau perubahan nilai variabel tertentu secara otomatis di setiap langkah.
+Kasus lain: Mengetikkan `watch('variableName')` di sesi `node inspect` untuk memantau perubahan nilai variabel tertentu secara otomatis di setiap langkah.
 
 ### `--inspect`
 
@@ -122,7 +121,7 @@ Flag `--inspect-brk` membuka listener V8 Inspector dan langsung menahan eksekusi
 
 ```bash
 # Berhenti di baris pertama menunggu klien terhubung
-node --inspect-brk skrip-migrasi.js
+node --inspect-brk migration-script.js
 ```
 
 Opsi ini sangat krusial saat menelusuri bug yang terjadi pada tahap inisialisasi modul atau saat proses bootstrapping aplikasi berlangsung sangat cepat.
@@ -130,7 +129,7 @@ Opsi ini sangat krusial saat menelusuri bug yang terjadi pada tahap inisialisasi
 Kasus lain: Mengombinasikan `--inspect-brk` dengan port kustom saat menjalankan uji coba otomatis.
 
 ```bash
-node --inspect-brk=127.0.0.1:9440 skrip-migrasi.js
+node --inspect-brk=127.0.0.1:9440 migration-script.js
 ```
 
 ### `inspector.open()`
@@ -138,25 +137,25 @@ node --inspect-brk=127.0.0.1:9440 skrip-migrasi.js
 Fungsi `inspector.open()` dari modul bawaan `node:inspector` membuka port listener debugger secara terprogram langsung dari kode JavaScript tanpa memerlukan penambahan flag CLI saat proses dijalankan.
 
 ```javascript
-import inspector from "node:inspector";
+import inspector from 'node:inspector';
 
 // Buka listener debugger pada port acak lokal yang tersedia
-inspector.open(0, "127.0.0.1");
+inspector.open(0, '127.0.0.1');
 
-const urlDebugger = inspector.url();
-console.log(typeof urlDebugger);
+const debuggerUrl = inspector.url();
+console.log(typeof debuggerUrl);
 // Output: string
 
 inspector.close();
 ```
 
-Kasus lain: Melewatkan nilai `true` pada parameter ketiga untuk menahan eksekusi hingga klien debugger pertama terhubung.
+Kasus lain: Melewatkan nilai `false` pada parameter ketiga agar tidak menahan eksekusi proses.
 
 ```javascript
-import inspector from "node:inspector";
+import inspector from 'node:inspector';
 
 // inspector.open(port, host, wait)
-inspector.open(0, "127.0.0.1", false);
+inspector.open(0, '127.0.0.1', false);
 inspector.close();
 
 console.log(inspector.url());
@@ -168,9 +167,9 @@ console.log(inspector.url());
 Fungsi `inspector.close()` menonaktifkan listener V8 Inspector dan menutup seluruh koneksi WebSocket klien yang sedang terhubung, mengembalikan proses ke status non-debugging.
 
 ```javascript
-import inspector from "node:inspector";
+import inspector from 'node:inspector';
 
-inspector.open(0, "127.0.0.1");
+inspector.open(0, '127.0.0.1');
 console.log(typeof inspector.url());
 // Output: string
 
@@ -182,7 +181,7 @@ console.log(inspector.url());
 Kasus lain: Memanggil `inspector.close()` saat listener memang sedang tidak berjalan tidak akan melempar galat runtime.
 
 ```javascript
-import inspector from "node:inspector";
+import inspector from 'node:inspector';
 
 inspector.close();
 console.log(inspector.url());
@@ -194,13 +193,13 @@ console.log(inspector.url());
 Fungsi `inspector.url()` mengembalikan string alamat endpoint WebSocket dari listener V8 Inspector yang sedang aktif, atau `undefined` jika tidak ada sesi listener yang berjalan.
 
 ```javascript
-import inspector from "node:inspector";
+import inspector from 'node:inspector';
 
 console.log(inspector.url());
 // Output: undefined
 
-inspector.open(0, "127.0.0.1");
-console.log(inspector.url().startsWith("ws://127.0.0.1:"));
+inspector.open(0, '127.0.0.1');
+console.log(inspector.url().startsWith('ws://127.0.0.1:'));
 // Output: true
 
 inspector.close();
@@ -209,13 +208,13 @@ inspector.close();
 Kasus lain: Mengekstrak ID UUID sesi debugging yang tertera di bagian akhir URL WebSocket.
 
 ```javascript
-import inspector from "node:inspector";
+import inspector from 'node:inspector';
 
-inspector.open(0, "127.0.0.1");
-const alamat = inspector.url();
-const idSesi = alamat.split("/").pop();
+inspector.open(0, '127.0.0.1');
+const address = inspector.url();
+const sessionId = address.split('/').pop();
 
-console.log(idSesi.length === 36);
+console.log(sessionId.length === 36);
 // Output: true
 
 inspector.close();
@@ -226,9 +225,9 @@ inspector.close();
 Fungsi `inspector.waitForDebugger()` menghentikan sementara jalannya thread utama Node.js hingga ada klien eksternal (seperti VS Code atau Chrome DevTools) yang berhasil terhubung ke port listener WebSocket.
 
 ```javascript
-import inspector from "node:inspector";
+import inspector from 'node:inspector';
 
-inspector.open(0, "127.0.0.1");
+inspector.open(0, '127.0.0.1');
 console.log(typeof inspector.waitForDebugger);
 // Output: function
 
@@ -238,7 +237,7 @@ inspector.close();
 Kasus lain: Memanggil `waitForDebugger()` saat listener belum dibuka dengan `inspector.open()` tidak memiliki pengaruh apa pun pada thread.
 
 ```javascript
-import inspector from "node:inspector";
+import inspector from 'node:inspector';
 
 inspector.waitForDebugger();
 console.log(inspector.url());
@@ -250,35 +249,35 @@ console.log(inspector.url());
 Kelas `inspector.Session` menyediakan jembatan komunikasi dua arah ke Chrome DevTools Protocol (CDP) secara terprogram dari dalam kode JavaScript, memungkinkan pengumpulan data profil performa tanpa membuka port jaringan.
 
 ```javascript
-import inspector from "node:inspector";
+import inspector from 'node:inspector';
 
-const sesi = new inspector.Session();
-sesi.connect();
+const session = new inspector.Session();
+session.connect();
 
-let terhubung = false;
-sesi.post("Runtime.enable", () => {
-  terhubung = true;
+let isConnected = false;
+session.post('Runtime.enable', () => {
+  isConnected = true;
 });
 
-sesi.disconnect();
-console.log(typeof sesi.post);
+session.disconnect();
+console.log(typeof session.post);
 // Output: function
 ```
 
 Kasus lain: Menangkap galat saat mengirim perintah CDP yang tidak dikenali oleh domain protokol V8.
 
 ```javascript
-import inspector from "node:inspector";
+import inspector from 'node:inspector';
 
-const sesi = new inspector.Session();
-sesi.connect();
+const session = new inspector.Session();
+session.connect();
 
-sesi.post("DomainTidakAda.perintah", (error) => {
+session.post('NonExistentDomain.command', (error) => {
   console.log(error !== null);
   // Output: true
 });
 
-sesi.disconnect();
+session.disconnect();
 ```
 
 ### Perbandingan: `--inspect` vs `--inspect-brk`
@@ -313,17 +312,17 @@ Meskipun diabaikan jika runtime dijalankan tanpa flag inspect, membiarkan pernya
 
 ```javascript
 // Salah
-function prosesPembayaran(transaksi) {
+function processPayment(transaction) {
   debugger; // Tertinggal di kode rilis produksi
-  return kirimKeBank(transaksi);
+  return sendToBank(transaction);
 }
 ```
 
 ```javascript
 // Benar
-function prosesPembayaran(transaksi) {
+function processPayment(transaction) {
   // Gunakan logging diagnostik formal atau hapus sebelum rilis
-  return kirimKeBank(transaksi);
+  return sendToBank(transaction);
 }
 ```
 
@@ -334,7 +333,7 @@ Menggunakan `next` (`n`) saat baris memanggil fungsi internal akan melompati sel
 ```javascript
 // Salah
 // Menggunakan 's' saat kursor berada di pemanggilan fungsi modul bawaan internal
-fs.readFileSync("data.txt"); // Menyeret debugger masuk ke kode internal node:fs
+fs.readFileSync('data.txt'); // Menyeret debugger masuk ke kode internal node:fs
 ```
 
 ```javascript
@@ -349,56 +348,56 @@ fs.readFileSync("data.txt"); // Menyeret debugger masuk ke kode internal node:fs
 Skenario: Membangun mekanisme aktivasi debugger terprogram darurat (_emergency on-demand debugger activator_). Ketika aplikasi server mendeteksi kegagalan transaksi kritis berturut-turut, sistem secara otomatis membuka listener V8 Inspector pada port lokal dinamis, mencatat URL WebSocket diagnostik, menunggu intervensi teknisi secara aman, lalu memastikan listener ditutup kembali setelah investigasi selesai.
 
 ```javascript
-import inspector from "node:inspector";
+import inspector from 'node:inspector';
 
-class PengawasDiagnostikDarurat {
-  #jumlahKegagalan = 0;
-  #ambangBatas = 3;
-  #sesiAktif = false;
+class EmergencyDiagnosticSupervisor {
+  #failureCount = 0;
+  #threshold = 3;
+  #isActive = false;
 
-  catatInsiden(galat) {
-    this.#jumlahKegagalan++;
+  recordIncident(error) {
+    this.#failureCount++;
 
-    if (this.#jumlahKegagalan >= this.#ambangBatas && !this.#sesiAktif) {
+    if (this.#failureCount >= this.#threshold && !this.#isActive) {
       // Buka debugger secara terprogram hanya pada alamat localhost aman
-      inspector.open(0, "127.0.0.1", false);
-      this.#sesiAktif = true;
+      inspector.open(0, '127.0.0.1', false);
+      this.#isActive = true;
 
       return {
-        modeDarurat: true,
-        pesan: "Ambang batas kegagalan terlampaui. Port debugger lokal dibuka.",
-        urlInspeksi: inspector.url(),
-        penyebab: galat.message,
+        isEmergencyMode: true,
+        message: 'Failure threshold exceeded. Local debugger port opened.',
+        inspectionUrl: inspector.url(),
+        reason: error.message,
       };
     }
 
     return {
-      modeDarurat: false,
-      jumlahKegagalanSaatIni: this.#jumlahKegagalan,
+      isEmergencyMode: false,
+      currentFailureCount: this.#failureCount,
     };
   }
 
-  tutupSesiDarurat() {
-    if (this.#sesiAktif) {
+  closeEmergencySession() {
+    if (this.#isActive) {
       inspector.close();
-      this.#sesiAktif = false;
-      this.#jumlahKegagalan = 0;
+      this.#isActive = false;
+      this.#failureCount = 0;
     }
   }
 }
 
-const pengawas = new PengawasDiagnostikDarurat();
+const supervisor = new EmergencyDiagnosticSupervisor();
 
-pengawas.catatInsiden(new Error("Timeout transaksi 1"));
-pengawas.catatInsiden(new Error("Timeout transaksi 2"));
-const statusKritis = pengawas.catatInsiden(new Error("Timeout transaksi 3"));
+supervisor.recordIncident(new Error('Transaction timeout 1'));
+supervisor.recordIncident(new Error('Transaction timeout 2'));
+const criticalStatus = supervisor.recordIncident(new Error('Transaction timeout 3'));
 
-console.log(statusKritis.modeDarurat);
+console.log(criticalStatus.isEmergencyMode);
 // Output: true
-console.log(typeof statusKritis.urlInspeksi);
+console.log(typeof criticalStatus.inspectionUrl);
 // Output: string
 
-pengawas.tutupSesiDarurat();
+supervisor.closeEmergencySession();
 console.log(inspector.url());
 // Output: undefined
 ```
@@ -411,16 +410,14 @@ Desain ini dipilih karena mengisolasi port debugger ke alamat `127.0.0.1`, hanya
 
 ### Soal 1 (Dasar)
 
-Buat fungsi `hitungTarifPengiriman(beratKg, jarakKm, opsiKilat)` yang menghitung ongkos kirim (berat dikali Rp10.000, ditambah jarak dikali Rp2.000, dan biaya tambahan kilat Rp25.000 jika `opsiKilat` bernilai `true`). Tempatkan pernyataan `debugger;` tepat setelah perhitungan biaya dasar dan sebelum kalkulasi biaya kilat. Kembalikan total tarif dalam bentuk angka integer.
+Buat fungsi `calculateShippingFee(weightKg, distanceKm, isExpress)` yang menghitung ongkos kirim (berat dikali 10000, ditambah jarak dikali 2000, dan biaya tambahan kilat 25000 jika `isExpress` bernilai `true`). Tempatkan pernyataan `debugger;` tepat setelah perhitungan biaya dasar dan sebelum kalkulasi biaya kilat. Kembalikan total tarif dalam bentuk angka integer.
 
 Contoh masukan:
-
 ```javascript
-hitungTarifPengiriman(2, 10, true);
+calculateShippingFee(2, 10, true);
 ```
 
 Contoh keluaran yang diharapkan:
-
 ```javascript
 65000
 ```
@@ -429,22 +426,20 @@ Batasan: Gunakan pernyataan `debugger;` native di dalam alur fungsi.
 
 ### Soal 2 (Menengah)
 
-Buat fungsi `jalankanDenganInspeksiTerbatas(fungsiOperasi, portKustom)` yang membungkus pemanggilan `fungsiOperasi()`. Fungsi harus membuka listener V8 Inspector pada alamat lokal `'127.0.0.1'` dan port `portKustom` via `inspector.open()`, mengeksekusi `fungsiOperasi()`, mengumpulkan URL WebSocket yang aktif via `inspector.url()`, serta menjamin penutupan listener via `inspector.close()` di dalam blok `finally`.
+Buat fungsi `runWithScopedInspection(operationFn, customPort)` yang membungkus pemanggilan `operationFn()`. Fungsi harus membuka listener V8 Inspector pada alamat lokal `'127.0.0.1'` dan port `customPort` via `inspector.open()`, mengeksekusi `operationFn()`, mengumpulkan URL WebSocket yang aktif via `inspector.url()`, serta menjamin penutupan listener via `inspector.close()` di dalam blok `finally`.
 
 Contoh masukan:
-
 ```javascript
-const tugas = () => ({ status: "selesai", hasil: 42 });
-jalankanDenganInspeksiTerbatas(tugas, 0);
+const task = () => ({ status: 'completed', result: 42 });
+runWithScopedInspection(task, 0);
 ```
 
 Contoh keluaran yang diharapkan:
-
 ```javascript
 {
-  sukses: true,
-  data: { status: 'selesai', hasil: 42 },
-  pernahAktif: true
+  success: true,
+  data: { status: 'completed', result: 42 },
+  wasActive: true
 }
 ```
 
@@ -452,38 +447,35 @@ Batasan: Gunakan modul bawaan `node:inspector` dan struktur penanganan `try...fi
 
 ### Soal 3 (Menantang)
 
-Buat modul profiler runtime mandiri bernama `tangkapJejakEvaluasi(fungsiUji)` yang menggunakan kelas `inspector.Session` untuk berinteraksi langsung dengan Chrome DevTools Protocol tanpa membuka port jaringan TCP.
+Buat modul profiler runtime mandiri bernama `captureExecutionProfile(testFn)` yang menggunakan kelas `inspector.Session` untuk berinteraksi langsung dengan Chrome DevTools Protocol tanpa membuka port jaringan TCP.
 
 Ketentuan pemrosesan:
-
 - Buat instans `new inspector.Session()` dan hubungkan menggunakan `session.connect()`.
 - Kirim perintah CDP `'Profiler.enable'` untuk mengaktifkan mesin profiler V8.
 - Mulai perekaman CPU dengan mengirimkan perintah `'Profiler.start'`.
-- Eksekusi fungsi `fungsiUji()`.
+- Eksekusi fungsi `testFn()`.
 - Hentikan perekaman CPU menggunakan perintah `'Profiler.stop'` dan tangkap objek profil yang dikembalikan oleh V8.
 - Putuskan sesi secara bersih menggunakan `session.disconnect()`.
-- Ekstrak nama fungsi akar, durasi waktu sampel (_timeDeltas_), dan total node tumpukan fungsi yang terekam.
-- Kembalikan objek `{ berhasil: true, totalNode: <number>, durasiSampelMs: <number> }`.
+- Ekstrak total node tumpukan fungsi yang terekam (`totalNodes`) dan durasi waktu sampel dalam milidetik (`sampleDurationMs`).
+- Kembalikan objek `{ success: true, totalNodes: <number>, sampleDurationMs: <number> }`.
 
 Contoh masukan:
-
 ```javascript
-const ujiKomputasi = () => {
+const computeTask = () => {
   let total = 0;
   for (let i = 0; i < 500000; i++) total += i;
   return total;
 };
 
-await tangkapJejakEvaluasi(ujiKomputasi);
+await captureExecutionProfile(computeTask);
 ```
 
 Contoh keluaran yang diharapkan:
-
 ```javascript
 {
-  berhasil: true,
-  totalNode: 12,
-  durasiSampelMs: 15.4
+  success: true,
+  totalNodes: 18,
+  sampleDurationMs: 33.3
 }
 ```
 

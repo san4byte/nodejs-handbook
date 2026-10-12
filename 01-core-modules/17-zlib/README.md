@@ -1,7 +1,6 @@
 # Zlib
 
 > Ringkasan
->
 > - Fungsi: Mengompresi dan mendekompresi data biner atau teks menggunakan algoritma standar seperti Gzip, Deflate, dan Brotli.
 > - Digunakan saat: Mengurangi ukuran payload respons HTTP, mengarsipkan berkas cadangan, menghemat ruang penyimpanan log, atau mentransfer data besar melalui stream.
 > - Aturan praktis: Gunakan Transform Stream bersama `stream/promises.pipeline` untuk memproses data berukuran besar agar terhindar dari lonjakan penggunaan memori heap, dan hindari pemanggilan metode sinkron di dalam server produksi.
@@ -51,25 +50,25 @@ flowchart LR
 Fungsi `gzipSync()` digunakan untuk memadatkan buffer data menggunakan algoritma Gzip secara langsung dan memblokir eksekusi hingga proses selesai. Fungsi ini biasanya dimanfaatkan pada skrip CLI atau operasi satu kali saat aplikasi pertama kali melakukan _bootstrapping_.
 
 ```javascript
-import zlib from "node:zlib";
+import zlib from 'node:zlib';
 
-const teks = "Belajar kompresi data di Node.js. ".repeat(20);
-const bufferAwal = Buffer.from(teks, "utf-8");
-const hasilGzip = zlib.gzipSync(bufferAwal);
+const text = 'Learning data compression in Node.js. '.repeat(20);
+const sourceBuffer = Buffer.from(text, 'utf-8');
+const gzipResult = zlib.gzipSync(sourceBuffer);
 
-console.log(bufferAwal.length);
-// Output: 680
-console.log(hasilGzip.length < bufferAwal.length);
+console.log(sourceBuffer.length);
+// Output: 760
+console.log(gzipResult.length < sourceBuffer.length);
 // Output: true
 ```
 
 Kasus lain: Mengompresi string kosong tetap menghasilkan buffer Gzip berukuran sekitar 20 byte karena menyertakan metadata header dan checksum.
 
 ```javascript
-import zlib from "node:zlib";
+import zlib from 'node:zlib';
 
-const bufferKosong = zlib.gzipSync(Buffer.from(""));
-console.log(bufferKosong.length);
+const emptyBuffer = zlib.gzipSync(Buffer.from(''));
+console.log(emptyBuffer.length);
 // Output: 20
 ```
 
@@ -78,23 +77,23 @@ console.log(bufferKosong.length);
 Fungsi `gunzipSync()` digunakan untuk mengembalikan data biner yang sebelumnya dikompresi dengan Gzip ke format aslinya secara sinkron. Fungsi ini umum dipakai saat membaca arsip konfigurasi terkompresi dari disk.
 
 ```javascript
-import zlib from "node:zlib";
+import zlib from 'node:zlib';
 
-const pesan = "Pesan rahasia server";
-const terkompresi = zlib.gzipSync(Buffer.from(pesan));
-const hasilEkstraksi = zlib.gunzipSync(terkompresi).toString("utf-8");
+const message = 'Server secret payload';
+const compressed = zlib.gzipSync(Buffer.from(message));
+const decompressed = zlib.gunzipSync(compressed).toString('utf-8');
 
-console.log(hasilEkstraksi);
-// Output: Pesan rahasia server
+console.log(decompressed);
+// Output: Server secret payload
 ```
 
 Kasus lain: Menangani galat ketika mencoba mendekompresi buffer biner acak yang tidak memiliki header Gzip sah.
 
 ```javascript
-import zlib from "node:zlib";
+import zlib from 'node:zlib';
 
 try {
-  zlib.gunzipSync(Buffer.from("bukan data gzip"));
+  zlib.gunzipSync(Buffer.from('invalid gzip data'));
 } catch (error) {
   console.log(error.code);
   // Output: Z_DATA_ERROR
@@ -106,28 +105,28 @@ try {
 Fungsi `brotliCompressSync()` digunakan untuk mengompresi buffer data menggunakan algoritma Brotli yang dioptimalkan untuk konten web modern. Fungsi ini menghasilkan ukuran berkas lebih kecil dibanding Gzip untuk teks berulang.
 
 ```javascript
-import zlib from "node:zlib";
+import zlib from 'node:zlib';
 
-const kontenWeb = "<html><body><h1>Selamat Datang</h1></body></html>".repeat(10);
-const hasilBrotli = zlib.brotliCompressSync(Buffer.from(kontenWeb));
+const webContent = '<html><body><h1>Welcome Home</h1></body></html>'.repeat(10);
+const brotliResult = zlib.brotliCompressSync(Buffer.from(webContent));
 
-console.log(hasilBrotli.length < Buffer.byteLength(kontenWeb));
+console.log(brotliResult.length < Buffer.byteLength(webContent));
 // Output: true
 ```
 
 Kasus lain: Mengatur opsi kualitas kompresi melalui parameter konfigurasi.
 
 ```javascript
-import zlib from "node:zlib";
+import zlib from 'node:zlib';
 
-const teks = "Opsi Brotli Khusus ".repeat(15);
-const hasilKustom = zlib.brotliCompressSync(Buffer.from(teks), {
+const customText = 'Custom Brotli Options '.repeat(15);
+const customResult = zlib.brotliCompressSync(Buffer.from(customText), {
   params: {
     [zlib.constants.BROTLI_PARAM_QUALITY]: 4,
   },
 });
 
-console.log(hasilKustom.length > 0);
+console.log(customResult.length > 0);
 // Output: true
 ```
 
@@ -136,23 +135,23 @@ console.log(hasilKustom.length > 0);
 Fungsi `brotliDecompressSync()` digunakan untuk mendekompresi payload biner yang dikompresi menggunakan algoritma Brotli kembali ke buffer aslinya. Fungsi ini dipakai saat memproses tanggapan API eksternal yang dienkode dengan Brotli.
 
 ```javascript
-import zlib from "node:zlib";
+import zlib from 'node:zlib';
 
-const dataTeks = "Informasi akun pengguna terenkripsi";
-const arsipBrotli = zlib.brotliCompressSync(Buffer.from(dataTeks));
-const pulih = zlib.brotliDecompressSync(arsipBrotli).toString("utf-8");
+const textData = 'Encrypted user profile information';
+const compressed = zlib.brotliCompressSync(Buffer.from(textData));
+const restored = zlib.brotliDecompressSync(compressed).toString('utf-8');
 
-console.log(pulih);
-// Output: Informasi akun pengguna terenkripsi
+console.log(restored);
+// Output: Encrypted user profile information
 ```
 
 Kasus lain: Menangkap kegagalan dekompresi jika format stream Brotli mengalami kerusakan data.
 
 ```javascript
-import zlib from "node:zlib";
+import zlib from 'node:zlib';
 
 try {
-  zlib.brotliDecompressSync(Buffer.from("data rusak"));
+  zlib.brotliDecompressSync(Buffer.from('corrupted payload'));
 } catch (error) {
   console.log(typeof error.code);
   // Output: string
@@ -164,22 +163,22 @@ try {
 Fungsi `deflateSync()` digunakan untuk mengompresi buffer data menggunakan spesifikasi RFC 1951 Deflate standar tanpa header Gzip tambahan. Fungsi ini sering dipakai pada protokol komunikasi jaringan biner ringan atau format berkas seperti ZIP dan PNG.
 
 ```javascript
-import zlib from "node:zlib";
+import zlib from 'node:zlib';
 
-const sumber = Buffer.from("Payload antrean pesan latar belakang ".repeat(10));
-const deflated = zlib.deflateSync(sumber);
+const source = Buffer.from('Background queue message payload '.repeat(10));
+const deflated = zlib.deflateSync(source);
 
-console.log(deflated.length < sumber.length);
+console.log(deflated.length < source.length);
 // Output: true
 ```
 
 Kasus lain: Memeriksa header biner Deflate yang biasanya diawali byte penanda zlib wrapper (`0x78`).
 
 ```javascript
-import zlib from "node:zlib";
+import zlib from 'node:zlib';
 
-const hasil = zlib.deflateSync(Buffer.from("Halo"));
-console.log(hasil[0]);
+const result = zlib.deflateSync(Buffer.from('Hello'));
+console.log(result[0]);
 // Output: 120
 ```
 
@@ -188,23 +187,23 @@ console.log(hasil[0]);
 Fungsi `inflateSync()` digunakan untuk mengekstrak kembali data biner yang dikompresi menggunakan `deflateSync()`. Fungsi ini melengkapi pemrosesan paket biner protokol kustom.
 
 ```javascript
-import zlib from "node:zlib";
+import zlib from 'node:zlib';
 
-const asli = "Teks verifikasi integritas deflate";
-const terkompresi = zlib.deflateSync(Buffer.from(asli));
-const dibaca = zlib.inflateSync(terkompresi).toString("utf-8");
+const original = 'Deflate integrity verification string';
+const compressed = zlib.deflateSync(Buffer.from(original));
+const restored = zlib.inflateSync(compressed).toString('utf-8');
 
-console.log(dibaca);
-// Output: Teks verifikasi integritas deflate
+console.log(restored);
+// Output: Deflate integrity verification string
 ```
 
 Kasus lain: Melempar galat ketika diberi buffer kosong yang tidak memiliki struktur kompresi Deflate.
 
 ```javascript
-import zlib from "node:zlib";
+import zlib from 'node:zlib';
 
 try {
-  zlib.inflateSync(Buffer.from(""));
+  zlib.inflateSync(Buffer.from(''));
 } catch (error) {
   console.log(error.code);
   // Output: Z_BUF_ERROR
@@ -216,40 +215,40 @@ try {
 Fungsi `createGzip()` membuat instance Transform Stream yang menerima potongan data dan mengeluarkan potongan data terkompresi Gzip secara asinkron. Pendekatan stream ini mencegah lonjakan memori saat memproses berkas multi-megabyte.
 
 ```javascript
-import { createGzip } from "node:zlib";
-import { Readable } from "node:stream";
-import { pipeline } from "node:stream/promises";
+import { createGzip } from 'node:zlib';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 
-const sumberStream = Readable.from(["Baris log 1\n", "Baris log 2\n"]);
-const kompresor = createGzip();
-const bongkahan = [];
+const sourceStream = Readable.from(['Log line 1\n', 'Log line 2\n']);
+const compressor = createGzip();
+const chunks = [];
 
-kompresor.on("data", (chunk) => bongkahan.push(chunk));
-await pipeline(sumberStream, kompresor);
+compressor.on('data', (chunk) => chunks.push(chunk));
+await pipeline(sourceStream, compressor);
 
-const totalBiner = Buffer.concat(bongkahan);
-console.log(totalBiner.length > 0);
+const totalBinary = Buffer.concat(chunks);
+console.log(totalBinary.length > 0);
 // Output: true
 ```
 
 Kasus lain: Menghentikan stream dengan memancarkan sinyal error jika stream sumber mengalami kegagalan.
 
 ```javascript
-import { createGzip } from "node:zlib";
-import { Readable } from "node:stream";
-import { pipeline } from "node:stream/promises";
+import { createGzip } from 'node:zlib';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 
-const streamRusak = new Readable({
+const brokenStream = new Readable({
   read() {
-    this.destroy(new Error("Gagal membaca disk"));
+    this.destroy(new Error('Disk read failure'));
   },
 });
 
 try {
-  await pipeline(streamRusak, createGzip());
+  await pipeline(brokenStream, createGzip());
 } catch (error) {
   console.log(error.message);
-  // Output: Gagal membaca disk
+  // Output: Disk read failure
 }
 ```
 
@@ -258,34 +257,35 @@ try {
 Fungsi `createGunzip()` membuat instance Transform Stream untuk mendekompresi aliran data biner Gzip secara bertahap. Fungsi ini digunakan bersama stream pembacaan jaringan atau pembacaan berkas disk berukuran besar.
 
 ```javascript
-import { createGzip, createGunzip } from "node:zlib";
-import { Readable } from "node:stream";
-import { pipeline } from "node:stream/promises";
+import { createGzip, createGunzip } from 'node:zlib';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 
-const dataTeks = "Aliran data streaming berkesinambungan";
-const sumber = Readable.from([Buffer.from(dataTeks)]);
-const kompresor = createGzip();
-const dekompresor = createGunzip();
-const hasil = [];
+const textData = 'Continuous streaming data pipeline';
+const source = Readable.from([Buffer.from(textData)]);
+const compressor = createGzip();
+const decompressor = createGunzip();
+const chunks = [];
 
-dekompresor.on("data", (chunk) => hasil.push(chunk));
-await pipeline(sumber, kompresor, dekompresor);
+decompressor.on('data', (chunk) => chunks.push(chunk));
+await pipeline(source, compressor, decompressor);
 
-console.log(Buffer.concat(hasil).toString("utf-8"));
-// Output: Aliran data streaming berkesinambungan
+console.log(Buffer.concat(chunks).toString('utf-8'));
+// Output: Continuous streaming data pipeline
 ```
 
 Kasus lain: Menangani aliran chunk biner parsial yang terputus di tengah proses streaming.
 
 ```javascript
-import { createGunzip } from "node:zlib";
-import { Readable } from "node:stream";
-import { pipeline } from "node:stream/promises";
+import { createGunzip } from 'node:zlib';
+import { Readable, PassThrough } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 
-const streamCacat = Readable.from([Buffer.from([0x1f, 0x8b, 0x08])]);
+const partialStream = Readable.from([Buffer.from([0x1f, 0x8b, 0x08])]);
+const destination = new PassThrough();
 
 try {
-  await pipeline(streamCacat, createGunzip());
+  await pipeline(partialStream, createGunzip(), destination);
 } catch (error) {
   console.log(error.code);
   // Output: Z_BUF_ERROR
@@ -297,33 +297,33 @@ try {
 Fungsi `createBrotliCompress()` membuat instance Transform Stream untuk kompresi data berformat Brotli. Pendekatan ini menjadi standar modern saat menyajikan aset web statis atau respons streaming HTTP melalui koneksi HTTPS.
 
 ```javascript
-import { createBrotliCompress } from "node:zlib";
-import { Readable } from "node:stream";
-import { pipeline } from "node:stream/promises";
+import { createBrotliCompress } from 'node:zlib';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 
-const sumber = Readable.from(["Payload JSON dari database"]);
+const source = Readable.from(['JSON payload from database']);
 const brotliStream = createBrotliCompress();
-const kumpulan = [];
+const chunks = [];
 
-brotliStream.on("data", (chunk) => kumpulan.push(chunk));
-await pipeline(sumber, brotliStream);
+brotliStream.on('data', (chunk) => chunks.push(chunk));
+await pipeline(source, brotliStream);
 
-console.log(Buffer.concat(kumpulan).length > 0);
+console.log(Buffer.concat(chunks).length > 0);
 // Output: true
 ```
 
 Kasus lain: Menggunakan konstanta mode teks untuk mengoptimalkan kamus internal Brotli.
 
 ```javascript
-import { createBrotliCompress, constants } from "node:zlib";
+import { createBrotliCompress, constants } from 'node:zlib';
 
-const streamKustom = createBrotliCompress({
+const customStream = createBrotliCompress({
   params: {
     [constants.BROTLI_PARAM_MODE]: constants.BROTLI_MODE_TEXT,
   },
 });
 
-console.log(typeof streamKustom.pipe);
+console.log(typeof customStream.pipe);
 // Output: function
 ```
 
@@ -346,23 +346,23 @@ Penggunaan `gzipSync()` di dalam penanganan permintaan server HTTP menghentikan 
 
 ```javascript
 // Salah
-import zlib from "node:zlib";
+import zlib from 'node:zlib';
 
-function tanganiPermintaan(res, dataBesar) {
-  const terkompresi = zlib.gzipSync(Buffer.from(dataBesar));
-  res.end(terkompresi);
+function handleRequest(res, largeData) {
+  const compressed = zlib.gzipSync(Buffer.from(largeData));
+  res.end(compressed);
 }
 ```
 
 ```javascript
 // Benar
-import { createGzip } from "node:zlib";
-import { pipeline } from "node:stream/promises";
-import { Readable } from "node:stream";
+import { createGzip } from 'node:zlib';
+import { pipeline } from 'node:stream/promises';
+import { Readable } from 'node:stream';
 
-async function tanganiPermintaan(res, dataBesar) {
-  res.setHeader("Content-Encoding", "gzip");
-  await pipeline(Readable.from(dataBesar), createGzip(), res);
+async function handleRequest(res, largeData) {
+  res.setHeader('Content-Encoding', 'gzip');
+  await pipeline(Readable.from(largeData), createGzip(), res);
 }
 ```
 
@@ -372,23 +372,23 @@ Mencoba mengompresi format biner yang sudah memiliki kompresi internal (seperti 
 
 ```javascript
 // Salah
-import zlib from "node:zlib";
+import zlib from 'node:zlib';
 
-function kompresiAset(bufferGambarJpeg) {
-  return zlib.gzipSync(bufferGambarJpeg);
+function compressAsset(jpegBuffer) {
+  return zlib.gzipSync(jpegBuffer);
 }
 ```
 
 ```javascript
 // Benar
-import zlib from "node:zlib";
+import zlib from 'node:zlib';
 
-function kompresiAset(bufferData, tipeMime) {
-  const tipeDilewati = ["image/jpeg", "image/png", "video/mp4", "application/zip"];
-  if (tipeDilewati.includes(tipeMime)) {
-    return bufferData;
+function compressAsset(dataBuffer, mimeType) {
+  const skippedTypes = ['image/jpeg', 'image/png', 'video/mp4', 'application/zip'];
+  if (skippedTypes.includes(mimeType)) {
+    return dataBuffer;
   }
-  return zlib.gzipSync(bufferData);
+  return zlib.gzipSync(dataBuffer);
 }
 ```
 
@@ -398,22 +398,22 @@ Data terkompresi yang terpotong di tengah transmisi atau dimanipulasi pihak luar
 
 ```javascript
 // Salah
-import zlib from "node:zlib";
+import zlib from 'node:zlib';
 
-function bukaPaket(bufferMasukan) {
-  return zlib.gunzipSync(bufferMasukan).toString("utf-8");
+function unpackPayload(inputBuffer) {
+  return zlib.gunzipSync(inputBuffer).toString('utf-8');
 }
 ```
 
 ```javascript
 // Benar
-import zlib from "node:zlib";
+import zlib from 'node:zlib';
 
-function bukaPaket(bufferMasukan) {
+function unpackPayload(inputBuffer) {
   try {
-    return zlib.gunzipSync(bufferMasukan).toString("utf-8");
+    return zlib.gunzipSync(inputBuffer).toString('utf-8');
   } catch (error) {
-    if (error.code === "Z_DATA_ERROR" || error.code === "Z_BUF_ERROR") {
+    if (error.code === 'Z_DATA_ERROR' || error.code === 'Z_BUF_ERROR') {
       return null;
     }
     throw error;
@@ -428,63 +428,63 @@ function bukaPaket(bufferMasukan) {
 Skenario: Membangun fungsi pengolah muatan HTTP respons mandiri (_response payload compressor_) yang secara otomatis menegosiasikan algoritma kompresi terbaik berdasarkan nilai header `Accept-Encoding` dari klien. Jika klien mendukung Brotli (`br`), sistem mengutamakan Brotli. Jika hanya mendukung `gzip`, sistem menggunakan Gzip. Jika tidak mendukung keduanya, data dikembalikan tanpa kompresi.
 
 ```javascript
-import zlib from "node:zlib";
+import zlib from 'node:zlib';
 
-function negosiasiKompresi(payloadTeks, headerAcceptEncoding = "") {
-  const bufferAsli = Buffer.from(payloadTeks, "utf-8");
-  const daftarEncoding = headerAcceptEncoding
+function negotiateCompression(payloadText, acceptEncodingHeader = '') {
+  const sourceBuffer = Buffer.from(payloadText, 'utf-8');
+  const encodings = acceptEncodingHeader
     .toLowerCase()
-    .split(",")
+    .split(',')
     .map((item) => item.trim());
 
-  if (daftarEncoding.includes("br")) {
-    const terkompresi = zlib.brotliCompressSync(bufferAsli, {
+  if (encodings.includes('br')) {
+    const compressed = zlib.brotliCompressSync(sourceBuffer, {
       params: {
         [zlib.constants.BROTLI_PARAM_QUALITY]: 4,
       },
     });
     return {
-      encoding: "br",
-      buffer: terkompresi,
-      ukuranAwal: bufferAsli.length,
-      ukuranAkhir: terkompresi.length,
+      encoding: 'br',
+      buffer: compressed,
+      originalSize: sourceBuffer.length,
+      compressedSize: compressed.length,
     };
   }
 
-  if (daftarEncoding.includes("gzip")) {
-    const terkompresi = zlib.gzipSync(bufferAsli);
+  if (encodings.includes('gzip')) {
+    const compressed = zlib.gzipSync(sourceBuffer);
     return {
-      encoding: "gzip",
-      buffer: terkompresi,
-      ukuranAwal: bufferAsli.length,
-      ukuranAkhir: terkompresi.length,
+      encoding: 'gzip',
+      buffer: compressed,
+      originalSize: sourceBuffer.length,
+      compressedSize: compressed.length,
     };
   }
 
   return {
-    encoding: "identity",
-    buffer: bufferAsli,
-    ukuranAwal: bufferAsli.length,
-    ukuranAkhir: bufferAsli.length,
+    encoding: 'identity',
+    buffer: sourceBuffer,
+    originalSize: sourceBuffer.length,
+    compressedSize: sourceBuffer.length,
   };
 }
 
-const payload = JSON.stringify({ pengguna: "Admin", peran: "Superuser" }).repeat(10);
+const payload = JSON.stringify({ user: 'Admin', role: 'Superuser' }).repeat(10);
 
-const responsBrotli = negosiasiKompresi(payload, "gzip, deflate, br");
-console.log(responsBrotli.encoding);
+const brotliResponse = negotiateCompression(payload, 'gzip, deflate, br');
+console.log(brotliResponse.encoding);
 // Output: br
-console.log(responsBrotli.ukuranAkhir < responsBrotli.ukuranAwal);
+console.log(brotliResponse.compressedSize < brotliResponse.originalSize);
 // Output: true
 
-const responsGzip = negosiasiKompresi(payload, "gzip, deflate");
-console.log(responsGzip.encoding);
+const gzipResponse = negotiateCompression(payload, 'gzip, deflate');
+console.log(gzipResponse.encoding);
 // Output: gzip
 
-const responsPolos = negosiasiKompresi(payload, "");
-console.log(responsPolos.encoding);
+const plainResponse = negotiateCompression(payload, '');
+console.log(plainResponse.encoding);
 // Output: identity
-console.log(responsPolos.ukuranAkhir === responsPolos.ukuranAwal);
+console.log(plainResponse.compressedSize === plainResponse.originalSize);
 // Output: true
 ```
 
@@ -496,21 +496,19 @@ Desain ini dipilih karena memprioritaskan algoritma kompresi rasio tertinggi (Br
 
 ### Soal 1 (Dasar)
 
-Buat fungsi `evaluasiPenghematan(stringData)` yang menghitung rasio kompresi algoritma Gzip. Fungsi harus mengembalikan objek berisi ukuran byte asli (`asliByte`), ukuran setelah dikompresi dengan `gzipSync` (`kompresiByte`), dan persentase penghematan ukuran (`penghematanPersen`) yang dibulatkan hingga dua angka di belakang koma.
+Buat fungsi `calculateSavings(dataString)` yang menghitung rasio kompresi algoritma Gzip. Fungsi harus mengembalikan objek berisi ukuran byte asli (`originalBytes`), ukuran setelah dikompresi dengan `gzipSync` (`compressedBytes`), dan persentase penghematan ukuran (`savingsPercent`) yang dibulatkan hingga dua angka di belakang koma dengan simbol `%`.
 
 Contoh masukan:
-
 ```javascript
-evaluasiPenghematan("Belajar Node.js Zlib secara mendalam! ".repeat(20));
+calculateSavings('Mastering Node.js Zlib in depth! '.repeat(20));
 ```
 
 Contoh keluaran yang diharapkan:
-
 ```javascript
 {
-  asliByte: 740,
-  kompresiByte: 55,
-  penghematanPersen: '92.57%'
+  originalBytes: 660,
+  compressedBytes: 60,
+  savingsPercent: '90.91%'
 }
 ```
 
@@ -518,16 +516,14 @@ Batasan: Gunakan modul bawaan `node:zlib` tanpa dependensi eksternal.
 
 ### Soal 2 (Menengah)
 
-Buat fungsi asinkron `arsipBatchStreaming(koleksiPesan, algoritma)` yang menerima larik string dan parameter string algoritma (`"gzip"` atau `"brotli"`). Gabungkan seluruh string tersebut melalui Readable Stream, kompresi menggunakan Transform Stream yang sesuai (`createGzip` atau `createBrotliCompress`), dan kembalikan hasil akhirnya dalam bentuk sebuah Buffer gabungan utuh.
+Buat fungsi asinkron `archiveBatchStreaming(messages, algorithm)` yang menerima larik string dan parameter string algoritma (`'gzip'` atau `'brotli'`). Gabungkan seluruh string tersebut melalui Readable Stream, kompresi menggunakan Transform Stream yang sesuai (`createGzip` atau `createBrotliCompress`), dan kembalikan hasil akhirnya dalam bentuk sebuah Buffer gabungan utuh.
 
 Contoh masukan:
-
 ```javascript
-await arsipBatchStreaming(["catatan baris satu\n", "catatan baris dua\n"], "gzip");
+await archiveBatchStreaming(['log line one\n', 'log line two\n'], 'gzip');
 ```
 
 Contoh keluaran yang diharapkan:
-
 ```javascript
 <Buffer 1f 8b 08 ...>
 ```
@@ -536,61 +532,54 @@ Batasan: Gunakan `stream/promises.pipeline` dan modul `node:stream` serta `node:
 
 ### Soal 3 (Menantang)
 
-Buat utilitas pengurai data terkompresi yang aman dari serangan bom dekompresi (_decompression bomb protector_) bernama `dekompresiAman(bufferMasukan, format, batasMaksimalByte)`. Utilitas ini harus memeriksa format masukan (`"gzip"` atau `"deflate"`), melakukan dekompresi secara bertahap menggunakan Transform Stream, dan menghitung akumulasi byte yang keluar.
+Buat utilitas pengurai data terkompresi yang aman dari serangan bom dekompresi (_decompression bomb protector_) bernama `safeDecompress(inputBuffer, format, maxByteLimit)`. Utilitas ini harus memeriksa format masukan (`'gzip'` atau `'deflate'`), melakukan dekompresi secara bertahap menggunakan Transform Stream, dan menghitung akumulasi byte yang keluar.
 
 Ketentuan penanganan kasus tepi:
-
-- Jika selama proses dekompresi total byte keluaran melebihi `batasMaksimalByte`, segera hancurkan (_destroy_) stream yang terlibat dan kembalikan objek `{ status: 'gagal', alasan: 'UKURAN_MELEBIHI_BATAS' }`.
-- Jika data masukan korup atau format biner tidak sesuai dengan parameter `format`, tangkap galat dan kembalikan objek `{ status: 'gagal', alasan: 'FORMAT_TIDAK_VALID' }`.
-- Jika proses berhasil dan ukuran berada dalam batas, kembalikan objek `{ status: 'berhasil', teks: '<isi_teks>', totalByte: <jumlah_byte> }`.
+- Jika selama proses dekompresi total byte keluaran melebihi `maxByteLimit`, segera hancurkan (_destroy_) stream yang terlibat dan kembalikan objek `{ status: 'failure', reason: 'MAX_SIZE_EXCEEDED' }`.
+- Jika data masukan korup atau format biner tidak sesuai dengan parameter `format`, tangkap galat dan kembalikan objek `{ status: 'failure', reason: 'INVALID_FORMAT' }`.
+- Jika proses berhasil dan ukuran berada dalam batas, kembalikan objek `{ status: 'success', text: '<content>', totalBytes: <count> }`.
 
 Contoh masukan 1:
-
 ```javascript
-import zlib from "node:zlib";
-const payload = zlib.gzipSync(Buffer.from("A".repeat(500)));
-await dekompresiAman(payload, "gzip", 1000);
+import zlib from 'node:zlib';
+const payload = zlib.gzipSync(Buffer.from('A'.repeat(500)));
+await safeDecompress(payload, 'gzip', 1000);
 ```
 
 Contoh keluaran 1:
-
 ```javascript
 {
-  status: 'berhasil',
-  teks: 'AAAAAAAAAAAAAAAA...',
-  totalByte: 500
+  status: 'success',
+  text: 'AAAAAAAAAAAAAAAA...',
+  totalBytes: 500
 }
 ```
 
 Contoh masukan 2:
-
 ```javascript
-import zlib from "node:zlib";
-const bomPayload = zlib.gzipSync(Buffer.from("A".repeat(5000)));
-await dekompresiAman(bomPayload, "gzip", 100);
+import zlib from 'node:zlib';
+const bombPayload = zlib.gzipSync(Buffer.from('A'.repeat(5000)));
+await safeDecompress(bombPayload, 'gzip', 100);
 ```
 
 Contoh keluaran 2:
-
 ```javascript
 {
-  status: 'gagal',
-  alasan: 'UKURAN_MELEBIHI_BATAS'
+  status: 'failure',
+  reason: 'MAX_SIZE_EXCEEDED'
 }
 ```
 
 Contoh masukan 3:
-
 ```javascript
-await dekompresiAman(Buffer.from("data acak korup"), "gzip", 1000);
+await safeDecompress(Buffer.from('corrupted random data'), 'gzip', 1000);
 ```
 
 Contoh keluaran 3:
-
 ```javascript
 {
-  status: 'gagal',
-  alasan: 'FORMAT_TIDAK_VALID'
+  status: 'failure',
+  reason: 'INVALID_FORMAT'
 }
 ```
 

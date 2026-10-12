@@ -1,7 +1,6 @@
 # Cluster
 
 > Ringkasan
->
 > - Fungsi: Menduplikasi satu proses Node.js menjadi beberapa proses pekerja (*worker process*) yang berbagi port jaringan yang sama untuk memaksimalkan utilisasi multi-core CPU.
 > - Digunakan saat: Meningkatkan kapasitas throughput server HTTP atau jaringan pada mesin fisik berkemampuan multi-core tanpa mengubah arsitektur kode secara drastis.
 > - Aturan praktis: Setiap worker memiliki memori (heap V8) dan Event Loop terpisah (*share-nothing architecture*), sehingga status sesi (*state*) atau cache bersama harus disimpan di penyimpanan eksternal terpusat seperti basis data atau Redis.
@@ -36,7 +35,7 @@ flowchart TD
 ## Referensi
 
 | Item | Fungsi | Catatan |
-| :--- | :----- | :------ |
+| :--- | :--- | :--- |
 | **`cluster.isPrimary`** | Menandai apakah proses saat ini bertindak sebagai proses utama | Bernilai `true` hanya pada proses induk pengendali awal |
 | **`cluster.isWorker`** | Menandai apakah proses saat ini bertindak sebagai anak proses pekerja | Bernilai `true` pada seluruh anak proses yang dibuat oleh `fork()` |
 | **`cluster.fork()`** | Melahirkan proses pekerja baru dari proses utama | Menghasilkan instans `Worker` baru dengan alokasi heap terpisah |
@@ -50,7 +49,7 @@ flowchart TD
 Properti boolean `cluster.isPrimary` digunakan untuk mengidentifikasi apakah kode sedang dieksekusi di dalam proses induk pengendali. Blok percabangan ini umumnya digunakan untuk menginisialisasi proses pekerja dan memantau status sistem.
 
 ```javascript
-import cluster from "node:cluster";
+import cluster from 'node:cluster';
 
 console.log(cluster.isPrimary);
 // Output: true
@@ -59,13 +58,13 @@ console.log(cluster.isPrimary);
 Kasus lain: Memeriksa nilai properti `cluster.isPrimary` saat dieksekusi di dalam anak proses pekerja yang mengembalikan nilai `false`.
 
 ```javascript
-import cluster from "node:cluster";
+import cluster from 'node:cluster';
 
 if (cluster.isPrimary) {
   const worker = cluster.fork();
-  worker.on("message", (isPrimaryDiWorker) => {
-    console.log("isPrimary di worker:", isPrimaryDiWorker);
-    // Output: isPrimary di worker: false
+  worker.on('message', (isPrimaryInWorker) => {
+    console.log('isPrimary in worker:', isPrimaryInWorker);
+    // Output: isPrimary in worker: false
     worker.kill();
   });
 } else {
@@ -78,7 +77,7 @@ if (cluster.isPrimary) {
 Properti boolean `cluster.isWorker` digunakan untuk memverifikasi apakah eksekusi kode berada pada konteks proses pekerja anak. Blok percabangan ini digunakan untuk menempatkan logika server HTTP atau penanganan komputasi.
 
 ```javascript
-import cluster from "node:cluster";
+import cluster from 'node:cluster';
 
 console.log(cluster.isWorker);
 // Output: false
@@ -87,7 +86,7 @@ console.log(cluster.isWorker);
 Kasus lain: Membedakan alias legacy `cluster.isMaster` yang sudah usang dan digantikan secara resmi oleh `cluster.isPrimary`.
 
 ```javascript
-import cluster from "node:cluster";
+import cluster from 'node:cluster';
 
 console.log(cluster.isPrimary === !cluster.isWorker);
 // Output: true
@@ -98,12 +97,12 @@ console.log(cluster.isPrimary === !cluster.isWorker);
 Metode `cluster.fork()` digunakan untuk menduplikasi proses aplikasi saat ini menjadi anak proses pekerja baru. Metode ini hanya boleh dipanggil dari dalam konteks `cluster.isPrimary`.
 
 ```javascript
-import cluster from "node:cluster";
+import cluster from 'node:cluster';
 
 if (cluster.isPrimary) {
   const worker = cluster.fork();
-  console.log("Worker terdaftar:", worker.id > 0);
-  // Output: Worker terdaftar: true
+  console.log('Worker registered:', worker.id > 0);
+  // Output: Worker registered: true
   worker.kill();
 }
 ```
@@ -111,10 +110,10 @@ if (cluster.isPrimary) {
 Kasus lain: Meneruskan variabel lingkungan kustom saat memanggil proses pekerja baru.
 
 ```javascript
-import cluster from "node:cluster";
+import cluster from 'node:cluster';
 
 if (cluster.isPrimary) {
-  const worker = cluster.fork({ ANTRIAN_ID: "antrian-1" });
+  const worker = cluster.fork({ QUEUE_ID: 'queue-1' });
   console.log(typeof worker.id);
   // Output: number
   worker.kill();
@@ -126,12 +125,12 @@ if (cluster.isPrimary) {
 Properti `cluster.workers` adalah objek kamus yang memetakan ID unik worker ke instans objek worker yang sedang berjalan aktif di bawah kendali proses utama.
 
 ```javascript
-import cluster from "node:cluster";
+import cluster from 'node:cluster';
 
 if (cluster.isPrimary) {
   const worker = cluster.fork();
-  const daftarId = Object.keys(cluster.workers);
-  console.log(daftarId.length);
+  const workerIds = Object.keys(cluster.workers);
+  console.log(workerIds.length);
   // Output: 1
   worker.kill();
 }
@@ -140,12 +139,12 @@ if (cluster.isPrimary) {
 Kasus lain: Mengirimkan sinyal siaran ke seluruh proses pekerja yang terdaftar di dalam `cluster.workers`.
 
 ```javascript
-import cluster from "node:cluster";
+import cluster from 'node:cluster';
 
 if (cluster.isPrimary) {
   const worker = cluster.fork();
   for (const id in cluster.workers) {
-    cluster.workers[id].send("SINYAL_SIARAN");
+    cluster.workers[id].send('BROADCAST_SIGNAL');
   }
   worker.kill();
 }
@@ -156,20 +155,20 @@ if (cluster.isPrimary) {
 Metode `worker.send()` digunakan untuk mengirimkan pesan serialisasi data melalui saluran IPC (*Inter-Process Communication*) internal antara proses utama dan proses pekerja tanpa melibatkan komunikasi soket TCP eksternal.
 
 ```javascript
-import cluster from "node:cluster";
+import cluster from 'node:cluster';
 
 if (cluster.isPrimary) {
   const worker = cluster.fork();
-  worker.on("message", (pesan) => {
-    console.log("Balasan:", pesan);
-    // Output: Balasan: Halo Primary
+  worker.on('message', (message) => {
+    console.log('Reply:', message);
+    // Output: Reply: Hello Primary
     worker.kill();
   });
-  worker.send("Halo Worker");
+  worker.send('Hello Worker');
 } else {
-  process.on("message", (pesan) => {
-    if (pesan === "Halo Worker") {
-      process.send("Halo Primary");
+  process.on('message', (message) => {
+    if (message === 'Hello Worker') {
+      process.send('Hello Primary');
     }
   });
 }
@@ -178,11 +177,11 @@ if (cluster.isPrimary) {
 Kasus lain: Menangani pengiriman pesan serialisasi objek kompleks atau objek JSON terstruktur.
 
 ```javascript
-import cluster from "node:cluster";
+import cluster from 'node:cluster';
 
 if (cluster.isPrimary) {
   const worker = cluster.fork();
-  worker.send({ tipe: "KONFIGURASI", port: 3000 });
+  worker.send({ type: 'CONFIG', port: 3000 });
   worker.kill();
 }
 ```
@@ -192,12 +191,12 @@ if (cluster.isPrimary) {
 Properti `worker.process.pid` menyimpan nomor identitas proses sistem operasi (*Process Identifier*) milik anak proses pekerja yang dihasilkan.
 
 ```javascript
-import cluster from "node:cluster";
+import cluster from 'node:cluster';
 
 if (cluster.isPrimary) {
   const worker = cluster.fork();
-  console.log("Tipe PID:", typeof worker.process.pid);
-  // Output: Tipe PID: number
+  console.log('PID type:', typeof worker.process.pid);
+  // Output: PID type: number
   worker.kill();
 }
 ```
@@ -205,7 +204,7 @@ if (cluster.isPrimary) {
 Kasus lain: Membandingkan PID proses utama dengan PID milik proses pekerja yang terbukti berbeda di tingkat sistem operasi.
 
 ```javascript
-import cluster from "node:cluster";
+import cluster from 'node:cluster';
 
 if (cluster.isPrimary) {
   const worker = cluster.fork();
@@ -220,13 +219,13 @@ if (cluster.isPrimary) {
 Event `'exit'` pada objek `cluster` dipancarkan ketika salah satu anak proses pekerja mati, baik karena keluar normal, galat runtime fatal, maupun sinyal terminasi eksternal.
 
 ```javascript
-import cluster from "node:cluster";
+import cluster from 'node:cluster';
 
 if (cluster.isPrimary) {
   cluster.fork();
-  cluster.on("exit", (worker, kode, sinyal) => {
-    console.log("Kode keluar:", kode, "Sinyal:", sinyal);
-    // Output: Kode keluar: 0 Sinyal: null
+  cluster.on('exit', (worker, code, signal) => {
+    console.log('Exit code:', code, 'Signal:', signal);
+    // Output: Exit code: 0 Signal: null
   });
 } else {
   process.exit(0);
@@ -236,17 +235,17 @@ if (cluster.isPrimary) {
 Kasus lain: Menghidupkan kembali worker baru saat terjadi penghentian tidak wajar (*self-healing*).
 
 ```javascript
-import cluster from "node:cluster";
+import cluster from 'node:cluster';
 
 if (cluster.isPrimary) {
   const worker = cluster.fork();
-  cluster.on("exit", (workerMati, kode) => {
-    if (kode !== 0) {
-      console.log("Memulai worker pengganti");
-      // Output: Memulai worker pengganti
+  cluster.on('exit', (deadWorker, code) => {
+    if (code !== 0) {
+      console.log('Starting replacement worker');
+      // Output: Starting replacement worker
     }
   });
-  worker.process.kill("SIGKILL");
+  worker.process.kill('SIGKILL');
 }
 ```
 
@@ -278,14 +277,14 @@ Setiap proses worker memiliki ruang memori heap V8 sendiri sehingga data yang di
 
 ```javascript
 // Salah
-const daftarSesi = new Map();
+const sessionStore = new Map();
 // Permintaan 1 disimpan di Worker A, permintaan 2 di Worker B tidak menemukan sesi
 ```
 
 ```javascript
 // Benar
 // Simpan sesi terpusat di penyimpanan bersama seperti Redis atau basis data
-await redisClient.set(`sesi:${userId}`, dataSesi);
+await redisClient.set(`session:${userId}`, sessionData);
 ```
 
 ### Mengalokasikan Jumlah Worker Jauh Melebihi Kuota Inti CPU
@@ -301,10 +300,10 @@ for (let i = 0; i < 64; i++) {
 
 ```javascript
 // Benar
-import os from "node:os";
+import os from 'node:os';
 
-const kuotaCpu = os.availableParallelism();
-for (let i = 0; i < kuotaCpu; i++) {
+const cpuCount = os.availableParallelism();
+for (let i = 0; i < cpuCount; i++) {
   cluster.fork();
 }
 ```
@@ -324,8 +323,8 @@ if (cluster.isPrimary) {
 // Benar
 if (cluster.isPrimary) {
   cluster.fork();
-  cluster.on("exit", (worker, kode) => {
-    if (kode !== 0) {
+  cluster.on('exit', (worker, code) => {
+    if (code !== 0) {
       cluster.fork();
     }
   });
@@ -339,28 +338,28 @@ if (cluster.isPrimary) {
 Skenario: Membangun arsitektur server HTTP multi-proses mandiri dengan penyeimbang beban transparan, pelaporan metrik akumulasi permintaan melalui saluran IPC ke proses utama, dan penutupan bersih instans worker.
 
 ```javascript
-import cluster from "node:cluster";
-import http from "node:http";
+import cluster from 'node:cluster';
+import http from 'node:http';
 
 if (cluster.isPrimary) {
-  let totalPermintaan = 0;
+  let requestCount = 0;
   const worker = cluster.fork();
 
-  worker.on("message", (pesan) => {
-    if (pesan.tipe === "HIT_REQUEST") {
-      totalPermintaan++;
-      console.log("Total permintaan di Primary:", totalPermintaan);
+  worker.on('message', (message) => {
+    if (message.type === 'REQUEST_RECEIVED') {
+      requestCount++;
+      console.log('Total requests in Primary:', requestCount);
       worker.kill();
     }
   });
 
-  cluster.on("exit", () => {
-    console.log("Worker selesai, orkestrasi berakhir");
+  cluster.on('exit', () => {
+    console.log('Worker terminated, orchestration ended');
   });
 } else {
   const server = http.createServer((req, res) => {
-    process.send({ tipe: "HIT_REQUEST" });
-    res.writeHead(200, { "Content-Type": "application/json" });
+    process.send({ type: 'REQUEST_RECEIVED' });
+    res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ pid: process.pid }));
   });
 
@@ -372,8 +371,8 @@ if (cluster.isPrimary) {
 }
 
 // Output:
-// Total permintaan di Primary: 1
-// Worker selesai, orkestrasi berakhir
+// Total requests in Primary: 1
+// Worker terminated, orchestration ended
 ```
 
 Desain ini dipilih karena memisahkan tanggung jawab antara orkestrasi metrik global pada proses utama dan pemrosesan transaksi HTTP pada proses pekerja, menjaga arsitektur *share-nothing* yang aman tanpa perebutan kunci memori, serta memanfaatkan port berbagi otomatis bawaan sistem operasi.
@@ -384,13 +383,13 @@ Desain ini dipilih karena memisahkan tanggung jawab antara orkestrasi metrik glo
 
 ### Soal 1 (Dasar)
 
-Buat fungsi `tentukanAlokasiWorker(kuotaKustom)` yang menghitung jumlah worker ideal yang boleh dibuat. Fungsi membaca jumlah konkurensi CPU yang tersedia menggunakan `os.availableParallelism()`. Jika argumen `kuotaKustom` berupa bilangan bulat positif yang lebih kecil dari kuota CPU, gunakan nilai tersebut. Jika `kuotaKustom` lebih besar dari kuota fisik atau bernilai tidak valid, batasi maksimal sebesar kuota CPU sistem.
+Buat fungsi `calculateWorkerAllocation(customQuota)` yang menghitung jumlah worker ideal yang boleh dibuat. Fungsi membaca jumlah konkurensi CPU yang tersedia menggunakan `os.availableParallelism()`. Jika argumen `customQuota` berupa bilangan bulat positif yang lebih kecil dari kuota CPU, gunakan nilai tersebut. Jika `customQuota` lebih besar dari kuota fisik atau bernilai tidak valid, batasi maksimal sebesar kuota CPU sistem.
 
 Contoh masukan:
 
 ```javascript
 // Asumsi mesin memiliki 4 core fisik CPU
-tentukanAlokasiWorker(2);
+calculateWorkerAllocation(2);
 ```
 
 Contoh keluaran yang diharapkan:
@@ -403,14 +402,14 @@ Batasan: Gunakan modul bawaan `node:os` dengan fungsi `availableParallelism()`.
 
 ### Soal 2 (Menengah)
 
-Buat fungsi distribusi tugas Round-Robin `bagiTugasKeWorker(daftarWorkerId, antreanPekerjaan)` yang membagi daftar string pekerjaan secara bergantian dan merata ke seluruh worker yang terdaftar. Fungsi harus mengembalikan objek kamus yang memetakan setiap worker ID ke larik pekerjaan yang dialokasikan untuknya.
+Buat fungsi distribusi tugas Round-Robin `distributeTasksToWorkers(workerIds, taskQueue)` yang membagi daftar string pekerjaan secara bergantian dan merata ke seluruh worker yang terdaftar. Fungsi harus mengembalikan objek kamus yang memetakan setiap worker ID ke larik pekerjaan yang dialokasikan untuknya.
 
 Contoh masukan:
 
 ```javascript
-bagiTugasKeWorker(
-  ["w1", "w2"],
-  ["tugasA", "tugasB", "tugasC", "tugasD", "tugasE"]
+distributeTasksToWorkers(
+  ['w1', 'w2'],
+  ['taskA', 'taskB', 'taskC', 'taskD', 'taskE']
 );
 ```
 
@@ -418,39 +417,39 @@ Contoh keluaran yang diharapkan:
 
 ```javascript
 {
-  w1: [ 'tugasA', 'tugasC', 'tugasE' ],
-  w2: [ 'tugasB', 'tugasD' ]
+  w1: [ 'taskA', 'taskC', 'taskE' ],
+  w2: [ 'taskB', 'taskD' ]
 }
 ```
 
-Batasan: Gunakan fungsi murni berbasis manipulasi array tanpa dependensi eksternal. Jika `daftarWorkerId` kosong, kembalikan objek kosong `{}`.
+Batasan: Gunakan fungsi murni berbasis manipulasi array tanpa dependensi eksternal. Jika `workerIds` kosong, kembalikan objek kosong `{}`.
 
 ### Soal 3 (Menantang)
 
-Buat fungsi pengelola batas pemulihan worker `buatPenahanCrashLoop(batasMaksimalCrash, jendelaWaktuMs)`. Fungsi ini bertindak sebagai pemutus sirkuit (*circuit breaker*) untuk mencegah proses utama melakukan *crash-loop* tanpa henti saat aplikasi worker mengalami kegagalan berulang dalam rentang waktu singkat.
+Buat fungsi pengelola batas pemulihan worker `createCrashLoopBreaker(maxCrashCount, windowMs)`. Fungsi ini bertindak sebagai pemutus sirkuit (*circuit breaker*) untuk mencegah proses utama melakukan *crash-loop* tanpa henti saat aplikasi worker mengalami kegagalan berulang dalam rentang waktu singkat.
 
 Ketentuan fungsional:
-1. Fungsi mengembalikan objek pengendali dengan metode `catatKematianWorker(workerId)`.
-2. Setiap kali `catatKematianWorker` dipanggil:
+1. Fungsi mengembalikan objek pengendali dengan metode `recordWorkerCrash(workerId)`.
+2. Setiap kali `recordWorkerCrash` dipanggil:
    - Catat stempel waktu (*timestamp*) saat kematian terjadi.
-   - Buang seluruh catatan riwayat kematian yang usianya sudah melampaui `jendelaWaktuMs` dari waktu saat ini (*sliding time window*).
-   - Jika jumlah riwayat kematian yang tersisa masih di bawah atau sama dengan `batasMaksimalCrash`, kembalikan objek `{ izinkanFork: true, totalCrashAktif: number }`.
-   - Jika jumlah riwayat kematian dalam jendela waktu aktif telah melampaui `batasMaksimalCrash`, aktifkan status pemutus sirkuit dan tolak pemulihan dengan mengembalikan objek `{ izinkanFork: false, totalCrashAktif: number, alasan: 'CRASH_LOOP_TERDETEKSI' }`.
+   - Buang seluruh catatan riwayat kematian yang usianya sudah melampaui `windowMs` dari waktu saat ini (*sliding time window*).
+   - Jika jumlah riwayat kematian yang tersisa masih di bawah atau sama dengan `maxCrashCount`, kembalikan objek `{ allowFork: true, activeCrashCount: number }`.
+   - Jika jumlah riwayat kematian dalam jendela waktu aktif telah melampaui `maxCrashCount`, aktifkan status pemutus sirkuit dan tolak pemulihan dengan mengembalikan objek `{ allowFork: false, activeCrashCount: number, reason: 'CRASH_LOOP_DETECTED' }`.
 3. Sediakan metode `resetStatus()` untuk mengosongkan seluruh riwayat dan memulihkan status pemutus sirkuit ke kondisi normal.
 
 Contoh skenario eksekusi:
 
 ```javascript
-const penahan = buatPenahanCrashLoop(2, 5000);
+const breaker = createCrashLoopBreaker(2, 5000);
 
-penahan.catatKematianWorker(101);
-// Hasil: { izinkanFork: true, totalCrashAktif: 1 }
+breaker.recordWorkerCrash(101);
+// Hasil: { allowFork: true, activeCrashCount: 1 }
 
-penahan.catatKematianWorker(102);
-// Hasil: { izinkanFork: true, totalCrashAktif: 2 }
+breaker.recordWorkerCrash(102);
+// Hasil: { allowFork: true, activeCrashCount: 2 }
 
-penahan.catatKematianWorker(103);
-// Hasil: { izinkanFork: false, totalCrashAktif: 3, alasan: 'CRASH_LOOP_TERDETEKSI' }
+breaker.recordWorkerCrash(103);
+// Hasil: { allowFork: false, activeCrashCount: 3, reason: 'CRASH_LOOP_DETECTED' }
 ```
 
 Batasan: Gunakan logika sliding window waktu murni tanpa menggunakan pustaka pihak ketiga.

@@ -1,7 +1,6 @@
 # DNS
 
 > Ringkasan
->
 > - Fungsi: Menerjemahkan nama domain yang ramah manusia menjadi alamat IP serta menginspeksi berbagai tipe rekaman DNS jaringan.
 > - Digunakan saat: Validasi keberadaan domain surel, resolusi alamat host sebelum membuka koneksi jaringan, atau diagnosa infrastruktur nama server.
 > - Aturan praktis: Pahami perbedaan mendasar antara `dns.lookup()` yang memanggil konfigurasi sistem operasi lokal melalui thread pool Libuv dan `dns.resolve*()` yang melakukan kueri jaringan DNS langsung secara asinkron murni.
@@ -37,7 +36,7 @@ flowchart TD
 ## Referensi
 
 | Item | Fungsi | Catatan |
-| :--- | :----- | :------ |
+| :--- | :--- | :--- |
 | **`dns.lookup()`** | Menerjemahkan nama host menjadi alamat IP via sistem operasi | Menggunakan thread pool Libuv dan membaca berkas konfigurasi host lokal |
 | **`dns.resolve4()`** | Melakukan kueri rekaman IPv4 (rekaman A) langsung ke jaringan | Berjalan murni asinkron tanpa membebani Libuv thread pool |
 | **`dns.resolveMx()`** | Mengambil rekaman Mail Exchange untuk penanganan perutean surel | Mengembalikan daftar objek berisi nilai prioritas dan nama host pertukaran |
@@ -51,20 +50,20 @@ flowchart TD
 Fungsi `dns.lookup()` digunakan untuk menyelesaikan nama domain menggunakan resolver bawaan sistem operasi melalui panggilan C `getaddrinfo`. Fungsi ini memperhitungkan berkas pemetaan host lokal seperti `/etc/hosts` di Linux atau `hosts` di Windows.
 
 ```javascript
-import dns from "node:dns/promises";
+import dns from 'node:dns/promises';
 
-const hasil = await dns.lookup("localhost");
-console.log(hasil.address, hasil.family);
+const result = await dns.lookup('localhost');
+console.log(result.address, result.family);
 // Output: 127.0.0.1 4
 ```
 
 Kasus lain: Mengambil seluruh varian alamat IP yang tersedia (IPv4 dan IPv6) sekaligus dengan menambahkan opsi `all: true`.
 
 ```javascript
-import dns from "node:dns/promises";
+import dns from 'node:dns/promises';
 
-const daftar = await dns.lookup("localhost", { all: true });
-console.log(Array.isArray(daftar), daftar.length > 0);
+const list = await dns.lookup('localhost', { all: true });
+console.log(Array.isArray(list), list.length > 0);
 // Output: true true
 ```
 
@@ -73,9 +72,9 @@ console.log(Array.isArray(daftar), daftar.length > 0);
 Fungsi `dns.resolve4()` digunakan untuk meminta daftar alamat IPv4 (rekaman A) langsung ke server DNS jaringan tanpa melewati konfigurasi host lokal sistem operasi. Pemanggilan ini tidak mengonsumsi antrean thread pool Libuv.
 
 ```javascript
-import dns from "node:dns/promises";
+import dns from 'node:dns/promises';
 
-const ipList = await dns.resolve4("localhost").catch(() => ["127.0.0.1"]);
+const ipList = await dns.resolve4('localhost').catch(() => ['127.0.0.1']);
 console.log(Array.isArray(ipList), ipList[0]);
 // Output: true 127.0.0.1
 ```
@@ -83,10 +82,10 @@ console.log(Array.isArray(ipList), ipList[0]);
 Kasus lain: Menangani galat saat nama domain tidak ditemukan di server DNS jaringan (`ENOTFOUND` atau `ECONNREFUSED`).
 
 ```javascript
-import dns from "node:dns/promises";
+import dns from 'node:dns/promises';
 
 try {
-  await dns.resolve4("domain-palsu-tidak-nyata.invalid");
+  await dns.resolve4('non-existent-domain.invalid');
 } catch (error) {
   console.log(error.code !== undefined);
   // Output: true
@@ -98,10 +97,10 @@ try {
 Fungsi `dns.resolveMx()` digunakan untuk mengambil daftar rekaman MX (*Mail Exchange*) dari suatu domain guna memvalidasi tujuan server pengiriman surel. Setiap rekaman memuat nama host server dan tingkat prioritas rute.
 
 ```javascript
-import dns from "node:dns/promises";
+import dns from 'node:dns/promises';
 
-const mxRecords = await dns.resolveMx("gmail.com").catch(() => [
-  { exchange: "gmail-smtp-in.l.google.com", priority: 5 },
+const mxRecords = await dns.resolveMx('gmail.com').catch(() => [
+  { exchange: 'gmail-smtp-in.l.google.com', priority: 5 },
 ]);
 
 console.log(mxRecords[0].priority, typeof mxRecords[0].exchange);
@@ -111,10 +110,10 @@ console.log(mxRecords[0].priority, typeof mxRecords[0].exchange);
 Kasus lain: Menangani galat `ENODATA` ketika domain terdaftar aktif tetapi tidak mengonfigurasikan rekaman server surel.
 
 ```javascript
-import dns from "node:dns/promises";
+import dns from 'node:dns/promises';
 
 try {
-  await dns.resolveMx("localhost");
+  await dns.resolveMx('localhost');
 } catch (error) {
   console.log(error.code !== undefined);
   // Output: true
@@ -126,10 +125,10 @@ try {
 Fungsi `dns.resolveTxt()` digunakan untuk membaca rekaman teks (rekaman TXT) yang sering dimanfaatkan untuk validasi kepemilikan domain serta keamanan surel seperti SPF (*Sender Policy Framework*) dan DKIM.
 
 ```javascript
-import dns from "node:dns/promises";
+import dns from 'node:dns/promises';
 
-const txtRecords = await dns.resolveTxt("example.com").catch(() => [
-  ["v=spf1 -all"],
+const txtRecords = await dns.resolveTxt('example.com').catch(() => [
+  ['v=spf1 -all'],
 ]);
 
 console.log(txtRecords[0][0]);
@@ -139,10 +138,10 @@ console.log(txtRecords[0][0]);
 Kasus lain: Menangani domain yang memuat beberapa baris fragmen rekaman teks sekaligus di dalam satu zona rekaman TXT.
 
 ```javascript
-const fragmenGabungan = [["fragmen-bagian-1", "fragmen-bagian-2"]];
-const barisUtuh = fragmenGabungan[0].join("");
-console.log(barisUtuh);
-// Output: fragmen-bagian-1fragmen-bagian-2
+const combinedChunks = [['chunk-part-1', 'chunk-part-2']];
+const completeRecord = combinedChunks[0].join('');
+console.log(completeRecord);
+// Output: chunk-part-1chunk-part-2
 ```
 
 ### `dns.resolveNs()`
@@ -150,11 +149,11 @@ console.log(barisUtuh);
 Fungsi `dns.resolveNs()` digunakan untuk mendapatkan daftar Name Server yang memiliki otoritas resmi atas pengelolaan zona konfigurasi domain yang bersangkutan.
 
 ```javascript
-import dns from "node:dns/promises";
+import dns from 'node:dns/promises';
 
-const nsRecords = await dns.resolveNs("example.com").catch(() => [
-  "a.iana-servers.net",
-  "b.iana-servers.net",
+const nsRecords = await dns.resolveNs('example.com').catch(() => [
+  'a.iana-servers.net',
+  'b.iana-servers.net',
 ]);
 
 console.log(nsRecords.length > 0);
@@ -164,10 +163,10 @@ console.log(nsRecords.length > 0);
 Kasus lain: Menangani galat saat memanggil resolusi rekaman NS pada alamat IP numerik mentah alih-alih nama domain.
 
 ```javascript
-import dns from "node:dns/promises";
+import dns from 'node:dns/promises';
 
 try {
-  await dns.resolveNs("127.0.0.1");
+  await dns.resolveNs('127.0.0.1');
 } catch (error) {
   console.log(error.code !== undefined);
   // Output: true
@@ -179,9 +178,9 @@ try {
 Fungsi `dns.reverse()` digunakan untuk melakukan pencarian balik (*reverse lookup*) dari alamat IP numerik ke nama domain terkait berdasarkan rekaman PTR (*Pointer Record*).
 
 ```javascript
-import dns from "node:dns/promises";
+import dns from 'node:dns/promises';
 
-const hostnames = await dns.reverse("127.0.0.1").catch(() => ["localhost"]);
+const hostnames = await dns.reverse('127.0.0.1').catch(() => ['localhost']);
 console.log(Array.isArray(hostnames));
 // Output: true
 ```
@@ -189,10 +188,10 @@ console.log(Array.isArray(hostnames));
 Kasus lain: Melempar galat `EINVAL` ketika parameter alamat IP yang dimasukkan memiliki format string yang tidak valid.
 
 ```javascript
-import dns from "node:dns/promises";
+import dns from 'node:dns/promises';
 
 try {
-  await dns.reverse("bukan-alamat-ip");
+  await dns.reverse('not-an-ip-address');
 } catch (error) {
   console.log(error.code);
   // Output: EINVAL
@@ -204,21 +203,21 @@ try {
 Fungsi `dns.setServers()` digunakan untuk mengarahkan seluruh kueri jaringan `resolve*()` berikutnya ke server resolver DNS kustom (seperti DNS publik Google atau Cloudflare) tanpa terikat pada resolver penyedia internet lokal.
 
 ```javascript
-import dns from "node:dns";
+import dns from 'node:dns';
 
-dns.setServers(["8.8.8.8", "1.1.1.1"]);
-const daftarServer = dns.getServers();
-console.log(daftarServer);
+dns.setServers(['8.8.8.8', '1.1.1.1']);
+const serverList = dns.getServers();
+console.log(serverList);
 // Output: [ '8.8.8.8', '1.1.1.1' ]
 ```
 
 Kasus lain: Memasukkan string alamat IP yang tidak valid melempar galat `ERR_INVALID_IP_ADDRESS`.
 
 ```javascript
-import dns from "node:dns";
+import dns from 'node:dns';
 
 try {
-  dns.setServers(["999.999.999.999"]);
+  dns.setServers(['999.999.999.999']);
 } catch (error) {
   console.log(error.code);
   // Output: ERR_INVALID_IP_ADDRESS
@@ -244,14 +243,14 @@ Pemanggilan `dns.lookup()` dalam jumlah besar secara serempak dapat memenuhi kuo
 
 ```javascript
 // Salah
-for (const domain of daftarDomain) {
+for (const domain of domainList) {
   await dns.lookup(domain);
 }
 ```
 
 ```javascript
 // Benar
-for (const domain of daftarDomain) {
+for (const domain of domainList) {
   await dns.resolve4(domain);
 }
 ```
@@ -262,15 +261,15 @@ Layanan berskala besar umumnya menerapkan mekanisme penyeimbang beban DNS (*Roun
 
 ```javascript
 // Salah
-const ip = await dns.resolve4("contoh.com");
-console.log(ip.startsWith("192."));
+const ip = await dns.resolve4('example.com');
+console.log(ip.startsWith('192.'));
 ```
 
 ```javascript
 // Benar
-const ipList = await dns.resolve4("contoh.com");
-const ipUtama = ipList[0];
-console.log(typeof ipUtama === "string");
+const ipList = await dns.resolve4('example.com');
+const primaryIp = ipList[0];
+console.log(typeof primaryIp === 'string');
 ```
 
 ### Mengabaikan Penanganan Galat `ENODATA` saat Rekaman Kosong
@@ -279,16 +278,16 @@ Ketiadaan rekaman tipe tertentu pada domain yang aktif bukan berarti jaringan ru
 
 ```javascript
 // Salah
-const mx = await dns.resolveMx("domain-tanpa-email.com");
+const mx = await dns.resolveMx('domain-without-email.com');
 ```
 
 ```javascript
 // Benar
 let mx = [];
 try {
-  mx = await dns.resolveMx("domain-tanpa-email.com");
+  mx = await dns.resolveMx('domain-without-email.com');
 } catch (error) {
-  if (error.code === "ENODATA" || error.code === "ENOTFOUND") {
+  if (error.code === 'ENODATA' || error.code === 'ENOTFOUND') {
     mx = [];
   }
 }
@@ -298,66 +297,66 @@ try {
 
 ## Studi Kasus
 
-Skenario: Membangun fungsi pemeriksa dan validasi konfigurasi domain surel (`periksaDomainSurel`) mandiri yang memvalidasi format sintaksis alamat, memverifikasi ketersediaan server MX, mengekstrak rekaman SPF dari rekaman TXT, dan mengembalikan status keabsahan secara komprehensif.
+Skenario: Membangun fungsi pemeriksa dan validasi konfigurasi domain surel (`verifyEmailDomain`) mandiri yang memvalidasi format sintaksis alamat, memverifikasi ketersediaan server MX, mengekstrak rekaman SPF dari rekaman TXT, dan mengembalikan status keabsahan secara komprehensif.
 
 ```javascript
-import dns from "node:dns/promises";
+import dns from 'node:dns/promises';
 
-async function periksaDomainSurel(alamatSurel, penyediaResolver = dns) {
-  const bagian = alamatSurel.split("@");
-  if (bagian.length !== 2 || !bagian[0] || !bagian[1]) {
-    return { valid: false, alasan: "FORMAT_TIDAK_VALID", mx: [], punyaSpf: false };
+async function verifyEmailDomain(emailAddress, resolver = dns) {
+  const parts = emailAddress.split('@');
+  if (parts.length !== 2 || !parts[0] || !parts[1]) {
+    return { valid: false, reason: 'INVALID_FORMAT', mx: [], hasSpf: false };
   }
 
-  const domain = bagian[1].toLowerCase();
+  const domain = parts[1].toLowerCase();
 
   try {
     let mxList = [];
     try {
-      mxList = await penyediaResolver.resolveMx(domain);
+      mxList = await resolver.resolveMx(domain);
     } catch {
       mxList = [];
     }
 
     let txtList = [];
     try {
-      txtList = await penyediaResolver.resolveTxt(domain);
+      txtList = await resolver.resolveTxt(domain);
     } catch {
       txtList = [];
     }
 
-    const punyaSpf = txtList.some((baris) =>
-      baris.some((teks) => teks.startsWith("v=spf1"))
+    const hasSpf = txtList.some((records) =>
+      records.some((text) => text.startsWith('v=spf1'))
     );
 
     const valid = mxList.length > 0;
     return {
       valid,
-      alasan: valid ? "OK" : "TIDAK_ADA_MX",
-      mx: mxList.map((m) => m.exchange),
-      punyaSpf,
+      reason: valid ? 'OK' : 'NO_MX_RECORDS',
+      mx: mxList.map((item) => item.exchange),
+      hasSpf,
     };
   } catch (error) {
-    return { valid: false, alasan: error.code || "RESOLUSI_GAGAL", mx: [], punyaSpf: false };
+    return { valid: false, reason: error.code || 'RESOLUTION_FAILED', mx: [], hasSpf: false };
   }
 }
 
 // Pengujian mandiri menggunakan resolver tiruan teruji
-const resolverTiruan = {
-  resolveMx: async () => [{ exchange: "mail.contoh.com", priority: 10 }],
-  resolveTxt: async () => [["v=spf1 include:_spf.contoh.com ~all"]],
+const mockResolver = {
+  resolveMx: async () => [{ exchange: 'mail.example.com', priority: 10 }],
+  resolveTxt: async () => [['v=spf1 include:_spf.example.com ~all']],
 };
 
-const hasil = await periksaDomainSurel("pengguna@contoh.com", resolverTiruan);
-console.log(hasil.valid);
-console.log(hasil.alasan);
-console.log(hasil.mx[0]);
-console.log(hasil.punyaSpf);
+const result = await verifyEmailDomain('user@example.com', mockResolver);
+console.log(result.valid);
+console.log(result.reason);
+console.log(result.mx[0]);
+console.log(result.hasSpf);
 
 // Output:
 // true
 // OK
-// mail.contoh.com
+// mail.example.com
 // true
 ```
 
@@ -369,32 +368,32 @@ Desain ini dipilih karena mengisolasi penanganan galat `ENODATA` pada masing-mas
 
 ### Soal 1 (Dasar)
 
-Buat fungsi `ambilIpLokal(namaHost)` yang menyelesaikan nama host menggunakan `dns.lookup()`. Fungsi harus mengembalikan objek berisi alamat IP (`ip`) dan versi keluarga alamat (`versi`). Jika resolusi gagal, fungsi harus menangkap galat dan mengembalikan nilai `null`.
+Buat fungsi `resolveLocalIp(hostname)` yang menyelesaikan nama host menggunakan `dns.lookup()`. Fungsi harus mengembalikan objek berisi alamat IP (`ip`) dan versi keluarga alamat (`family`). Jika resolusi gagal, fungsi harus menangkap galat dan mengembalikan nilai `null`.
 
 Contoh masukan:
 
 ```javascript
-await ambilIpLokal("localhost");
+await resolveLocalIp('localhost');
 ```
 
 Contoh keluaran yang diharapkan:
 
 ```javascript
-{ ip: '127.0.0.1', versi: 4 }
+{ ip: '127.0.0.1', family: 4 }
 ```
 
 Batasan: Gunakan modul bawaan `node:dns/promises`. Pastikan penanganan galat menggunakan blok `try...catch`.
 
 ### Soal 2 (Menengah)
 
-Buat fungsi `ekstrakDomainSpf(daftarTxt)` yang memproses struktur data array hasil pembacaan rekaman TXT. Fungsi wajib menyaring rekaman yang diawali dengan `"v=spf1"`, memisahkan aturan-aturan mekanisme otorisasi yang ada di dalamnya, dan mengekstrak penentu kebijakan akhir (seperti `-all`, `~all`, atau `?all`).
+Buat fungsi `extractSpfRecord(txtRecords)` yang memproses struktur data array hasil pembacaan rekaman TXT. Fungsi wajib menyaring rekaman yang diawali dengan `"v=spf1"`, memisahkan aturan-aturan mekanisme otorisasi yang ada di dalamnya, dan mengekstrak penentu kebijakan akhir (seperti `-all`, `~all`, atau `?all`).
 
 Contoh masukan:
 
 ```javascript
-ekstrakDomainSpf([
-  ["v=spf1 include:_spf.contoh.com ip4:192.0.2.0/24 -all"],
-  ["google-site-verification=token123"]
+extractSpfRecord([
+  ['v=spf1 include:_spf.example.com ip4:192.0.2.0/24 -all'],
+  ['google-site-verification=token123'],
 ]);
 ```
 
@@ -402,9 +401,9 @@ Contoh keluaran yang diharapkan:
 
 ```javascript
 {
-  versi: 'spf1',
-  aturan: [ 'include:_spf.contoh.com', 'ip4:192.0.2.0/24' ],
-  penentu: '-all'
+  version: 'spf1',
+  rules: [ 'include:_spf.example.com', 'ip4:192.0.2.0/24' ],
+  qualifier: '-all'
 }
 ```
 
@@ -412,22 +411,22 @@ Batasan: Gunakan manipulasi string dan larik murni tanpa modul pihak ketiga. Jik
 
 ### Soal 3 (Menantang)
 
-Buat fungsi auditor kesehatan konfigurasi jaringan domain `diagnosaDomain(namaDomain, resolverKustom)`. Fungsi ini mengeksekusi kueri multi-rekaman secara independen terhadap satu nama domain dengan ketentuan berikut:
+Buat fungsi auditor kesehatan konfigurasi jaringan domain `diagnoseDomain(domainName, customResolver)`. Fungsi ini mengeksekusi kueri multi-rekaman secara independen terhadap satu nama domain dengan ketentuan berikut:
 
-1. Kueri rekaman IPv4 (`resolve4`): catat daftar IP dan tentukan properti `adaRedundansi: boolean` (bernilai `true` jika jumlah alamat IP lebih dari 1).
+1. Kueri rekaman IPv4 (`resolve4`): catat daftar IP dan tentukan properti `hasRedundancy: boolean` (bernilai `true` jika jumlah alamat IP lebih dari 1).
 2. Kueri rekaman MX (`resolveMx`): urutkan daftar server surel berdasarkan nilai `priority` dari yang paling kecil (prioritas utama) ke terbesar.
 3. Kueri rekaman Name Server (`resolveNs`): catat jumlah total server nama otoritatif yang terdaftar.
 4. Ketentuan penanganan kasus tepi:
    - Jika suatu tipe rekaman melempar galat `ENODATA` atau `ENOTFOUND`, anggap tipe rekaman tersebut kosong (larik kosong `[]`) tanpa menggagalkan pengujian tipe rekaman lainnya.
-   - Jika `namaDomain` berupa string kosong atau bukan tipe data string, tolak eksekusi dan kembalikan objek `{ sukses: false, alasan: 'NAMA_DOMAIN_TIDAK_VALID' }`.
+   - Jika `domainName` berupa string kosong atau bukan tipe data string, tolak eksekusi dan kembalikan objek `{ success: false, reason: 'INVALID_DOMAIN_NAME' }`.
    - Hasil keluaran sukses harus memuat struktur ringkasan terpadu:
      ```javascript
      {
-       sukses: true,
+       success: true,
        domain: string,
        ipv4: string[],
-       adaRedundansi: boolean,
-       mxTerurut: Array<{ exchange: string, priority: number }>,
+       hasRedundancy: boolean,
+       sortedMx: Array<{ exchange: string, priority: number }>,
        totalNs: number
      }
      ```
@@ -435,28 +434,28 @@ Buat fungsi auditor kesehatan konfigurasi jaringan domain `diagnosaDomain(namaDo
 Contoh interaksi dengan penyedia resolver tiruan:
 
 ```javascript
-const resolver = {
-  resolve4: async () => ["93.184.216.34", "93.184.216.35"],
+const mockResolver = {
+  resolve4: async () => ['93.184.216.34', '93.184.216.35'],
   resolveMx: async () => [
-    { exchange: "backup.mail.com", priority: 20 },
-    { exchange: "utama.mail.com", priority: 10 }
+    { exchange: 'backup.mail.com', priority: 20 },
+    { exchange: 'primary.mail.com', priority: 10 },
   ],
-  resolveNs: async () => ["ns1.contoh.com", "ns2.contoh.com"]
+  resolveNs: async () => ['ns1.example.com', 'ns2.example.com'],
 };
 
-await diagnosaDomain("contoh.com", resolver);
+await diagnoseDomain('example.com', mockResolver);
 ```
 
 Contoh keluaran yang diharapkan:
 
 ```javascript
 {
-  sukses: true,
-  domain: 'contoh.com',
+  success: true,
+  domain: 'example.com',
   ipv4: [ '93.184.216.34', '93.184.216.35' ],
-  adaRedundansi: true,
-  mxTerurut: [
-    { exchange: 'utama.mail.com', priority: 10 },
+  hasRedundancy: true,
+  sortedMx: [
+    { exchange: 'primary.mail.com', priority: 10 },
     { exchange: 'backup.mail.com', priority: 20 }
   ],
   totalNs: 2

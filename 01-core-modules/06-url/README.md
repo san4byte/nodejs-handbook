@@ -1,7 +1,6 @@
 # URL
 
 > Ringkasan
->
 > - Fungsi: Mengurai, memvalidasi, menyusun, dan memanipulasi alamat web (URL) serta parameter kueri sesuai standar internasional WHATWG URL API.
 > - Digunakan saat: Membaca parameter pencarian, menggabungkan endpoint API dengan basis URL, mencegah celah pengalihan berbahaya (_open redirect_), dan mengonversi format tautan berkas sistem.
 > - Aturan praktis: Hindari penggunaan fungsi usang `url.parse()` karena memiliki kerentanan manipulasi keamanan (SSRF); gunakan kelas bawaan `URL` dan `URLSearchParams` yang tersedia secara global.
@@ -24,9 +23,9 @@
 
 ```mermaid
 flowchart LR
-    INPUT["String URL Masukan"] --> PARSER["new URL(alamat, [baseUrl])"]
+    INPUT["String URL Masukan"] --> PARSER["new URL(input, [base])"]
     PARSER --> ORIGIN["Origin: protocol + // + host"]
-    PARSER --> PATH["Pathname: /v1/produk"]
+    PARSER --> PATH["Pathname: /v1/products"]
     PARSER --> QUERY["searchParams (URLSearchParams)"]
     QUERY --> GET["params.get() / params.getAll()"]
     QUERY --> SET["params.set() / params.append()"]
@@ -36,34 +35,34 @@ flowchart LR
 
 ## Referensi
 
-| Item                                 | Fungsi                                                                        | Catatan                                                               |
-| :----------------------------------- | :---------------------------------------------------------------------------- | :-------------------------------------------------------------------- |
-| **`new URL(input, [base])`**         | Mengurai string alamat web menjadi instance objek URL standar WHATWG          | Melempar `TypeError` jika format URL tidak valid atau basis hilang    |
-| **`url.origin`**                     | Mengembalikan gabungan skema protokol, domain, dan nomor port                 | Bersifat hanya-baca, sangat krusial untuk validasi CORS dan keamanan  |
-| **`url.pathname`**                   | Mengembalikan hierarki jalur rute berkas yang selalu diawali tanda slash      | Otomatis bernilai `'/'` jika tidak ada rute yang didefinisikan        |
-| **`url.searchParams`**               | Mengakses instance utilitas untuk manipulasi kueri URL secara dinamis         | Terhubung secara reaktif dengan nilai `url.search` dan `url.href`     |
-| **`searchParams.get(name)`**         | Mengambil nilai pertama yang cocok dengan nama parameter kueri                | Mengembalikan string nilai atau `null` jika parameter tidak ditemukan |
-| **`searchParams.getAll(name)`**      | Mengambil seluruh nilai yang cocok dengan nama parameter kueri                | Mengembalikan larik string untuk menangani kueri multi-nilai          |
-| **`searchParams.set(name, value)`**  | Menetapkan nilai baru dan menimpa seluruh entri nilai kunci sebelumnya        | Bersifat idempoten untuk memperbarui parameter tunggal                |
-| **`searchParams.append(name, value)`**| Menambahkan pasangan kunci dan nilai baru ke dalam daftar kueri              | Mempertahankan nilai lama untuk mendukung parameter berulang          |
-| **`fileURLToPath(url)`**             | Mengonversi URL format `file://` menjadi representasi jalur sistem berkas     | Menyesuaikan separator direktori sistem operasi aktif secara otomatis |
-| **`pathToFileURL(path)`**            | Mengonversi jalur sistem berkas absolut menjadi URL format `file://`          | Mengodekan karakter spasi dan simbol khusus secara otomatis          |
+| Item | Fungsi | Catatan |
+| :--- | :--- | :--- |
+| **`new URL(input, [base])`** | Mengurai string alamat web menjadi instance objek URL standar WHATWG | Melempar `TypeError` jika format URL tidak valid atau basis hilang |
+| **`url.origin`** | Mengembalikan gabungan skema protokol, domain, dan nomor port | Bersifat hanya-baca, sangat krusial untuk validasi CORS dan keamanan |
+| **`url.pathname`** | Mengembalikan hierarki jalur rute berkas yang selalu diawali tanda slash | Otomatis bernilai `'/'` jika tidak ada rute yang didefinisikan |
+| **`url.searchParams`** | Mengakses instance utilitas untuk manipulasi kueri URL secara dinamis | Terhubung secara reaktif dengan nilai `url.search` dan `url.href` |
+| **`searchParams.get(name)`** | Mengambil nilai pertama yang cocok dengan nama parameter kueri | Mengembalikan string nilai atau `null` jika parameter tidak ditemukan |
+| **`searchParams.getAll(name)`** | Mengambil seluruh nilai yang cocok dengan nama parameter kueri | Mengembalikan larik string untuk menangani kueri multi-nilai |
+| **`searchParams.set(name, value)`** | Menetapkan nilai baru dan menimpa seluruh entri nilai kunci sebelumnya | Bersifat idempoten untuk memperbarui parameter tunggal |
+| **`searchParams.append(name, value)`** | Menambahkan pasangan kunci dan nilai baru ke dalam daftar kueri | Mempertahankan nilai lama untuk mendukung parameter berulang |
+| **`fileURLToPath(url)`** | Mengonversi URL format `file://` menjadi representasi jalur sistem berkas | Menyesuaikan separator direktori sistem operasi aktif secara otomatis |
+| **`pathToFileURL(path)`** | Mengonversi jalur sistem berkas absolut menjadi URL format `file://` | Mengodekan karakter spasi dan simbol khusus secara otomatis |
 
 ### `new URL(input, [base])`
 
 Konstruktor `new URL()` membedah string alamat web menjadi objek URL standar. Jika masukan berupa URL relatif, argumen kedua `base` wajib disertakan sebagai titik acuan resolusi.
 
 ```javascript
-const tautan = new URL("/v1/pengguna", "https://api.contoh.com");
-console.log(tautan.href);
-// Output: https://api.contoh.com/v1/pengguna
+const targetUrl = new URL('/v1/users', 'https://api.example.com');
+console.log(targetUrl.href);
+// Output: https://api.example.com/v1/users
 ```
 
 Kasus lain: Melempar `TypeError` berkode `ERR_INVALID_URL` jika string masukan bukan merupakan format URL yang valid atau kekurangan basis.
 
 ```javascript
 try {
-  new URL("jalur-tanpa-basis");
+  new URL('path-without-base');
 } catch (error) {
   console.log(error.code);
   // Output: ERR_INVALID_URL
@@ -75,16 +74,16 @@ try {
 Properti `url.origin` mengembalikan kombinasi protokol, nama domain, dan port. Properti ini bersifat baca-saja dan sering digunakan untuk memverifikasi domain asal permintaan pada proteksi CORS atau pengalihan rute.
 
 ```javascript
-const tautan = new URL("https://toko.com:8080/katalog?halaman=1");
-console.log(tautan.origin);
-// Output: https://toko.com:8080
+const targetUrl = new URL('https://example.com:8080/catalog?page=1');
+console.log(targetUrl.origin);
+// Output: https://example.com:8080
 ```
 
 Kasus lain: URL dengan protokol non-jaringan seperti `file:` atau `blob:` menghasilkan origin khusus atau string `'null'`.
 
 ```javascript
-const berkasUrl = new URL("file:///app/index.js");
-console.log(berkasUrl.origin);
+const fileUrl = new URL('file:///app/index.js');
+console.log(fileUrl.origin);
 // Output: null
 ```
 
@@ -93,18 +92,18 @@ console.log(berkasUrl.origin);
 Properti `url.pathname` menyimpan jalur rute hierarki sumber daya. Properti ini selalu diawali garis miring pembuka `/`, bahkan jika URL masukan dibuat tanpa mencantumkan path spesifik.
 
 ```javascript
-const urlDomain = new URL("https://contoh.com");
-console.log(urlDomain.pathname);
+const domainUrl = new URL('https://example.com');
+console.log(domainUrl.pathname);
 // Output: /
 ```
 
 Kasus lain: Mengubah nilai properti `pathname` akan memperbarui properti `href` secara otomatis seketika.
 
 ```javascript
-const alamat = new URL("https://contoh.com/awal");
-alamat.pathname = "/akhir";
-console.log(alamat.href);
-// Output: https://contoh.com/akhir
+const targetUrl = new URL('https://example.com/start');
+targetUrl.pathname = '/end';
+console.log(targetUrl.href);
+// Output: https://example.com/end
 ```
 
 ### `url.searchParams`
@@ -112,18 +111,18 @@ console.log(alamat.href);
 Properti `url.searchParams` mengembalikan objek instance `URLSearchParams` yang mengikat parameter kueri secara dua arah dengan URL induknya.
 
 ```javascript
-const alamat = new URL("https://api.com?urutan=terbaru");
-console.log(alamat.searchParams.get("urutan"));
-// Output: terbaru
+const targetUrl = new URL('https://api.example.com?sort=latest');
+console.log(targetUrl.searchParams.get('sort'));
+// Output: latest
 ```
 
 Kasus lain: Menghapus seluruh parameter dari `searchParams` otomatis membersihkan tanda tanya pada properti `search`.
 
 ```javascript
-const alamat = new URL("https://api.com?urutan=terbaru");
-alamat.searchParams.delete("urutan");
-console.log(alamat.search);
-// Output: 
+const targetUrl = new URL('https://api.example.com?sort=latest');
+targetUrl.searchParams.delete('sort');
+console.log(targetUrl.search === '');
+// Output: true
 ```
 
 ### `searchParams.get(name)`
@@ -131,19 +130,19 @@ console.log(alamat.search);
 Metode `searchParams.get()` membaca nilai pertama yang terdaftar untuk parameter tertentu. Jika parameter tidak ditemukan pada kueri, metode ini mengembalikan `null`.
 
 ```javascript
-const kueri = new URLSearchParams("kategori=buku&halaman=2");
-console.log(kueri.get("kategori"));
-// Output: buku
-console.log(kueri.get("harga"));
+const searchParams = new URLSearchParams('category=books&page=2');
+console.log(searchParams.get('category'));
+// Output: books
+console.log(searchParams.get('price'));
 // Output: null
 ```
 
 Kasus lain: Mengambil parameter yang hanya memiliki nama tanpa tanda sama dengan menghasilkan string kosong, bukan `null`.
 
 ```javascript
-const kueri = new URLSearchParams("aktif");
-console.log(kueri.get("aktif"));
-// Output: 
+const searchParams = new URLSearchParams('active');
+console.log(searchParams.get('active') === '');
+// Output: true
 ```
 
 ### `searchParams.getAll(name)`
@@ -151,18 +150,18 @@ console.log(kueri.get("aktif"));
 Metode `searchParams.getAll()` mengumpulkan seluruh nilai yang memiliki nama parameter sama ke dalam bentuk larik string.
 
 ```javascript
-const kueri = new URLSearchParams("warna=merah&warna=biru&warna=hijau");
-const daftarWarna = kueri.getAll("warna");
+const searchParams = new URLSearchParams('color=red&color=blue&color=green');
+const colors = searchParams.getAll('color');
 
-console.log(daftarWarna);
-// Output: [ 'merah', 'biru', 'hijau' ]
+console.log(colors);
+// Output: [ 'red', 'blue', 'green' ]
 ```
 
 Kasus lain: Jika parameter yang diminta tidak ada, metode mengembalikan larik kosong tanpa galat.
 
 ```javascript
-const kueri = new URLSearchParams("warna=merah");
-console.log(kueri.getAll("ukuran"));
+const searchParams = new URLSearchParams('color=red');
+console.log(searchParams.getAll('size'));
 // Output: []
 ```
 
@@ -171,20 +170,20 @@ console.log(kueri.getAll("ukuran"));
 Metode `searchParams.set()` menetapkan nilai baru untuk suatu parameter. Jika parameter tersebut sebelumnya memiliki beberapa nilai duplikat, metode ini akan menghapus seluruh duplikat dan menyisakan satu nilai baru.
 
 ```javascript
-const kueri = new URLSearchParams("tag=js&tag=node");
-kueri.set("tag", "express");
+const searchParams = new URLSearchParams('tag=js&tag=node');
+searchParams.set('tag', 'express');
 
-console.log(kueri.toString());
+console.log(searchParams.toString());
 // Output: tag=express
 ```
 
 Kasus lain: Menetapkan nilai yang memuat karakter khusus atau emoji otomatis disandikan ke format URL encoding.
 
 ```javascript
-const kueri = new URLSearchParams();
-kueri.set("cari", "kopi & susu");
-console.log(kueri.toString());
-// Output: cari=kopi+%26+susu
+const searchParams = new URLSearchParams();
+searchParams.set('query', 'coffee & milk');
+console.log(searchParams.toString());
+// Output: query=coffee+%26+milk
 ```
 
 ### `searchParams.append(name, value)`
@@ -192,20 +191,20 @@ console.log(kueri.toString());
 Metode `searchParams.append()` menambahkan pasangan kunci dan nilai baru ke bagian akhir kueri tanpa menghapus nilai yang sudah ada sebelumnya.
 
 ```javascript
-const kueri = new URLSearchParams("kategori=makanan");
-kueri.append("kategori", "minuman");
+const searchParams = new URLSearchParams('category=food');
+searchParams.append('category', 'beverages');
 
-console.log(kueri.toString());
-// Output: kategori=makanan&kategori=minuman
+console.log(searchParams.toString());
+// Output: category=food&category=beverages
 ```
 
 Kasus lain: Menambahkan parameter berkali-kali mempertahankan urutan pendaftaran nilai sesuai waktu pemanggilan.
 
 ```javascript
-const kueri = new URLSearchParams();
-kueri.append("angka", "1");
-kueri.append("angka", "2");
-console.log(kueri.getAll("angka").join("-"));
+const searchParams = new URLSearchParams();
+searchParams.append('number', '1');
+searchParams.append('number', '2');
+console.log(searchParams.getAll('number').join('-'));
 // Output: 1-2
 ```
 
@@ -214,20 +213,20 @@ console.log(kueri.getAll("angka").join("-"));
 Fungsi `fileURLToPath()` mengonversi string atau instance URL berformat `file://` menjadi representasi jalur sistem berkas yang kompatibel dengan platform operasi aktif.
 
 ```javascript
-import { fileURLToPath } from "node:url";
+import { fileURLToPath } from 'node:url';
 
-const jalur = fileURLToPath("file:///var/log/audit.log");
-console.log(jalur);
+const filePath = fileURLToPath('file:///var/log/audit.log');
+console.log(filePath);
 // Output: /var/log/audit.log
 ```
 
 Kasus lain: Melempar `TypeError` berkode `ERR_INVALID_URL_SCHEME` jika URL masukan tidak menggunakan protokol `file:`.
 
 ```javascript
-import { fileURLToPath } from "node:url";
+import { fileURLToPath } from 'node:url';
 
 try {
-  fileURLToPath("https://contoh.com/app.js");
+  fileURLToPath('https://example.com/app.js');
 } catch (error) {
   console.log(error.code);
   // Output: ERR_INVALID_URL_SCHEME
@@ -239,20 +238,20 @@ try {
 Fungsi `pathToFileURL()` mengonversi string jalur berkas absolut dari sistem operasi menjadi instance URL berformat `file://`.
 
 ```javascript
-import { pathToFileURL } from "node:url";
+import { pathToFileURL } from 'node:url';
 
-const urlObjek = pathToFileURL("/var/log/audit.log");
-console.log(urlObjek.href);
+const fileUrl = pathToFileURL('/var/log/audit.log');
+console.log(fileUrl.href);
 // Output: file:///var/log/audit.log
 ```
 
 Kasus lain: Spasi dan karakter khusus pada nama berkas diubah secara otomatis menjadi bentuk persen-encoding.
 
 ```javascript
-import { pathToFileURL } from "node:url";
+import { pathToFileURL } from 'node:url';
 
-const urlSpasi = pathToFileURL("/data/laporan keuangan.pdf");
-console.log(urlSpasi.href.includes("laporan%20keuangan.pdf"));
+const spacedUrl = pathToFileURL('/data/financial report.pdf');
+console.log(spacedUrl.href.includes('financial%20report.pdf'));
 // Output: true
 ```
 
@@ -274,12 +273,12 @@ Membuat objek `new URL()` dengan jalur relatif tanpa menyertakan argumen kedua m
 
 ```javascript
 // Salah
-const tautan = new URL("/api/users");
+const targetUrl = new URL('/api/users');
 ```
 
 ```javascript
 // Benar
-const tautan = new URL("/api/users", "https://api.contoh.com");
+const targetUrl = new URL('/api/users', 'https://api.example.com');
 ```
 
 ### Terjebak Pemotongan Jalur Akibat Garis Miring Pembuka (*Slash Truncation*)
@@ -288,18 +287,18 @@ Jika endpoint relatif diawali garis miring `/`, resolusi URL akan memotong selur
 
 ```javascript
 // Salah
-const basis = "https://api.contoh.com/v1/auth";
-const target = new URL("/masuk", basis);
-console.log(target.href);
-// Hasilnya: "https://api.contoh.com/masuk" (segmen /v1/auth hilang!)
+const baseUrl = 'https://api.example.com/v1/auth';
+const targetUrl = new URL('/login', baseUrl);
+console.log(targetUrl.href);
+// Hasilnya: "https://api.example.com/login" (segmen /v1/auth hilang!)
 ```
 
 ```javascript
 // Benar
-const basis = "https://api.contoh.com/v1/auth/";
-const target = new URL("masuk", basis);
-console.log(target.href);
-// Hasilnya: "https://api.contoh.com/v1/auth/masuk"
+const baseUrl = 'https://api.example.com/v1/auth/';
+const targetUrl = new URL('login', baseUrl);
+console.log(targetUrl.href);
+// Hasilnya: "https://api.example.com/v1/auth/login"
 ```
 
 ### Menggunakan Modul Usang `url.parse()` yang Rentan Celah SSRF
@@ -308,13 +307,13 @@ Fungsi lama `url.parse()` memiliki cacat perancangan penguraian karakter khusus 
 
 ```javascript
 // Salah
-import url from "node:url";
-const terurai = url.parse("https://contoh.com/jalur");
+import url from 'node:url';
+const parsed = url.parse('https://example.com/path');
 ```
 
 ```javascript
 // Benar
-const terurai = new URL("https://contoh.com/jalur");
+const parsed = new URL('https://example.com/path');
 ```
 
 ---
@@ -325,66 +324,66 @@ Skenario: Membangun pembangun permintaan API aman (_secure API client builder_) 
 
 ```javascript
 class ApiRequestBuilder {
-  constructor(baseUrlTerpercaya) {
-    this.baseUrl = new URL(baseUrlTerpercaya);
+  constructor(trustedBaseUrl) {
+    this.baseUrl = new URL(trustedBaseUrl);
   }
 
-  bangunUrl(endpoint, parameter = {}) {
-    const basisBersih = this.baseUrl.href.endsWith("/")
+  buildUrl(endpoint, parameters = {}) {
+    const cleanBase = this.baseUrl.href.endsWith('/')
       ? this.baseUrl.href
       : `${this.baseUrl.href}/`;
-    const endpointBersih = endpoint.startsWith("/") ? endpoint.slice(1) : endpoint;
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
 
-    const hasilUrl = new URL(endpointBersih, basisBersih);
+    const targetUrl = new URL(cleanEndpoint, cleanBase);
 
-    for (const [kunci, nilai] of Object.entries(parameter)) {
-      if (Array.isArray(nilai)) {
-        for (const item of nilai) {
-          hasilUrl.searchParams.append(kunci, String(item));
+    for (const [key, value] of Object.entries(parameters)) {
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          targetUrl.searchParams.append(key, String(item));
         }
-      } else if (nilai !== undefined && nilai !== null) {
-        hasilUrl.searchParams.set(kunci, String(nilai));
+      } else if (value !== undefined && value !== null) {
+        targetUrl.searchParams.set(key, String(value));
       }
     }
 
-    hasilUrl.searchParams.sort();
-    return hasilUrl;
+    targetUrl.searchParams.sort();
+    return targetUrl;
   }
 
-  validasiRedirectAman(urlTujuanPengguna) {
+  validateSafeRedirect(userRedirectUrl) {
     try {
-      const target = new URL(urlTujuanPengguna, this.baseUrl.origin);
+      const target = new URL(userRedirectUrl, this.baseUrl.origin);
       if (target.origin !== this.baseUrl.origin) {
-        return { aman: false, pengalihan: "/dashboard" };
+        return { isSafe: false, redirectPath: '/dashboard' };
       }
-      return { aman: true, pengalihan: target.pathname + target.search };
+      return { isSafe: true, redirectPath: target.pathname + target.search };
     } catch {
-      return { aman: false, pengalihan: "/dashboard" };
+      return { isSafe: false, redirectPath: '/dashboard' };
     }
   }
 }
 
-const builder = new ApiRequestBuilder("https://api.perusahaan.com/v1");
+const builder = new ApiRequestBuilder('https://api.example.com/v1');
 
-const urlPermintaan = builder.bangunUrl("pengguna", {
-  peran: "admin",
-  tag: ["nodejs", "security"],
+const requestUrl = builder.buildUrl('users', {
+  role: 'admin',
+  tags: ['nodejs', 'security'],
 });
-console.log(urlPermintaan.pathname);
-// Output: /v1/pengguna
-console.log(urlPermintaan.search);
-// Output: ?peran=admin&tag=nodejs&tag=security
+console.log(requestUrl.pathname);
+// Output: /v1/users
+console.log(requestUrl.search);
+// Output: ?role=admin&tags=nodejs&tags=security
 
-const cekAman = builder.validasiRedirectAman("/profil?tab=keamanan");
-console.log(cekAman.aman);
+const safeCheck = builder.validateSafeRedirect('/profile?tab=security');
+console.log(safeCheck.isSafe);
 // Output: true
-console.log(cekAman.pengalihan);
-// Output: /profil?tab=keamanan
+console.log(safeCheck.redirectPath);
+// Output: /profile?tab=security
 
-const cekPhishing = builder.validasiRedirectAman("https://situs-palsu.com/login");
-console.log(cekPhishing.aman);
+const phishingCheck = builder.validateSafeRedirect('https://malicious-site.com/login');
+console.log(phishingCheck.isSafe);
 // Output: false
-console.log(cekPhishing.pengalihan);
+console.log(phishingCheck.redirectPath);
 // Output: /dashboard
 ```
 
@@ -396,35 +395,31 @@ Desain ini memanfaatkan kelas bawaan `URL` dan `URLSearchParams` dengan normalis
 
 ### Soal 1 (Dasar)
 
-Buat fungsi `uraiKomponenDomain(urlTeks)` yang menerima string URL utuh dan mengembalikan objek ringkas berisi nama domain bersih (`hostname`), nomor port (`port`), dan skema protokol (`protocol`). Jika port tidak dicantumkan secara eksplisit, tentukan port bawaan (80 untuk `'http:'`, 443 untuk `'https:'`).
+Buat fungsi `parseDomainComponents(rawUrl)` yang menerima string URL utuh dan mengembalikan objek ringkas berisi nama domain bersih (`hostname`), nomor port (`port`), dan skema protokol (`protocol`). Jika port tidak dicantumkan secara eksplisit, tentukan port bawaan (80 untuk `'http:'`, 443 untuk `'https:'`).
 
 Contoh masukan 1:
-
 ```javascript
-uraiKomponenDomain("https://api.contoh.com:8443/v1");
+parseDomainComponents('https://api.example.com:8443/v1');
 ```
 
 Contoh keluaran 1:
-
 ```javascript
 {
-  hostname: 'api.contoh.com',
+  hostname: 'api.example.com',
   port: 8443,
   protocol: 'https:'
 }
 ```
 
 Contoh masukan 2:
-
 ```javascript
-uraiKomponenDomain("https://contoh.com/beranda");
+parseDomainComponents('https://example.com/home');
 ```
 
 Contoh keluaran 2:
-
 ```javascript
 {
-  hostname: 'contoh.com',
+  hostname: 'example.com',
   port: 443,
   protocol: 'https:'
 }
@@ -434,21 +429,19 @@ Batasan: Gunakan kelas `new URL()` bawaan. Nomor port pada objek keluaran wajib 
 
 ### Soal 2 (Menengah)
 
-Buat fungsi `ekstrakFilterPencarian(urlTeks)` yang menerima sebuah string URL lengkap dan mengekstrak parameter kuerinya ke dalam bentuk objek biasa. Jika suatu parameter muncul lebih dari satu kali, simpan seluruh nilainya dalam bentuk larik string; jika hanya muncul satu kali, simpan sebagai string tunggal.
+Buat fungsi `extractSearchParams(rawUrl)` yang menerima sebuah string URL lengkap dan mengekstrak parameter kuerinya ke dalam bentuk objek biasa. Jika suatu parameter muncul lebih dari satu kali, simpan seluruh nilainya dalam bentuk larik string; jika hanya muncul satu kali, simpan sebagai string tunggal.
 
 Contoh masukan:
-
 ```javascript
-ekstrakFilterPencarian("https://toko.com/produk?kategori=elektronik&warna=merah&warna=hitam&halaman=1");
+extractSearchParams('https://shop.example.com/products?category=electronics&color=red&color=black&page=1');
 ```
 
 Contoh keluaran yang diharapkan:
-
 ```javascript
 {
-  kategori: 'elektronik',
-  warna: ['merah', 'hitam'],
-  halaman: '1'
+  category: 'electronics',
+  color: ['red', 'black'],
+  page: '1'
 }
 ```
 
@@ -456,73 +449,67 @@ Batasan: Wajib memanfaatkan properti `url.searchParams`, metode `.getAll()`, dan
 
 ### Soal 3 (Menantang)
 
-Buat fungsi pembangun dan pemvalidasi URL webhook `siapkanWebhookUrl(basisUrl, rute, parameterKueri, daftarDomainDiizinkan)` dengan ketentuan keamanan ketat:
+Buat fungsi pembangun dan pemvalidasi URL webhook `buildWebhookUrl(baseUrl, route, queryParams, allowedDomains)` dengan ketentuan keamanan ketat:
 
-1. Periksa `basisUrl` dan `rute`. Gabungkan keduanya tanpa memicu pemotongan jalur (_slash truncation trap_) dan hasilkan objek instance `URL`.
-2. Validasi apakah `hasilUrl.hostname` terdapat di dalam larik `daftarDomainDiizinkan`. Jika domain tidak terdaftar atau protokol bukan `'https:'`, kembalikan `{ sukses: false, alasan: 'Domain atau protokol webhook tidak diizinkan' }`.
-3. Tambahkan seluruh `parameterKueri` ke dalam `searchParams`. Jika nilai berupa larik, gunakan `.append()`. Jika skalar, gunakan `.set()`. Abaikan nilai yang bernilai `null` atau `undefined`.
+1. Periksa `baseUrl` dan `route`. Gabungkan keduanya tanpa memicu pemotongan jalur (_slash truncation trap_) dan hasilkan objek instance `URL`.
+2. Validasi apakah `resultUrl.hostname` terdapat di dalam larik `allowedDomains`. Jika domain tidak terdaftar atau protokol bukan `'https:'`, kembalikan `{ success: false, reason: 'Domain or protocol not allowed' }`.
+3. Tambahkan seluruh `queryParams` ke dalam `searchParams`. Jika nilai berupa larik, gunakan `.append()`. Jika skalar, gunakan `.set()`. Abaikan nilai yang bernilai `null` atau `undefined`.
 4. Urutkan seluruh parameter secara alfabetis menggunakan `searchParams.sort()`.
-5. Hitung panjang total string URL akhir yang dihasilkan (`href.length`). Jika panjang URL melebihi batas 2048 karakter, batalkan dan kembalikan `{ sukses: false, alasan: 'Panjang URL melebihi batas maksimum 2048 karakter' }`.
-6. Jika seluruh aturan terpenuhi, kembalikan objek `{ sukses: true, urlLengkap: string, parameterJumlah: number }`.
+5. Hitung panjang total string URL akhir yang dihasilkan (`href.length`). Jika panjang URL melebihi batas 2048 karakter, batalkan dan kembalikan `{ success: false, reason: 'URL length exceeds maximum limit of 2048 characters' }`.
+6. Jika seluruh aturan terpenuhi, kembalikan objek `{ success: true, fullUrl: string, paramCount: number }`.
 
 Contoh masukan 1 (Sukses):
-
 ```javascript
-siapkanWebhookUrl(
-  "https://webhook.mitra.com/api/v2",
-  "transaksi",
-  { status: "sukses", tag: ["pembayaran", "otomatis"] },
-  ["webhook.mitra.com"]
+buildWebhookUrl(
+  'https://webhook.partner.com/api/v2',
+  'transactions',
+  { status: 'success', tags: ['payment', 'auto'] },
+  ['webhook.partner.com']
 );
 ```
 
 Contoh keluaran 1:
-
 ```javascript
 {
-  sukses: true,
-  urlLengkap: 'https://webhook.mitra.com/api/v2/transaksi?status=sukses&tag=pembayaran&tag=otomatis',
-  parameterJumlah: 3
+  success: true,
+  fullUrl: 'https://webhook.partner.com/api/v2/transactions?status=success&tags=payment&tags=auto',
+  paramCount: 3
 }
 ```
 
 Contoh masukan 2 (Domain Ditolak):
-
 ```javascript
-siapkanWebhookUrl(
-  "https://webhook.penyusup.com",
-  "data",
+buildWebhookUrl(
+  'https://webhook.attacker.com',
+  'data',
   {},
-  ["webhook.mitra.com"]
+  ['webhook.partner.com']
 );
 ```
 
 Contoh keluaran 2:
-
 ```javascript
 {
-  sukses: false,
-  alasan: 'Domain atau protokol webhook tidak diizinkan'
+  success: false,
+  reason: 'Domain or protocol not allowed'
 }
 ```
 
 Contoh masukan 3 (Protokol Tidak Aman HTTP):
-
 ```javascript
-siapkanWebhookUrl(
-  "http://webhook.mitra.com",
-  "data",
+buildWebhookUrl(
+  'http://webhook.partner.com',
+  'data',
   {},
-  ["webhook.mitra.com"]
+  ['webhook.partner.com']
 );
 ```
 
 Contoh keluaran 3:
-
 ```javascript
 {
-  sukses: false,
-  alasan: 'Domain atau protokol webhook tidak diizinkan'
+  success: false,
+  reason: 'Domain or protocol not allowed'
 }
 ```
 

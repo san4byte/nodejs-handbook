@@ -1,7 +1,6 @@
 # File System
 
 > Ringkasan
->
 > - Fungsi: Mengelola manipulasi berkas dan direktori lokal seperti pembacaan, penulisan, inspeksi metadata, dan penghapusan.
 > - Digunakan saat: Menyimpan berkas unggahan, membaca konfigurasi aplikasi, mencatat log transaksi, atau mengelola direktori penyimpanan.
 > - Aturan praktis: Selalu prioritaskan `node:fs/promises` untuk operasi non-blocking, terapkan pola penulisan atomik untuk data penting, dan gunakan stream untuk berkas besar di atas 50MB.
@@ -52,35 +51,35 @@ flowchart LR
 Metode `fs.readFile()` digunakan untuk membaca seluruh isi berkas ke dalam memori secara asinkron. Jika parameter encoding diberikan (misalnya `'utf-8'`), metode ini mengembalikan string teks.
 
 ```javascript
-import fs from "node:fs/promises";
-import path from "node:path";
-import os from "node:os";
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
 
-const target = path.join(os.tmpdir(), "data-pengguna.txt");
-await fs.writeFile(target, "Nama: Joko Santoso", "utf-8");
+const filePath = path.join(os.tmpdir(), 'user-profile.txt');
+await fs.writeFile(filePath, 'User: Alice Smith', 'utf-8');
 
-const isi = await fs.readFile(target, "utf-8");
-console.log(isi);
-// Output: Nama: Joko Santoso
+const content = await fs.readFile(filePath, 'utf-8');
+console.log(content);
+// Output: User: Alice Smith
 
-await fs.unlink(target);
+await fs.unlink(filePath);
 ```
 
 Kasus lain: Membaca berkas tanpa menentukan encoding menghasilkan representasi biner mentah berupa objek `Buffer`.
 
 ```javascript
-import fs from "node:fs/promises";
-import path from "node:path";
-import os from "node:os";
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
 
-const target = path.join(os.tmpdir(), "biner.txt");
-await fs.writeFile(target, "Node", "utf-8");
+const filePath = path.join(os.tmpdir(), 'binary-data.txt');
+await fs.writeFile(filePath, 'Node', 'utf-8');
 
-const buffer = await fs.readFile(target);
+const buffer = await fs.readFile(filePath);
 console.log(Buffer.isBuffer(buffer), buffer.length);
 // Output: true 4
 
-await fs.unlink(target);
+await fs.unlink(filePath);
 ```
 
 ### `fs.writeFile()`
@@ -88,39 +87,39 @@ await fs.unlink(target);
 Metode `fs.writeFile()` menulis data baru ke sebuah berkas secara asinkron. Jika berkas sudah ada sebelumnya, isi berkas akan langsung ditimpa dan diganti dengan data baru.
 
 ```javascript
-import fs from "node:fs/promises";
-import path from "node:path";
-import os from "node:os";
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
 
-const target = path.join(os.tmpdir(), "konfigurasi.json");
-const data = JSON.stringify({ port: 3000, env: "production" });
+const filePath = path.join(os.tmpdir(), 'app-config.json');
+const payload = JSON.stringify({ port: 3000, env: 'production' });
 
-await fs.writeFile(target, data, "utf-8");
-const isi = await fs.readFile(target, "utf-8");
-console.log(isi);
+await fs.writeFile(filePath, payload, 'utf-8');
+const content = await fs.readFile(filePath, 'utf-8');
+console.log(content);
 // Output: {"port":3000,"env":"production"}
 
-await fs.unlink(target);
+await fs.unlink(filePath);
 ```
 
 Kasus lain: Menggunakan flag eksklusif `'wx'` untuk memastikan penulisan hanya berhasil jika berkas belum ada, dan melempar galat `EEXIST` jika sudah ada.
 
 ```javascript
-import fs from "node:fs/promises";
-import path from "node:path";
-import os from "node:os";
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
 
-const target = path.join(os.tmpdir(), "kunci.lock");
-await fs.writeFile(target, "kunci-1", "utf-8");
+const lockFile = path.join(os.tmpdir(), 'app.lock');
+await fs.writeFile(lockFile, 'lock-1', 'utf-8');
 
 try {
-  await fs.writeFile(target, "kunci-2", { flag: "wx" });
+  await fs.writeFile(lockFile, 'lock-2', { flag: 'wx' });
 } catch (error) {
   console.log(error.code);
   // Output: EEXIST
 }
 
-await fs.unlink(target);
+await fs.unlink(lockFile);
 ```
 
 ### `fs.appendFile()`
@@ -128,37 +127,37 @@ await fs.unlink(target);
 Metode `fs.appendFile()` menambahkan konten data ke baris paling akhir berkas tanpa menghapus isi yang sudah ada. Berkas target akan dibuat secara otomatis jika belum tersedia di disk.
 
 ```javascript
-import fs from "node:fs/promises";
-import path from "node:path";
-import os from "node:os";
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
 
-const target = path.join(os.tmpdir(), "aktivitas.log");
-await fs.writeFile(target, "BARIS 1\n", "utf-8");
-await fs.appendFile(target, "BARIS 2\n", "utf-8");
+const logFile = path.join(os.tmpdir(), 'activity.log');
+await fs.writeFile(logFile, 'LINE 1\n', 'utf-8');
+await fs.appendFile(logFile, 'LINE 2\n', 'utf-8');
 
-const isi = await fs.readFile(target, "utf-8");
-console.log(isi.trim());
-// Output: BARIS 1
-// BARIS 2
+const content = await fs.readFile(logFile, 'utf-8');
+console.log(content.trim());
+// Output: LINE 1
+// LINE 2
 
-await fs.unlink(target);
+await fs.unlink(logFile);
 ```
 
 Kasus lain: Menambahkan catatan log pada berkas yang belum pernah dibuat sebelumnya.
 
 ```javascript
-import fs from "node:fs/promises";
-import path from "node:path";
-import os from "node:os";
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
 
-const target = path.join(os.tmpdir(), "log-baru.log");
-await fs.appendFile(target, "Entri pertama", "utf-8");
+const newLogFile = path.join(os.tmpdir(), 'new-audit.log');
+await fs.appendFile(newLogFile, 'First entry', 'utf-8');
 
-const isi = await fs.readFile(target, "utf-8");
-console.log(isi);
-// Output: Entri pertama
+const content = await fs.readFile(newLogFile, 'utf-8');
+console.log(content);
+// Output: First entry
 
-await fs.unlink(target);
+await fs.unlink(newLogFile);
 ```
 
 ### `fs.mkdir()`
@@ -166,28 +165,28 @@ await fs.unlink(target);
 Metode `fs.mkdir()` membuat direktori baru di dalam sistem penyimpanan. Opsi `{ recursive: true }` memungkinkan pembuatan seluruh jalur direktori bersarang tanpa melempar galat jika direktori sudah ada.
 
 ```javascript
-import fs from "node:fs/promises";
-import path from "node:path";
-import os from "node:os";
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
 
-const targetDir = path.join(os.tmpdir(), "app-cache", "sesi", "token");
+const targetDir = path.join(os.tmpdir(), 'app-cache', 'session', 'tokens');
 await fs.mkdir(targetDir, { recursive: true });
 
-const info = await fs.stat(targetDir);
-console.log(info.isDirectory());
+const stats = await fs.stat(targetDir);
+console.log(stats.isDirectory());
 // Output: true
 
-await fs.rm(path.join(os.tmpdir(), "app-cache"), { recursive: true, force: true });
+await fs.rm(path.join(os.tmpdir(), 'app-cache'), { recursive: true, force: true });
 ```
 
 Kasus lain: Membuat direktori yang sudah ada tanpa opsi `recursive: true` sehingga melempar galat sistem operasi `EEXIST`.
 
 ```javascript
-import fs from "node:fs/promises";
-import path from "node:path";
-import os from "node:os";
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
 
-const targetDir = path.join(os.tmpdir(), "folder-uji");
+const targetDir = path.join(os.tmpdir(), 'test-folder');
 await fs.mkdir(targetDir, { recursive: true });
 
 try {
@@ -205,41 +204,41 @@ await fs.rm(targetDir, { recursive: true, force: true });
 Metode `fs.readdir()` membaca daftar entri yang terdapat di dalam sebuah direktori. Memberikan opsi `{ withFileTypes: true }` mengembalikan array objek `Dirent` untuk mendeteksi jenis entri secara langsung.
 
 ```javascript
-import fs from "node:fs/promises";
-import path from "node:path";
-import os from "node:os";
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
 
-const root = path.join(os.tmpdir(), "tes-readdir");
-await fs.mkdir(root, { recursive: true });
-await fs.writeFile(path.join(root, "dokumen.txt"), "tes", "utf-8");
-await fs.mkdir(path.join(root, "subfolder"), { recursive: true });
+const rootDir = path.join(os.tmpdir(), 'test-readdir');
+await fs.mkdir(rootDir, { recursive: true });
+await fs.writeFile(path.join(rootDir, 'document.txt'), 'test', 'utf-8');
+await fs.mkdir(path.join(rootDir, 'subfolder'), { recursive: true });
 
-const entriList = await fs.readdir(root, { withFileTypes: true });
-for (const entri of entriList) {
-  console.log(`${entri.name}: ${entri.isDirectory() ? "folder" : "berkas"}`);
+const entries = await fs.readdir(rootDir, { withFileTypes: true });
+for (const entry of entries) {
+  console.log(`${entry.name}: ${entry.isDirectory() ? 'directory' : 'file'}`);
 }
-// Output: dokumen.txt: berkas
-// subfolder: folder
+// Output: document.txt: file
+// subfolder: directory
 
-await fs.rm(root, { recursive: true, force: true });
+await fs.rm(rootDir, { recursive: true, force: true });
 ```
 
 Kasus lain: Membaca direktori tanpa opsi `withFileTypes` yang mengembalikan array berisi string nama entri saja.
 
 ```javascript
-import fs from "node:fs/promises";
-import path from "node:path";
-import os from "node:os";
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
 
-const root = path.join(os.tmpdir(), "tes-string");
-await fs.mkdir(root, { recursive: true });
-await fs.writeFile(path.join(root, "a.txt"), "", "utf-8");
+const rootDir = path.join(os.tmpdir(), 'test-string-entries');
+await fs.mkdir(rootDir, { recursive: true });
+await fs.writeFile(path.join(rootDir, 'file-a.txt'), '', 'utf-8');
 
-const namaEntri = await fs.readdir(root);
-console.log(namaEntri);
-// Output: [ 'a.txt' ]
+const entryNames = await fs.readdir(rootDir);
+console.log(entryNames);
+// Output: [ 'file-a.txt' ]
 
-await fs.rm(root, { recursive: true, force: true });
+await fs.rm(rootDir, { recursive: true, force: true });
 ```
 
 ### `fs.stat()`
@@ -247,27 +246,27 @@ await fs.rm(root, { recursive: true, force: true });
 Metode `fs.stat()` mengambil metadata teknis sebuah berkas atau direktori. Objek hasil memuat ukuran dalam byte, waktu pembuatan, waktu modifikasi terakhir, serta fungsi verifikasi tipe.
 
 ```javascript
-import fs from "node:fs/promises";
-import path from "node:path";
-import os from "node:os";
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
 
-const target = path.join(os.tmpdir(), "metadata.txt");
-await fs.writeFile(target, "Hello World", "utf-8");
+const filePath = path.join(os.tmpdir(), 'metadata-sample.txt');
+await fs.writeFile(filePath, 'Hello World', 'utf-8');
 
-const stats = await fs.stat(target);
+const stats = await fs.stat(filePath);
 console.log(stats.isFile(), stats.size);
 // Output: true 11
 
-await fs.unlink(target);
+await fs.unlink(filePath);
 ```
 
-Kasus lain: Menginspeksi path yang tidak ada di sistem berkas sehingga menghasilkan kode galat `ENOENT`.
+Kasus lain: Menginspeksi jalur yang tidak ada di sistem berkas sehingga menghasilkan kode galat `ENOENT`.
 
 ```javascript
-import fs from "node:fs/promises";
+import fs from 'node:fs/promises';
 
 try {
-  await fs.stat("/jalur/fiktif/data.bin");
+  await fs.stat('/path/does/not/exist.bin');
 } catch (error) {
   console.log(error.code);
   // Output: ENOENT
@@ -279,36 +278,36 @@ try {
 Metode `fs.access()` digunakan untuk menguji keberadaan berkas serta hak izin akses proses tanpa perlu membuka berkas secara nyata. Metode ini menerima konstanta mode dari `node:fs.constants`.
 
 ```javascript
-import fs from "node:fs/promises";
-import { constants } from "node:fs";
-import path from "node:path";
-import os from "node:os";
+import fs from 'node:fs/promises';
+import { constants } from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
 
-const target = path.join(os.tmpdir(), "cek-akses.txt");
-await fs.writeFile(target, "konten", "utf-8");
+const filePath = path.join(os.tmpdir(), 'check-access.txt');
+await fs.writeFile(filePath, 'content', 'utf-8');
 
-let bisaDitulis = false;
+let isWritable = false;
 try {
-  await fs.access(target, constants.F_OK | constants.W_OK);
-  bisaDitulis = true;
+  await fs.access(filePath, constants.F_OK | constants.W_OK);
+  isWritable = true;
 } catch {
-  bisaDitulis = false;
+  isWritable = false;
 }
 
-console.log(bisaDitulis);
+console.log(isWritable);
 // Output: true
 
-await fs.unlink(target);
+await fs.unlink(filePath);
 ```
 
 Kasus lain: Menguji izin akses pada berkas yang tidak terdaftar di sistem berkas.
 
 ```javascript
-import fs from "node:fs/promises";
-import { constants } from "node:fs";
+import fs from 'node:fs/promises';
+import { constants } from 'node:fs';
 
 try {
-  await fs.access("/berkas/tidak/ada.txt", constants.F_OK);
+  await fs.access('/path/does/not/exist.txt', constants.F_OK);
 } catch (error) {
   console.log(error.code);
   // Output: ENOENT
@@ -320,47 +319,47 @@ try {
 Metode `fs.copyFile()` menyalin satu berkas tunggal dari jalur sumber ke jalur tujuan secara asinkron. Isi berkas tujuan akan langsung ditimpa jika sudah ada di disk.
 
 ```javascript
-import fs from "node:fs/promises";
-import path from "node:path";
-import os from "node:os";
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
 
-const sumber = path.join(os.tmpdir(), "asli.txt");
-const tujuan = path.join(os.tmpdir(), "salinan.txt");
+const sourcePath = path.join(os.tmpdir(), 'source-file.txt');
+const destinationPath = path.join(os.tmpdir(), 'target-file.txt');
 
-await fs.writeFile(sumber, "Data Asli", "utf-8");
-await fs.copyFile(sumber, tujuan);
+await fs.writeFile(sourcePath, 'Original Data', 'utf-8');
+await fs.copyFile(sourcePath, destinationPath);
 
-const isi = await fs.readFile(tujuan, "utf-8");
-console.log(isi);
-// Output: Data Asli
+const content = await fs.readFile(destinationPath, 'utf-8');
+console.log(content);
+// Output: Original Data
 
-await fs.unlink(sumber);
-await fs.unlink(tujuan);
+await fs.unlink(sourcePath);
+await fs.unlink(destinationPath);
 ```
 
 Kasus lain: Mencegah penimpaan berkas tujuan dengan menyertakan flag `constants.COPYFILE_EXCL`.
 
 ```javascript
-import fs from "node:fs/promises";
-import { constants } from "node:fs";
-import path from "node:path";
-import os from "node:os";
+import fs from 'node:fs/promises';
+import { constants } from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
 
-const sumber = path.join(os.tmpdir(), "sumber.txt");
-const tujuan = path.join(os.tmpdir(), "tujuan.txt");
+const sourcePath = path.join(os.tmpdir(), 'source.txt');
+const destinationPath = path.join(os.tmpdir(), 'destination.txt');
 
-await fs.writeFile(sumber, "A", "utf-8");
-await fs.writeFile(tujuan, "B", "utf-8");
+await fs.writeFile(sourcePath, 'A', 'utf-8');
+await fs.writeFile(destinationPath, 'B', 'utf-8');
 
 try {
-  await fs.copyFile(sumber, tujuan, constants.COPYFILE_EXCL);
+  await fs.copyFile(sourcePath, destinationPath, constants.COPYFILE_EXCL);
 } catch (error) {
   console.log(error.code);
   // Output: EEXIST
 }
 
-await fs.unlink(sumber);
-await fs.unlink(tujuan);
+await fs.unlink(sourcePath);
+await fs.unlink(destinationPath);
 ```
 
 ### `fs.rename()`
@@ -368,30 +367,30 @@ await fs.unlink(tujuan);
 Metode `fs.rename()` memindahkan atau mengganti nama berkas/direktori. Di tingkat sistem operasi, operasi pemindahan dalam sistem berkas yang sama bersifat atomik.
 
 ```javascript
-import fs from "node:fs/promises";
-import path from "node:path";
-import os from "node:os";
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
 
-const jalurAwal = path.join(os.tmpdir(), "draf.tmp");
-const jalurAkhir = path.join(os.tmpdir(), "laporan.txt");
+const tempPath = path.join(os.tmpdir(), 'draft.tmp');
+const targetPath = path.join(os.tmpdir(), 'report.txt');
 
-await fs.writeFile(jalurAwal, "Laporan Selesai", "utf-8");
-await fs.rename(jalurAwal, jalurAkhir);
+await fs.writeFile(tempPath, 'Final Report', 'utf-8');
+await fs.rename(tempPath, targetPath);
 
-const isi = await fs.readFile(jalurAkhir, "utf-8");
-console.log(isi);
-// Output: Laporan Selesai
+const content = await fs.readFile(targetPath, 'utf-8');
+console.log(content);
+// Output: Final Report
 
-await fs.unlink(jalurAkhir);
+await fs.unlink(targetPath);
 ```
 
 Kasus lain: Mengganti nama berkas asal yang tidak ditemukan sehingga melempar galat `ENOENT`.
 
 ```javascript
-import fs from "node:fs/promises";
+import fs from 'node:fs/promises';
 
 try {
-  await fs.rename("/asal/kosong.tmp", "/tujuan/laporan.txt");
+  await fs.rename('/source/nonexistent.tmp', '/target/report.txt');
 } catch (error) {
   console.log(error.code);
   // Output: ENOENT
@@ -403,39 +402,39 @@ try {
 Metode `fs.unlink()` digunakan untuk menghapus satu berkas reguler dari sistem penyimpanan. Metode ini akan gagal dan melempar galat jika diterapkan pada sebuah direktori.
 
 ```javascript
-import fs from "node:fs/promises";
-import path from "node:path";
-import os from "node:os";
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
 
-const target = path.join(os.tmpdir(), "hapus-saya.txt");
-await fs.writeFile(target, "sementara", "utf-8");
+const targetPath = path.join(os.tmpdir(), 'remove-me.txt');
+await fs.writeFile(targetPath, 'temporary', 'utf-8');
 
-await fs.unlink(target);
+await fs.unlink(targetPath);
 
-let berkasAda = true;
+let fileExists = true;
 try {
-  await fs.stat(target);
+  await fs.stat(targetPath);
 } catch {
-  berkasAda = false;
+  fileExists = false;
 }
-console.log(berkasAda);
+console.log(fileExists);
 // Output: false
 ```
 
 Kasus lain: Menjalankan `fs.unlink()` pada direktori memicu kode galat sistem operasi `EISDIR` atau `EPERM`.
 
 ```javascript
-import fs from "node:fs/promises";
-import path from "node:path";
-import os from "node:os";
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
 
-const targetDir = path.join(os.tmpdir(), "folder-unlink");
+const targetDir = path.join(os.tmpdir(), 'unlink-folder');
 await fs.mkdir(targetDir, { recursive: true });
 
 try {
   await fs.unlink(targetDir);
 } catch (error) {
-  console.log(["EISDIR", "EPERM"].includes(error.code));
+  console.log(['EISDIR', 'EPERM'].includes(error.code));
   // Output: true
 }
 
@@ -447,37 +446,37 @@ await fs.rm(targetDir, { recursive: true, force: true });
 Metode `fs.rm()` menghapus berkas atau direktori secara rekursif dan aman. Metode ini menjadi pengganti modern untuk `rmdir` guna menghapus folder beserta seluruh isinya.
 
 ```javascript
-import fs from "node:fs/promises";
-import path from "node:path";
-import os from "node:os";
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
 
-const targetDir = path.join(os.tmpdir(), "folder-bersarang", "anak");
-await fs.mkdir(targetDir, { recursive: true });
-await fs.writeFile(path.join(targetDir, "file.txt"), "data", "utf-8");
+const nestedDir = path.join(os.tmpdir(), 'nested-folder', 'child');
+await fs.mkdir(nestedDir, { recursive: true });
+await fs.writeFile(path.join(nestedDir, 'data.txt'), 'hello', 'utf-8');
 
-await fs.rm(path.join(os.tmpdir(), "folder-bersarang"), {
+await fs.rm(path.join(os.tmpdir(), 'nested-folder'), {
   recursive: true,
   force: true,
 });
 
-let folderAda = true;
+let dirExists = true;
 try {
-  await fs.stat(path.join(os.tmpdir(), "folder-bersarang"));
+  await fs.stat(path.join(os.tmpdir(), 'nested-folder'));
 } catch {
-  folderAda = false;
+  dirExists = false;
 }
-console.log(folderAda);
+console.log(dirExists);
 // Output: false
 ```
 
 Kasus lain: Menggunakan opsi `force: true` saat menghapus target yang tidak ada tidak akan memicu galat.
 
 ```javascript
-import fs from "node:fs/promises";
+import fs from 'node:fs/promises';
 
-await fs.rm("/path/pasti/tidak/ada/12345", { force: true, recursive: true });
-console.log("Penghapusan aman selesai");
-// Output: Penghapusan aman selesai
+await fs.rm('/path/definitely/does/not/exist/99999', { force: true, recursive: true });
+console.log('Safe deletion complete');
+// Output: Safe deletion complete
 ```
 
 ### Perbandingan: Tiga Generasi API File System
@@ -509,17 +508,17 @@ Mengabaikan opsi encoding saat memanggil `readFile` mengembalikan instance `Buff
 
 ```javascript
 // Salah
-import fs from "node:fs/promises";
+import fs from 'node:fs/promises';
 
-const raw = await fs.readFile("konfigurasi.json");
+const raw = await fs.readFile('config.json');
 console.log(typeof raw); // Objek Buffer
 ```
 
 ```javascript
 // Benar
-import fs from "node:fs/promises";
+import fs from 'node:fs/promises';
 
-const raw = await fs.readFile("konfigurasi.json", "utf-8");
+const raw = await fs.readFile('config.json', 'utf-8');
 const data = JSON.parse(raw);
 ```
 
@@ -529,11 +528,11 @@ Pengecekan keberadaan berkas sebelum pembacaan membuka celah perubahan status be
 
 ```javascript
 // Salah
-import fs from "node:fs/promises";
+import fs from 'node:fs/promises';
 
 try {
-  await fs.access("data.json");
-  const isi = await fs.readFile("data.json", "utf-8");
+  await fs.access('data.json');
+  const content = await fs.readFile('data.json', 'utf-8');
 } catch {
   // Rentan terhadap race condition jika berkas dihapus sebelum readFile
 }
@@ -541,12 +540,12 @@ try {
 
 ```javascript
 // Benar
-import fs from "node:fs/promises";
+import fs from 'node:fs/promises';
 
 try {
-  const isi = await fs.readFile("data.json", "utf-8");
+  const content = await fs.readFile('data.json', 'utf-8');
 } catch (error) {
-  if (error.code === "ENOENT") {
+  if (error.code === 'ENOENT') {
     // Tangani kondisi berkas belum tersedia secara langsung
   }
 }
@@ -558,21 +557,21 @@ Pemanggilan fungsi berakhiran `Sync` di dalam rute penanganan permintaan menghen
 
 ```javascript
 // Salah
-import fs from "node:fs";
+import fs from 'node:fs';
 
 function handleRequest() {
-  const konten = fs.readFileSync("laporan.pdf");
-  return konten;
+  const content = fs.readFileSync('report.pdf');
+  return content;
 }
 ```
 
 ```javascript
 // Benar
-import fs from "node:fs/promises";
+import fs from 'node:fs/promises';
 
 async function handleRequest() {
-  const konten = await fs.readFile("laporan.pdf");
-  return konten;
+  const content = await fs.readFile('report.pdf');
+  return content;
 }
 ```
 
@@ -583,9 +582,9 @@ async function handleRequest() {
 Skenario: Membangun manajer konfigurasi aplikasi dengan dukungan fallback default dan penulisan atomik aman (_atomic write_) untuk mencegah kerusakan berkas saat aplikasi terhenti mendadak.
 
 ```javascript
-import fs from "node:fs/promises";
-import path from "node:path";
-import os from "node:os";
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
 
 class ConfigManager {
   constructor(filePath, defaultConfig = {}) {
@@ -595,10 +594,10 @@ class ConfigManager {
 
   async read() {
     try {
-      const raw = await fs.readFile(this.filePath, "utf-8");
+      const raw = await fs.readFile(this.filePath, 'utf-8');
       return JSON.parse(raw);
     } catch (error) {
-      if (error.code === "ENOENT") {
+      if (error.code === 'ENOENT') {
         return { ...this.defaultConfig };
       }
       throw error;
@@ -612,23 +611,23 @@ class ConfigManager {
     const tempPath = `${this.filePath}.${Date.now()}-${Math.random().toString(36).slice(2)}.tmp`;
     const serialized = JSON.stringify(data, null, 2);
 
-    await fs.writeFile(tempPath, serialized, "utf-8");
+    await fs.writeFile(tempPath, serialized, 'utf-8');
     await fs.rename(tempPath, this.filePath);
   }
 }
 
-const configDir = path.join(os.tmpdir(), "app-config-" + Date.now());
-const targetPath = path.join(configDir, "settings.json");
-const manager = new ConfigManager(targetPath, { tema: "gelap", port: 8080 });
+const configDir = path.join(os.tmpdir(), 'app-config-' + Date.now());
+const targetPath = path.join(configDir, 'settings.json');
+const manager = new ConfigManager(targetPath, { theme: 'dark', port: 8080 });
 
-const configAwal = await manager.read();
-console.log(configAwal);
-// Output: { tema: 'gelap', port: 8080 }
+const initialConfig = await manager.read();
+console.log(initialConfig);
+// Output: { theme: 'dark', port: 8080 }
 
-await manager.writeSafe({ tema: "terang", port: 3000 });
-const configBaru = await manager.read();
-console.log(configBaru);
-// Output: { tema: 'terang', port: 3000 }
+await manager.writeSafe({ theme: 'light', port: 3000 });
+const updatedConfig = await manager.read();
+console.log(updatedConfig);
+// Output: { theme: 'light', port: 3000 }
 
 await fs.rm(configDir, { recursive: true, force: true });
 ```
@@ -641,12 +640,12 @@ Desain ini menggunakan kombinasi `fs.writeFile` ke berkas sementara dan `fs.rena
 
 ### Soal 1 (Dasar)
 
-Buat fungsi `pastikanDirektori(jalurFolder)` yang memanfaatkan `fs.mkdir` untuk memastikan sebuah direktori dan seluruh subfolder bersarangnya telah tersedia di disk, lalu mengembalikan nilai boolean `true`.
+Buat fungsi `ensureDirectory(dirPath)` yang memanfaatkan `fs.mkdir` untuk memastikan sebuah direktori dan seluruh subfolder bersarangnya telah tersedia di disk, lalu mengembalikan nilai boolean `true`.
 
 Contoh masukan:
 
 ```javascript
-await pastikanDirektori("penyimpanan/laporan/2026");
+await ensureDirectory('storage/reports/2026');
 ```
 
 Contoh keluaran yang diharapkan:
@@ -659,21 +658,21 @@ Batasan: Wajib menggunakan `node:fs/promises` dengan opsi rekursif tanpa memicu 
 
 ### Soal 2 (Menengah)
 
-Buat fungsi `hitungStatistikDirektori(jalurFolder)` yang memindai isi satu tingkat direktori menggunakan `fs.readdir` dengan opsi `withFileTypes: true`. Fungsi ini wajib mengembalikan objek yang merangkum jumlah berkas reguler (`totalBerkas`), jumlah subfolder (`totalFolder`), dan total akumulasi ukuran seluruh berkas reguler dalam satuan byte (`totalUkuranByte`) menggunakan `fs.stat`.
+Buat fungsi `getDirectoryStats(dirPath)` yang memindai isi satu tingkat direktori menggunakan `fs.readdir` dengan opsi `withFileTypes: true`. Fungsi ini wajib mengembalikan objek yang merangkum jumlah berkas reguler (`totalFiles`), jumlah subfolder (`totalDirectories`), dan total akumulasi ukuran seluruh berkas reguler dalam satuan byte (`totalSizeBytes`) menggunakan `fs.stat`.
 
 Contoh masukan (pada folder dengan 2 berkas berukuran total 150 byte dan 1 subfolder):
 
 ```javascript
-await hitungStatistikDirektori("data/dokumen");
+await getDirectoryStats('data/documents');
 ```
 
 Contoh keluaran yang diharapkan:
 
 ```javascript
 {
-  totalBerkas: 2,
-  totalFolder: 1,
-  totalUkuranByte: 150
+  totalFiles: 2,
+  totalDirectories: 1,
+  totalSizeBytes: 150
 }
 ```
 
@@ -681,26 +680,26 @@ Batasan: Hanya menghitung entri pada tingkat pertama (tanpa rekursi), serta lemp
 
 ### Soal 3 (Menantang)
 
-Buat fungsi pembersih berkas kedaluwarsa `bersihkanArsipKadaluarsa(jalurFolder, batasUsiaDetik)`. Fungsi ini wajib menelusuri isi direktori tanpa dependensi eksternal, mengabaikan entri subdirektori, mengevaluasi properti `mtimeMs` berkas reguler via `fs.stat`, lalu menghapus berkas yang usianya melebihi batas waktu menggunakan `fs.unlink`.
+Buat fungsi pembersih berkas kedaluwarsa `cleanExpiredArchives(dirPath, maxAgeSeconds)`. Fungsi ini wajib menelusuri isi direktori tanpa dependensi eksternal, mengabaikan entri subdirektori, mengevaluasi properti `mtimeMs` berkas reguler via `fs.stat`, lalu menghapus berkas yang usianya melebihi batas waktu menggunakan `fs.unlink`.
 
 Ketentuan penanganan kasus tepi:
-- Jika direktori target tidak ditemukan (`ENOENT`), fungsi tidak boleh crash dan harus mengembalikan `{ status: 'gagal', alasan: 'Direktori tidak ditemukan', dihapus: 0, daftarBerkas: [] }`.
+- Jika direktori target tidak ditemukan (`ENOENT`), fungsi tidak boleh crash dan harus mengembalikan `{ success: false, reason: 'Directory not found', deletedCount: 0, deletedFiles: [] }`.
 - Entri berupa subdirektori harus dilewati tanpa dihapus atau memicu galat.
 - Kembalikan daftar nama berkas yang berhasil dihapus beserta jumlah totalnya saat pembersihan berhasil.
 
 Contoh masukan:
 
 ```javascript
-await bersihkanArsipKadaluarsa("var/log/arsip", 86400);
+await cleanExpiredArchives('var/log/archives', 86400);
 ```
 
 Contoh keluaran yang diharapkan:
 
 ```javascript
 {
-  status: 'selesai',
-  dihapus: 2,
-  daftarBerkas: [ 'audit-lama.log', 'sesi-kadaluarsa.tmp' ]
+  success: true,
+  deletedCount: 2,
+  deletedFiles: [ 'audit-old.log', 'session-expired.tmp' ]
 }
 ```
 

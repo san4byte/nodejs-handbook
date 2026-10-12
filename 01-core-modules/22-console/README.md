@@ -1,7 +1,6 @@
 # Console
 
 > Ringkasan
->
 > - Fungsi: Menyediakan fasilitas pencetakan diagnostik sistem, inspeksi tabular, pengukuran durasi waktu, serta pembuatan instans logger kustom ke Writable Stream.
 > - Digunakan saat: Menampilkan informasi status eksekusi di terminal, mengukur latensi algoritma, atau mengalirkan berkas log terisolasi ke sistem penyimpanan tanpa pustaka pihak ketiga.
 > - Aturan praktis: Buat instans `new Console({ stdout, stderr })` untuk mengarahkan luaran log ke berkas disk, dan hindari pemanggilan `console.log` secara berlebihan di alur aplikasi berbeban tinggi karena penulisan terminal dapat memblokir proses secara sinkron.
@@ -52,14 +51,14 @@ flowchart TD
 Metode `console.log()` mencetak string atau representasi objek ke aliran `process.stdout` yang diakhiri dengan karakter baris baru. Metode ini mendukung substitusi penentu format (_specifier_).
 
 ```javascript
-console.log("Pesan sistem: %s (kode %d)", "Siap", 200);
-// Output: Pesan sistem: Siap (kode 200)
+console.log('System message: %s (code %d)', 'Ready', 200);
+// Output: System message: Ready (code 200)
 ```
 
 Kasus lain: Melewatkan beberapa argumen tanpa penentu format akan mencetak seluruh nilai yang dipisahkan oleh satu spasi.
 
 ```javascript
-console.log("Status", true, [1, 2]);
+console.log('Status', true, [1, 2]);
 // Output: Status true [ 1, 2 ]
 ```
 
@@ -68,16 +67,16 @@ console.log("Status", true, [1, 2]);
 Metode `console.error()` mencetak pesan langsung ke aliran `process.stderr`. Pemisahan ini memungkinkan terminal atau sistem operasi membelokkan luaran galat ke berkas terpisah via operator pengalihan (`2>`).
 
 ```javascript
-console.error("Gagal menghubungkan ke gateway pembayaran");
-// Output: Gagal menghubungkan ke gateway pembayaran
+console.error('Failed to connect to payment gateway');
+// Output: Failed to connect to payment gateway
 ```
 
 Kasus lain: Melewatkan objek galat `Error` ke dalam `console.error` akan mencetak pesan galat beserta seluruh jejak tumpukan stack trace ke `stderr`.
 
 ```javascript
-const galat = new Error("Sesi kadaluarsa");
-console.error(galat.message);
-// Output: Sesi kadaluarsa
+const error = new Error('Session expired');
+console.error(error.message);
+// Output: Session expired
 ```
 
 ### `warn()`
@@ -85,15 +84,15 @@ console.error(galat.message);
 Metode `console.warn()` digunakan untuk mencatat peringatan penting yang belum bersifat fatal. Pada Node.js, metode ini mengalirkan datanya ke `process.stderr` persis seperti `console.error()`.
 
 ```javascript
-console.warn("Kapasitas memori tersisa 10%");
-// Output: Kapasitas memori tersisa 10%
+console.warn('Memory remaining: 10%');
+// Output: Memory remaining: 10%
 ```
 
 Kasus lain: Menyematkan objek konteks peringatan untuk memberikan rincian peringatan sistem.
 
 ```javascript
-console.warn("Pemberitahuan:", { aksi: "degradasi layanan", level: "waspada" });
-// Output: Pemberitahuan: { aksi: 'degradasi layanan', level: 'waspada' }
+console.warn('Notice:', { action: 'service degradation', level: 'warning' });
+// Output: Notice: { action: 'service degradation', level: 'warning' }
 ```
 
 ### `table()`
@@ -101,29 +100,29 @@ console.warn("Pemberitahuan:", { aksi: "degradasi layanan", level: "waspada" });
 Metode `console.table()` memformat array of object atau objek pasangan kunci-nilai menjadi representasi visual tabel dua dimensi yang rapi dan mudah dibaca manusia.
 
 ```javascript
-const daftarPengguna = [
-  { id: 1, nama: "Budi", peran: "Admin" },
-  { id: 2, nama: "Santoso", peran: "Editor" },
+const userList = [
+  { id: 1, name: 'Alice', role: 'Admin' },
+  { id: 2, name: 'Bob', role: 'Editor' },
 ];
 
-console.table(daftarPengguna, ["id", "nama"]);
+console.table(userList, ['id', 'name']);
 ```
 
 Output:
 
 ```text
-┌─────────┬────┬───────────┐
-│ (index) │ id │   nama    │
-├─────────┼────┼───────────┤
-│    0    │ 1  │  'Budi'   │
-│    1    │ 2  │ 'Santoso' │
-└─────────┴────┴───────────┘
+┌─────────┬────┬─────────┐
+│ (index) │ id │  name   │
+├─────────┼────┼─────────┤
+│    0    │ 1  │ 'Alice' │
+│    1    │ 2  │  'Bob'  │
+└─────────┴────┴─────────┘
 ```
 
 Kasus lain: Menampilkan objek primitif tunggal akan merender indeks properti beserta nilainya.
 
 ```javascript
-console.table({ nama: "Server-01", status: "Aktif" });
+console.table({ name: 'Server-01', status: 'Active' });
 ```
 
 ### `time()` dan `timeEnd()`
@@ -131,22 +130,22 @@ console.table({ nama: "Server-01", status: "Aktif" });
 Metode `console.time()` memulai pewaktu internal dengan label tertentu, dan `console.timeEnd()` menghentikan pewaktu tersebut sembari mencetak durasi waktu yang berlalu dalam milidetik ke `stdout`.
 
 ```javascript
-console.time("ProsesMatematika");
+console.time('MathBenchmark');
 
-let total = 0;
+let sum = 0;
 for (let i = 0; i < 1000; i++) {
-  total += i;
+  sum += i;
 }
 
-console.timeEnd("ProsesMatematika");
-// Output: ProsesMatematika: 0.05ms (durasi bervariasi)
+console.timeEnd('MathBenchmark');
+// Output: MathBenchmark: 0.116ms (durasi bervariasi)
 ```
 
 Kasus lain: Memanggil `timeEnd()` dengan nama label yang belum pernah didaftarkan pada `time()` akan mencetak peringatan bahwa timer tidak ditemukan.
 
 ```javascript
-console.timeEnd("LabelTidakAda");
-// Output: Warning: No such label 'LabelTidakAda' for console.timeEnd()
+console.timeEnd('NonExistentTimer');
+// Output: Warning: No such label 'NonExistentTimer' for console.timeEnd()
 ```
 
 ### `assert()`
@@ -154,31 +153,31 @@ console.timeEnd("LabelTidakAda");
 Metode `console.assert()` mengevaluasi kondisi kebenaran (_truthiness_). Jika kondisi bernilai false, pesan galat dicetak ke `stderr`. Berbeda dengan modul `node:assert`, metode ini tidak melempar galat dan tidak menghentikan proses.
 
 ```javascript
-import { Console } from "node:console";
-import { PassThrough } from "node:stream";
+import { Console } from 'node:console';
+import { PassThrough } from 'node:stream';
 
-const streamGalat = new PassThrough();
-let penampung = "";
-streamGalat.on("data", (chunk) => {
-  penampung += chunk.toString("utf-8");
+const errorStream = new PassThrough();
+let capturedOutput = '';
+errorStream.on('data', (chunk) => {
+  capturedOutput += chunk.toString('utf-8');
 });
 
-const logger = new Console({ stdout: new PassThrough(), stderr: streamGalat });
-logger.assert(10 > 20, "Angka 10 seharusnya tidak lebih besar dari 20");
+const logger = new Console({ stdout: new PassThrough(), stderr: errorStream });
+logger.assert(10 > 20, 'Number 10 should not be greater than 20');
 
-console.log(penampung.includes("Assertion failed"));
+console.log(capturedOutput.includes('Assertion failed'));
 // Output: true
 ```
 
 Kasus lain: Jika kondisi evaluasi bernilai true, `console.assert()` tidak melakukan tindakan apa pun dan tidak menghasilkan output.
 
 ```javascript
-import { Console } from "node:console";
-import { PassThrough } from "node:stream";
+import { Console } from 'node:console';
+import { PassThrough } from 'node:stream';
 
-const streamGalat = new PassThrough();
-const logger = new Console({ stdout: new PassThrough(), stderr: streamGalat });
-logger.assert(true, "Pesan ini tidak akan tercetak");
+const errorStream = new PassThrough();
+const logger = new Console({ stdout: new PassThrough(), stderr: errorStream });
+logger.assert(true, 'This message will not be printed');
 ```
 
 ### `count()` dan `countReset()`
@@ -186,13 +185,13 @@ logger.assert(true, "Pesan ini tidak akan tercetak");
 Metode `console.count()` mencatat dan menampilkan berapa kali suatu label telah dipanggil. Metode `console.countReset()` mengembalikan hitungan label tersebut kembali ke angka nol.
 
 ```javascript
-console.count("koneksi");
-// Output: koneksi: 1
-console.count("koneksi");
-// Output: koneksi: 2
-console.countReset("koneksi");
-console.count("koneksi");
-// Output: koneksi: 1
+console.count('connection');
+// Output: connection: 1
+console.count('connection');
+// Output: connection: 2
+console.countReset('connection');
+console.count('connection');
+// Output: connection: 1
 ```
 
 Kasus lain: Memanggil `count()` tanpa argumen label akan menggunakan label bawaan berlabel `'default'`.
@@ -205,26 +204,26 @@ console.countReset();
 
 ### `trace()`
 
-Metode `console.trace()` mencetak pesan diagnostik yang disertai dengan tumpukan tumpukan panggilan fungsi (_stack trace_) saat ini ke `process.stderr`. Metode ini berguna untuk mengetahui alur bagaimana suatu fungsi dipanggil.
+Metode `console.trace()` mencetak pesan diagnostik yang disertai dengan tumpukan panggilan fungsi (_stack trace_) saat ini ke `process.stderr`. Metode ini berguna untuk mengetahui alur bagaimana suatu fungsi dipanggil.
 
 ```javascript
-function fungsiDalam() {
-  console.trace("Jejak eksekusi");
+function innerFunction() {
+  console.trace('Execution trace');
 }
 
-function fungsiLuar() {
-  fungsiDalam();
+function outerFunction() {
+  innerFunction();
 }
 
-fungsiLuar();
+outerFunction();
 ```
 
 Output:
 
 ```text
-Trace: Jejak eksekusi
-    at fungsiDalam (file:///app/index.js:2:11)
-    at fungsiLuar (file:///app/index.js:6:3)
+Trace: Execution trace
+    at innerFunction (file:///app/index.js:2:11)
+    at outerFunction (file:///app/index.js:6:3)
 ```
 
 Kasus lain: Memanggil `trace()` tanpa argumen pesan hanya akan mencetak header `Trace:` diikuti susunan tumpukan fungsi.
@@ -238,34 +237,34 @@ console.trace();
 Kelas `Console` dari modul bawaan `node:console` memungkinkan pembuatan instans logger terisolasi yang mengalirkan pesan ke stream luaran kustom (seperti berkas disk atau soket jaringan) alih-alih terminal global.
 
 ```javascript
-import { Console } from "node:console";
-import { PassThrough } from "node:stream";
+import { Console } from 'node:console';
+import { PassThrough } from 'node:stream';
 
-const streamOut = new PassThrough();
-const logger = new Console({ stdout: streamOut });
+const outputStream = new PassThrough();
+const logger = new Console({ stdout: outputStream });
 
-let hasil = "";
-streamOut.on("data", (chunk) => {
-  hasil += chunk.toString("utf-8");
+let result = '';
+outputStream.on('data', (chunk) => {
+  result += chunk.toString('utf-8');
 });
 
-logger.log("Catatan penting ke stream kustom");
-console.log(hasil.trim());
-// Output: Catatan penting ke stream kustom
+logger.log('Important message to custom stream');
+console.log(result.trim());
+// Output: Important message to custom stream
 ```
 
 Kasus lain: Mengaktifkan opsi `ignoreErrors: true` agar kegagalan penulisan pada stream target tidak melempar galat runtime ke aplikasi utama.
 
 ```javascript
-import { Console } from "node:console";
-import { PassThrough } from "node:stream";
+import { Console } from 'node:console';
+import { PassThrough } from 'node:stream';
 
-const loggerAman = new Console({
+const safeLogger = new Console({
   stdout: new PassThrough(),
   ignoreErrors: true,
 });
 
-console.log(typeof loggerAman.log);
+console.log(typeof safeLogger.log);
 // Output: function
 ```
 
@@ -288,17 +287,17 @@ Banyak pengembang mengira `console.assert()` melempar galat seperti fungsi `asse
 
 ```javascript
 // Salah
-console.assert(tokenValid, "Token tidak valid!");
-// Jika tokenValid bernilai false, kode di bawah ini TETAP BERJALAN!
-eksekusiTransaksiSensitif();
+console.assert(isValidToken, 'Token is invalid!');
+// Jika isValidToken bernilai false, kode di bawah ini TETAP BERJALAN!
+executeSensitiveTransaction();
 ```
 
 ```javascript
 // Benar
-if (!tokenValid) {
-  throw new Error("Token tidak valid!");
+if (!isValidToken) {
+  throw new Error('Token is invalid!');
 }
-eksekusiTransaksiSensitif();
+executeSensitiveTransaction();
 ```
 
 ### Membanjiri Alur Kritis Permintaan dengan `console.log` Sinkron
@@ -307,18 +306,18 @@ Pemanggilan `console.log()` dalam jumlah ribuan per detik pada aplikasi server d
 
 ```javascript
 // Salah
-function prosesTiapItem(daftarBesar) {
-  for (const item of daftarBesar) {
-    console.log("Memproses item:", item.id); // Menghambat pemrosesan jutaan data
+function processItems(largeList) {
+  for (const item of largeList) {
+    console.log('Processing item:', item.id); // Menghambat pemrosesan ribuan data
   }
 }
 ```
 
 ```javascript
 // Benar
-function prosesTiapItem(daftarBesar) {
+function processItems(largeList) {
   // Gunakan pencatatan agregat berkala atau level debug kondisional
-  console.log("Total item yang akan diproses:", daftarBesar.length);
+  console.log('Total items to process:', largeList.length);
 }
 ```
 
@@ -328,24 +327,24 @@ Ketika membuat instans `new Console()` yang dikaitkan dengan stream berkas disk 
 
 ```javascript
 // Salah
-import { Console } from "node:console";
-import fs from "node:fs";
+import { Console } from 'node:console';
+import fs from 'node:fs';
 
-const berkas = fs.createWriteStream("audit.log");
-const logger = new Console({ stdout: berkas });
-logger.log("Sistem berhenti");
+const logFile = fs.createWriteStream('audit.log');
+const logger = new Console({ stdout: logFile });
+logger.log('System shutdown');
 // Berkas stream tidak ditutup, buffer berisiko hilang saat proses berhenti mendadak
 ```
 
 ```javascript
 // Benar
-import { Console } from "node:console";
-import fs from "node:fs";
+import { Console } from 'node:console';
+import fs from 'node:fs';
 
-const berkas = fs.createWriteStream("audit.log");
-const logger = new Console({ stdout: berkas });
-logger.log("Sistem berhenti");
-berkas.end(); // Menjamin seluruh buffer dialirkan tuntas ke media disk
+const logFile = fs.createWriteStream('audit.log');
+const logger = new Console({ stdout: logFile });
+logger.log('System shutdown');
+logFile.end(); // Menjamin seluruh buffer dialirkan tuntas ke media disk
 ```
 
 ---
@@ -355,57 +354,57 @@ berkas.end(); // Menjamin seluruh buffer dialirkan tuntas ke media disk
 Skenario: Membangun sistem logger aplikasi terstruktur mandiri (_zero-dependency structured application logger_) yang memisahkan luaran informasi umum dan luaran galat ke stream terpisah, menyediakan pencatatan tabel metrik performa, mengukur durasi tugas dengan timer bawaan, dan menjamin isolasi log tanpa mencemari terminal global.
 
 ```javascript
-import { Console } from "node:console";
-import { PassThrough } from "node:stream";
+import { Console } from 'node:console';
+import { PassThrough } from 'node:stream';
 
-class LoggerTerstruktur {
-  #streamInfo;
-  #streamGalat;
+class StructuredLogger {
+  #infoStream;
+  #errorStream;
   #logger;
 
   constructor() {
-    this.#streamInfo = new PassThrough();
-    this.#streamGalat = new PassThrough();
+    this.#infoStream = new PassThrough();
+    this.#errorStream = new PassThrough();
 
     this.#logger = new Console({
-      stdout: this.#streamInfo,
-      stderr: this.#streamGalat,
+      stdout: this.#infoStream,
+      stderr: this.#errorStream,
       colorMode: false,
     });
   }
 
-  info(pesan, metadata = {}) {
-    this.#logger.log("[INFO] %s %j", pesan, metadata);
+  info(message, metadata = {}) {
+    this.#logger.log('[INFO] %s %j', message, metadata);
   }
 
-  galat(pesan, detailError = {}) {
-    this.#logger.error("[ERROR] %s %j", pesan, detailError);
+  error(message, errorDetail = {}) {
+    this.#logger.error('[ERROR] %s %j', message, errorDetail);
   }
 
-  tabel(data) {
+  table(data) {
     this.#logger.table(data);
   }
 
-  ambilLogInfo() {
-    return this.#streamInfo.read()?.toString("utf-8") || "";
+  getInfoLogs() {
+    return this.#infoStream.read()?.toString('utf-8') || '';
   }
 
-  ambilLogGalat() {
-    return this.#streamGalat.read()?.toString("utf-8") || "";
+  getErrorLogs() {
+    return this.#errorStream.read()?.toString('utf-8') || '';
   }
 }
 
-const sistemLog = new LoggerTerstruktur();
+const appLogger = new StructuredLogger();
 
-sistemLog.info("Layanan autentikasi diinisialisasi", { port: 3000 });
-sistemLog.galat("Gagal memvalidasi token JWT", { kode: "TOKEN_EXPIRED" });
+appLogger.info('Authentication service initialized', { port: 3000 });
+appLogger.error('Failed to validate JWT token', { code: 'TOKEN_EXPIRED' });
 
-const teksInfo = sistemLog.ambilLogInfo();
-console.log(teksInfo.includes("[INFO] Layanan autentikasi"));
+const infoOutput = appLogger.getInfoLogs();
+console.log(infoOutput.includes('[INFO] Authentication service'));
 // Output: true
 
-const teksGalat = sistemLog.ambilLogGalat();
-console.log(teksGalat.includes("[ERROR] Gagal memvalidasi token"));
+const errorOutput = appLogger.getErrorLogs();
+console.log(errorOutput.includes('[ERROR] Failed to validate JWT'));
 // Output: true
 ```
 
@@ -417,17 +416,15 @@ Desain ini dipilih karena mengisolasi penulisan log ke dalam stream terpisah men
 
 ### Soal 1 (Dasar)
 
-Buat fungsi `pantauDurasiFungsi(labelWaktu, fungsiAksi)` yang menerima label string dan sebuah fungsi sinkron. Fungsi harus memulai pewaktu menggunakan `console.time(labelWaktu)`, mengeksekusi `fungsiAksi()`, menghentikan pewaktu via `console.timeEnd(labelWaktu)`, dan mengembalikan nilai hasil eksekusi dari `fungsiAksi()`.
+Buat fungsi `measureExecutionTime(timerLabel, actionFn)` yang menerima label string dan sebuah fungsi sinkron. Fungsi harus memulai pewaktu menggunakan `console.time(timerLabel)`, mengeksekusi `actionFn()`, menghentikan pewaktu via `console.timeEnd(timerLabel)`, dan mengembalikan nilai hasil eksekusi dari `actionFn()`.
 
 Contoh masukan:
-
 ```javascript
-const aksi = () => 40 + 2;
-pantauDurasiFungsi("HitungNilai", aksi);
+const action = () => 40 + 2;
+measureExecutionTime('ComputeValue', action);
 ```
 
 Contoh keluaran yang diharapkan:
-
 ```javascript
 42
 ```
@@ -436,26 +433,24 @@ Batasan: Gunakan metode bawaan `console.time()` dan `console.timeEnd()`.
 
 ### Soal 2 (Menengah)
 
-Buat fungsi `cetakLaporanTabular(daftarKaryawan, kolomPilihan)` yang menerima array of object data karyawan dan array string nama kolom yang ingin ditampilkan. Gunakan `console.table()` untuk merender data hanya berdasarkan kolom yang dipilih. Jika array data kosong, cetak pesan peringatan `'Data kosong'` ke konsol menggunakan `console.warn()`.
+Buat fungsi `printTabularReport(employeeList, selectedColumns)` yang menerima array of object data karyawan dan array string nama kolom yang ingin ditampilkan. Gunakan `console.table()` untuk merender data hanya berdasarkan kolom yang dipilih. Jika array data kosong, cetak pesan peringatan `'Empty data'` ke konsol menggunakan `console.warn()`.
 
 Contoh masukan:
-
 ```javascript
 const data = [
-  { nip: "K01", nama: "Ahmad", gaji: 8000000, departemen: "IT" },
-  { nip: "K02", nama: "Siti", gaji: 9000000, departemen: "Keuangan" }
+  { id: 'E01', name: 'Alice', salary: 8000000, department: 'IT' },
+  { id: 'E02', name: 'Bob', salary: 9000000, department: 'Finance' }
 ];
-cetakLaporanTabular(data, ["nip", "nama"]);
+printTabularReport(data, ['id', 'name']);
 ```
 
 Contoh keluaran yang diharapkan:
-
 ```text
 ┌─────────┬───────┬─────────┐
-│ (index) │  nip  │  nama   │
+│ (index) │  id   │  name   │
 ├─────────┼───────┼─────────┤
-│    0    │ 'K01' │ 'Ahmad' │
-│    1    │ 'K02' │ 'Siti'  │
+│    0    │ 'E01' │ 'Alice' │
+│    1    │ 'E02' │  'Bob'  │
 └─────────┴───────┴─────────┘
 ```
 
@@ -463,38 +458,35 @@ Batasan: Gunakan modul bawaan `node:console` tanpa pustaka pemformat tabel ekste
 
 ### Soal 3 (Menantang)
 
-Buat sistem pencatat riwayat audit mandiri (_isolated transaction audit logger_) bernama `buatLoggerAudit(streamTarget)`. Fungsi ini menerima sebuah Writable Stream dan mengembalikan objek pengelola audit.
+Buat sistem pencatat riwayat audit mandiri (_isolated transaction audit logger_) bernama `createAuditLogger(targetStream)`. Fungsi ini menerima sebuah Writable Stream dan mengembalikan objek pengelola audit.
 
 Ketentuan pemrosesan:
-
-- Buat instans `new Console()` yang mengarahkan luaran `stdout` dan `stderr` ke `streamTarget`.
-- Objek pengelola memiliki metode `catatTransaksi(idTrx, status, nominal)` yang mencatat pesan format `"[TRX:%s] Status: %s, Nominal: %d"`.
-- Memiliki metode `hitungFrekuensi(kategori)` yang memanfaatkan `count()` untuk menghitung berapa kali kategori transaksi tersebut muncul.
-- Memiliki metode `verifikasiIntegritas(kondisi, pesanGalat)` yang menggunakan `assert()` untuk mencatat ketidaksesuaian tanpa menghentikan aplikasi.
-- Memiliki metode `cetakRingkasan(daftarRekap)` yang memformat array rekap ke dalam bentuk tabel via `table()`.
+- Buat instans `new Console()` yang mengarahkan luaran `stdout` dan `stderr` ke `targetStream` dengan opsi `colorMode: false`.
+- Objek pengelola memiliki metode `recordTransaction(transactionId, status, amount)` yang mencatat pesan format `"[TRX:%s] Status: %s, Amount: %d"`.
+- Memiliki metode `trackFrequency(category)` yang memanfaatkan `count()` untuk menghitung berapa kali kategori transaksi tersebut muncul.
+- Memiliki metode `verifyIntegrity(condition, errorMessage)` yang menggunakan `assert()` untuk mencatat ketidaksesuaian tanpa menghentikan aplikasi.
+- Memiliki metode `printSummary(summaryList)` yang memformat array rekap ke dalam bentuk tabel via `table()`.
 - Seluruh pencatatan harus mengalir murni ke `streamTarget` tanpa memancarkan teks ke konsol terminal global.
 
 Contoh masukan:
-
 ```javascript
-import { PassThrough } from "node:stream";
+import { PassThrough } from 'node:stream';
 
 const target = new PassThrough();
-let akumulasiLog = "";
-target.on("data", (chunk) => {
-  akumulasiLog += chunk.toString("utf-8");
+let accumulatedLogs = '';
+target.on('data', (chunk) => {
+  accumulatedLogs += chunk.toString('utf-8');
 });
 
-const auditor = buatLoggerAudit(target);
-auditor.catatTransaksi("TRX-101", "BERHASIL", 500000);
-auditor.verifikasiIntegritas(false, "Saldo tidak seimbang");
+const auditor = createAuditLogger(target);
+auditor.recordTransaction('TRX-101', 'SUCCESS', 500000);
+auditor.verifyIntegrity(false, 'Balance mismatch detected');
 ```
 
 Contoh keluaran yang diharapkan:
-
 ```javascript
-akumulasiLog.includes("[TRX:TRX-101]") === true &&
-akumulasiLog.includes("Assertion failed: Saldo tidak seimbang") === true
+accumulatedLogs.includes('[TRX:TRX-101]') === true &&
+accumulatedLogs.includes('Assertion failed: Balance mismatch detected') === true
 ```
 
 Batasan: Wajib menggunakan `node:console` instans kustom. Dilarang menggunakan logging library eksternal dari NPM.
