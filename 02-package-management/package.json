@@ -1,0 +1,31 @@
+{
+  "name": "learn-package-management",
+  "version": "1.0.0",
+  "description": "Belajar Node.js Package Management & NPM",
+  "exports": {
+    ".": "./01-package-json-and-scripts/index.js",
+    "./write": "./01-package-json-and-scripts/write.js"
+  },
+  "scripts": {
+    "dev": "node 01-package-json-and-scripts/index.js",
+    "prestart": "echo 'Before app start'",
+    "start": "node 01-package-json-and-scripts/index.js",
+    "poststart": "echo 'After app start'",
+    "lodash": "node 03-third-party-packages/lodash.js",
+    "moment": "node 03-third-party-packages/moment.js"
+  },
+  "keywords": [
+    "nodejs",
+    "npm",
+    "package-management"
+  ],
+  "author": "Joko Santoso",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "moment": "^2.30.1"
+  }
+}

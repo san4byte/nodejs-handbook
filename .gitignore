@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Testing & Coverage
+coverage/
+**/coverage/
+
+# Logs
+*.log
+**/*.log
+!01-core-modules/**/data/*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment & Local
+.env
+.env.*
+!.env.example
+.DS_Store
+
+# Build artifacts
+dist/
+build/

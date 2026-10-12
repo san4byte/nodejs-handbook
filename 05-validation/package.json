@@ -1,0 +1,27 @@
+{
+  "name": "nodejs-validation",
+  "version": "1.0.0",
+  "description": "Belejar NodeJS Validation - Joi",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "jest"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.[t|j]sx?$": "babel-jest"
+    }
+  },
+  "keywords": [],
+  "author": "Joko Santoso",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/preset-env": "^7.25.8",
+    "@types/jest": "^29.5.13",
+    "babel-jest": "^29.7.0",
+    "jest": "^29.7.0"
+  },
+  "dependencies": {
+    "joi": "^17.13.3"
+  }
+}

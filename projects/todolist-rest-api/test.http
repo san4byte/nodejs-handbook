@@ -1,0 +1,30 @@
+### GET
+GET http://localhost:3000/api
+
+### POST
+POST http://localhost:3000/api
+content-type: application/json
+Accept: application/json
+
+{
+  "todo": "pyton"
+}
+
+### PUT
+PUT http://localhost:3000/api
+content-type: application/json
+Accept: application/json
+
+{
+  "id": 4,
+  "todo": "typescript"
+}
+
+### DELETE
+DELETE http://localhost:3000/api
+content-type: application/json
+Accept: application/json
+
+{
+  "id": 0
+}

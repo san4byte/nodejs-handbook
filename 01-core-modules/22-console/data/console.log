@@ -1,0 +1,8 @@
+hello world
+Error: hello world
+┌─────────┬────────────────┐
+│ (index) │ Values         │
+├─────────┼────────────────┤
+│ name    │ 'Joko Santoso' │
+│ age     │ 21             │
+└─────────┴────────────────┘
