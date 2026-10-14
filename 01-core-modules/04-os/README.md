@@ -1,32 +1,33 @@
 # OS
 
 > Ringkasan
-> - Fungsi: Menyediakan fungsi antarmuka untuk membaca informasi sistem operasi host, spesifikasi perangkat keras, kapasitas memori, dan konfigurasi jaringan.
-> - Digunakan saat: Menghitung konkurensi worker CPU, memantau metrik beban kerja server, mengidentifikasi alamat IP lokal, dan menentukan jalur direktori sementara.
-> - Aturan praktis: Prioritaskan `os.availableParallelism()` alih-alih `os.cpus().length` untuk penentuan alokasi proses di container; hindari mengandalkan `os.loadavg()` di platform Windows karena selalu mengembalikan nilai nol.
+>
+> - Fungsi: Membaca informasi sistem operasi host, spesifikasi perangkat keras komputer, kapasitas memori RAM, dan konfigurasi kartu jaringan.
+> - Digunakan saat: Menentukan jumlah proses worker CPU, memantau beban kerja server, mencari alamat IP lokal, dan mencari lokasi folder file sementara.
+> - Aturan praktis: Utamakan `os.availableParallelism()` daripada `os.cpus().length` untuk mengatur worker di container Docker; ingat bahwa `os.loadavg()` selalu bernilai nol di sistem operasi Windows.
 
 ---
 
 ## Tujuan Belajar
 
-- Mengidentifikasi arsitektur perangkat keras dan informasi platform sistem operasi melalui `node:os`.
-- Menerapkan penghitungan kuota konkurensi CPU yang sadar batasan container menggunakan `os.availableParallelism()`.
-- Menghitung persentase penggunaan memori RAM fisik pada mesin host (`os.totalmem()` dan `os.freemem()`).
-- Membaca dan menafsirkan rata-rata beban antrean CPU sistem (_System Load Average_) untuk telemetri server.
-- Mengekstrak alamat IP lokal melalui antarmuka jaringan serta mengelola direktori sementara yang portabel lintas platform.
+- Mengetahui arsitektur perangkat keras dan sistem operasi tempat aplikasi berjalan lewat `node:os`.
+- Menghitung kuota inti CPU yang aman dan ramah container menggunakan `os.availableParallelism()`.
+- Menghitung sisa dan persentase penggunaan memori RAM fisik pada komputer (`os.totalmem()` dan `os.freemem()`).
+- Membaca rata-rata beban antrean CPU sistem (_System Load Average_) untuk memantau performa server.
+- Mengambil alamat IP lokal dari kartu jaringan serta mencari lokasi folder penyimpanan sementara yang portabel.
 
 ---
 
 ## Konsep
 
-> Runtime Node.js dapat dianalogikan sebagai seorang penyewa kamar di dalam sebuah gedung apartemen. Objek `process` mewakili penghuni kamar itu sendiri (barang bawaan dan aktivitas di dalam unit), sedangkan modul `node:os` adalah gedung apartemen beserta infrastrukturnya: luas total bangunan fisik (kapasitas RAM `os.totalmem()`), jumlah lift utama yang dapat dipakai (inti CPU `os.availableParallelism()`), kepadatan antrean lobi gedung (`os.loadavg()`), dan saluran kabel data yang menghubungkan gedung ke jaringan luar (`os.networkInterfaces()`).
+> Bayangkan Node.js seperti seorang penyewa kamar di dalam sebuah gedung apartemen. Objek `process` adalah penghuni kamar itu sendiri (barang bawaan dan aktivitas di dalam unit), sedangkan modul `node:os` adalah gedung apartemen beserta seluruh fasilitasnya: luas bangunan fisik (kapasitas RAM `os.totalmem()`), jumlah lift yang tersedia untuk digunakan bersama (inti CPU `os.availableParallelism()`), kepadatan antrean di lobi gedung (`os.loadavg()`), dan kabel internet yang masuk ke gedung (`os.networkInterfaces()`).
 
 ```mermaid
 flowchart TD
-    OS["node:os (Metadata Host)"] --> CPU["Komputasi: os.cpus(), os.availableParallelism()"]
+    OS["node:os (Informasi Komputer Host)"] --> CPU["Komputasi: os.cpus(), os.availableParallelism()"]
     OS --> MEM["Memori RAM: os.totalmem(), os.freemem()"]
     OS --> NET["Jaringan: os.networkInterfaces()"]
-    OS --> FS["Sistem Berkas: os.tmpdir(), os.homedir()"]
+    OS --> FS["Sistem File: os.tmpdir(), os.homedir()"]
     OS --> METRIC["Status Host: os.loadavg(), os.uptime(), os.platform()"]
 ```
 
@@ -34,74 +35,74 @@ flowchart TD
 
 ## Referensi
 
-| Item | Fungsi | Catatan |
-| :--- | :--- | :--- |
-| **`os.platform()`** | Mengembalikan nama platform sistem operasi tempat runtime berjalan | Menghasilkan string seperti `'linux'`, `'darwin'`, atau `'win32'` |
-| **`os.arch()`** | Mengembalikan arsitektur prosesor CPU host | Menghasilkan string seperti `'x64'`, `'arm64'`, atau `'ia32'` |
-| **`os.availableParallelism()`** | Menghitung jumlah konkurensi CPU yang tersedia secara efektif untuk proses | Sadar batasan cgroup container Docker dan Kubernetes |
-| **`os.cpus()`** | Mengembalikan larik objek informasi spesifikasi setiap inti CPU | Memuat model prosesor, kecepatan clock (MHz), dan pembagian waktu |
-| **`os.totalmem()`** | Mengembalikan total kapasitas memori RAM fisik sistem dalam satuan byte | Bernilai tetap selama perangkat keras tidak diubah |
-| **`os.freemem()`** | Mengembalikan kapasitas memori RAM fisik yang sedang tidak terpakai | Berubah dinamis sesuai alokasi memori sistem operasi host |
-| **`os.loadavg()`** | Mengembalikan larik rata-rata beban antrean proses CPU Linux/macOS | Berisi rata-rata beban 1, 5, dan 15 menit; selalu `[0,0,0]` di Windows |
-| **`os.networkInterfaces()`** | Mengembalikan daftar antarmuka jaringan aktif beserta detail alamat IP | Memuat properti `family`, `address`, `netmask`, dan status internal |
-| **`os.tmpdir()`** | Mengembalikan jalur absolut direktori penyimpanan sementara sistem operasi | Mengembalikan `/tmp` di Linux dan folder AppData Temp di Windows |
-| **`os.homedir()`** | Mengembalikan jalur direktori beranda pengguna yang sedang aktif | Mengacu pada variabel lingkungan `HOME` atau `USERPROFILE` |
-| **`os.uptime()`** | Mengembalikan durasi aktif komputer atau sistem operasi dalam satuan detik | Berbeda dari `process.uptime()` yang hanya menghitung proses Node.js |
+| Item                            | Fungsi                                                               | Catatan                                                                |
+| :------------------------------ | :------------------------------------------------------------------- | :--------------------------------------------------------------------- |
+| **`os.platform()`**             | Mengetahui sistem operasi tempat aplikasi berjalan                   | Menghasilkan string seperti `'linux'`, `'darwin'`, atau `'win32'`      |
+| **`os.arch()`**                 | Mengetahui arsitektur prosesor CPU komputer                          | Menghasilkan string seperti `'x64'`, `'arm64'`, atau `'ia32'`          |
+| **`os.availableParallelism()`** | Menghitung jumlah inti CPU yang efektif dan aman untuk digunakan     | Sadar terhadap batasan kuota container Docker dan Kubernetes           |
+| **`os.cpus()`**                 | Mengembalikan daftar informasi detail dari setiap inti CPU           | Berisi model prosesor, kecepatan (MHz), dan pembagian waktu            |
+| **`os.totalmem()`**             | Mengembalikan total kapasitas memori RAM fisik dalam ukuran byte     | Bernilai tetap selama perangkat keras komputer tidak diubah            |
+| **`os.freemem()`**              | Mengembalikan sisa kapasitas memori RAM fisik yang sedang menganggur | Nilainya berubah dinamis sesuai pemakaian sistem operasi host          |
+| **`os.loadavg()`**              | Mengembalikan rata-rata beban antrean proses CPU Linux/macOS         | Berisi rata-rata beban 1, 5, dan 15 menit; selalu `[0,0,0]` di Windows |
+| **`os.networkInterfaces()`**    | Mengembalikan daftar kartu jaringan aktif beserta detail alamat IP   | Memuat properti `family`, `address`, `netmask`, dan status internal    |
+| **`os.tmpdir()`**               | Mengembalikan jalur folder sementara yang sah di sistem operasi      | Mengembalikan `/tmp` di Linux dan folder Temp AppData di Windows       |
+| **`os.homedir()`**              | Mengembalikan jalur folder beranda pengguna yang sedang aktif        | Membaca variabel lingkungan `HOME` atau `USERPROFILE`                  |
+| **`os.uptime()`**               | Mengembalikan berapa lama komputer atau server sudah menyala (detik) | Berbeda dari `process.uptime()` yang hanya menghitung aplikasi Node.js |
 
 ### `os.platform()`
 
-Metode `os.platform()` mengembalikan string identitas sistem operasi tempat Node.js dieksekusi. Metode ini menjadi fondasi dalam menentukan cabang logika kode yang bergantung pada sistem operasi.
+Metode `os.platform()` mengembalikan nama sistem operasi tempat Node.js sedang berjalan. Metode ini sangat berguna untuk membedakan perlakuan kode antar-sistem operasi.
 
 ```javascript
-import os from 'node:os';
+import os from "node:os";
 
 const platformName = os.platform();
 console.log(typeof platformName);
 // Output: string
-console.log(['linux', 'darwin', 'win32'].includes(platformName));
+console.log(["linux", "darwin", "win32"].includes(platformName));
 // Output: true
 ```
 
-Kasus lain: Menentukan perintah shell atau pemisah baris baru berdasarkan hasil platform.
+Kasus lain: Menentukan perintah terminal atau tanda pemisah baris baru berdasarkan jenis platform.
 
 ```javascript
-import os from 'node:os';
+import os from "node:os";
 
-const isWindows = os.platform() === 'win32';
+const isWindows = os.platform() === "win32";
 console.log(typeof isWindows);
 // Output: boolean
 ```
 
 ### `os.arch()`
 
-Metode `os.arch()` mengembalikan arsitektur CPU tempat biner Node.js dikompilasi dan dijalankan. Metode ini umum dipakai saat mengunduh biner native C++ yang cocok dengan mesin server.
+Metode `os.arch()` mengembalikan arsitektur prosesor CPU tempat Node.js berjalan. Fitur ini umum dipakai saat aplikasi perlu mengunduh biner native C++ yang cocok dengan mesin server.
 
 ```javascript
-import os from 'node:os';
+import os from "node:os";
 
 const architecture = os.arch();
 console.log(typeof architecture);
 // Output: string
-console.log(['x64', 'arm64', 'ia32'].includes(architecture));
+console.log(["x64", "arm64", "ia32"].includes(architecture));
 // Output: true
 ```
 
-Kasus lain: Memvalidasi kecocokan arsitektur untuk sistem 64-bit sebelum menjalankan pustaka intensif.
+Kasus lain: Memastikan apakah server berjalan pada sistem modern 64-bit sebelum memproses data besar.
 
 ```javascript
-import os from 'node:os';
+import os from "node:os";
 
-const is64Bit = os.arch().includes('64');
+const is64Bit = os.arch().includes("64");
 console.log(is64Bit);
 // Output: true
 ```
 
 ### `os.availableParallelism()`
 
-Metode `os.availableParallelism()` mengembalikan jumlah kuota inti CPU yang benar-benar dialokasikan untuk proses saat ini. Metode ini memperhitungkan batasan kuota container (cgroups) pada Docker dan Kubernetes.
+Metode `os.availableParallelism()` menghitung berapa banyak inti prosesor CPU yang benar-benar boleh dipakai oleh aplikasi kamu. Metode ini otomatis sadar batasan alokasi CPU di lingkungan container Docker dan Kubernetes.
 
 ```javascript
-import os from 'node:os';
+import os from "node:os";
 
 const workerQuota = os.availableParallelism();
 console.log(typeof workerQuota);
@@ -110,10 +111,10 @@ console.log(workerQuota >= 1);
 // Output: true
 ```
 
-Kasus lain: Menentukan ukuran pool worker secara optimal tanpa melebihi jatah CPU yang diberikan orkestrator.
+Kasus lain: Menentukan ukuran antrean worker agar pas tanpa melebihi jatah CPU yang diberikan oleh server.
 
 ```javascript
-import os from 'node:os';
+import os from "node:os";
 
 const optimalWorkers = Math.max(1, os.availableParallelism());
 console.log(Number.isInteger(optimalWorkers));
@@ -122,10 +123,10 @@ console.log(Number.isInteger(optimalWorkers));
 
 ### `os.cpus()`
 
-Metode `os.cpus()` mengembalikan larik objek yang memuat rincian setiap inti prosesor, mencakup nama model, kecepatan clock dalam satuan MHz, dan durasi penggunaan CPU dalam berbagai mode.
+Metode `os.cpus()` mengembalikan array objek yang memuat rincian setiap inti prosesor, mulai dari nama model, kecepatan (MHz), hingga catatan waktu penggunaan CPU.
 
 ```javascript
-import os from 'node:os';
+import os from "node:os";
 
 const cpuList = os.cpus();
 console.log(Array.isArray(cpuList));
@@ -136,10 +137,10 @@ console.log(typeof cpuList[0].model);
 // Output: string
 ```
 
-Kasus lain: Menghitung kecepatan clock rata-rata dari seluruh inti prosesor yang terpasang.
+Kasus lain: Menghitung kecepatan rata-rata dari seluruh inti prosesor yang terpasang di komputer.
 
 ```javascript
-import os from 'node:os';
+import os from "node:os";
 
 const cpus = os.cpus();
 const totalSpeed = cpus.reduce((acc, cpu) => acc + cpu.speed, 0);
@@ -150,23 +151,23 @@ console.log(averageSpeed >= 0);
 
 ### `os.totalmem()`
 
-Metode `os.totalmem()` mengembalikan jumlah total memori RAM fisik yang terpasang di sistem dalam satuan byte.
+Metode `os.totalmem()` mengembalikan jumlah total kapasitas memori RAM fisik yang terpasang di komputer dalam satuan byte.
 
 ```javascript
-import os from 'node:os';
+import os from "node:os";
 
 const totalBytes = os.totalmem();
-const totalGb = totalBytes / (1024 ** 3);
+const totalGb = totalBytes / 1024 ** 3;
 console.log(typeof totalBytes);
 // Output: number
 console.log(totalGb > 0);
 // Output: true
 ```
 
-Kasus lain: Memastikan kapasitas total selalu bernilai bilangan bulat positif.
+Kasus lain: Memastikan nilai kapasitas RAM selalu berupa bilangan bulat positif yang aman.
 
 ```javascript
-import os from 'node:os';
+import os from "node:os";
 
 console.log(Number.isSafeInteger(os.totalmem()));
 // Output: true
@@ -174,10 +175,10 @@ console.log(Number.isSafeInteger(os.totalmem()));
 
 ### `os.freemem()`
 
-Metode `os.freemem()` mengembalikan sisa kapasitas memori RAM fisik yang sedang tidak dialokasikan oleh sistem operasi dalam satuan byte.
+Metode `os.freemem()` mengembalikan sisa kapasitas memori RAM fisik komputer yang saat ini sedang tidak terpakai dalam ukuran byte.
 
 ```javascript
-import os from 'node:os';
+import os from "node:os";
 
 const freeRamBytes = os.freemem();
 console.log(typeof freeRamBytes);
@@ -186,22 +187,22 @@ console.log(freeRamBytes <= os.totalmem());
 // Output: true
 ```
 
-Kasus lain: Menghitung sisa RAM dalam gigabyte untuk keperluan pelaporan metrik berkala.
+Kasus lain: Menghitung sisa kapasitas RAM ke dalam satuan gigabyte agar mudah dibaca di dashboard pemantauan.
 
 ```javascript
-import os from 'node:os';
+import os from "node:os";
 
-const freeRamGb = os.freemem() / (1024 ** 3);
+const freeRamGb = os.freemem() / 1024 ** 3;
 console.log(freeRamGb >= 0);
 // Output: true
 ```
 
 ### `os.loadavg()`
 
-Metode `os.loadavg()` mengembalikan larik tiga elemen angka yang merepresentasikan rata-rata beban antrean proses CPU pada interval 1, 5, dan 15 menit terakhir pada sistem POSIX (Linux dan macOS).
+Metode `os.loadavg()` mengembalikan array berisi tiga angka yang menggambarkan rata-rata kepadatan antrean proses CPU selama 1, 5, dan 15 menit terakhir pada sistem POSIX (Linux dan macOS).
 
 ```javascript
-import os from 'node:os';
+import os from "node:os";
 
 const loadAverage = os.loadavg();
 console.log(Array.isArray(loadAverage));
@@ -210,10 +211,10 @@ console.log(loadAverage.length);
 // Output: 3
 ```
 
-Kasus lain: Pada lingkungan Windows, metode ini selalu mengembalikan larik bernilai nol `[0, 0, 0]` karena Windows tidak menerapkan metrik load average bergaya UNIX.
+Kasus lain: Di sistem operasi Windows, metode ini selalu mengembalikan angka nol `[0, 0, 0]` karena Windows memakai konsep pengukuran performa yang berbeda.
 
 ```javascript
-import os from 'node:os';
+import os from "node:os";
 
 const [load1m] = os.loadavg();
 console.log(typeof load1m);
@@ -222,10 +223,10 @@ console.log(typeof load1m);
 
 ### `os.networkInterfaces()`
 
-Metode `os.networkInterfaces()` mengembalikan objek peta antarmuka jaringan yang menghubungkan host ke kartu jaringan fisik maupun virtual.
+Metode `os.networkInterfaces()` mengembalikan peta daftar kartu jaringan yang menghubungkan komputer kamu ke jaringan lokal maupun internet.
 
 ```javascript
-import os from 'node:os';
+import os from "node:os";
 
 const networkCards = os.networkInterfaces();
 console.log(typeof networkCards);
@@ -234,17 +235,17 @@ console.log(Object.keys(networkCards).length > 0);
 // Output: true
 ```
 
-Kasus lain: Memfilter antarmuka loopback lokal (`127.0.0.1`) untuk mencari IP antarmuka eksternal.
+Kasus lain: Menyaring antarmuka loopback lokal (`127.0.0.1`) untuk mencari alamat IP yang bisa dihubungi dari luar.
 
 ```javascript
-import os from 'node:os';
+import os from "node:os";
 
 const interfaces = os.networkInterfaces();
 let ipFound = false;
 
 for (const name of Object.keys(interfaces)) {
   for (const info of interfaces[name] || []) {
-    if (info.family === 'IPv4') {
+    if (info.family === "IPv4") {
       ipFound = true;
       break;
     }
@@ -256,10 +257,10 @@ console.log(ipFound);
 
 ### `os.tmpdir()`
 
-Metode `os.tmpdir()` mengembalikan jalur absolut direktori sementara yang disediakan oleh sistem operasi untuk penulisan berkas jangka pendek.
+Metode `os.tmpdir()` mengembalikan jalur folder penyimpanan sementara resmi dari sistem operasi tempat aplikasi bisa menyimpan file sementara dengan aman.
 
 ```javascript
-import os from 'node:os';
+import os from "node:os";
 
 const tempDirectory = os.tmpdir();
 console.log(typeof tempDirectory);
@@ -268,22 +269,22 @@ console.log(tempDirectory.length > 0);
 // Output: true
 ```
 
-Kasus lain: Jalur direktori sementara dijamin bebas dari tanda pemisah ganda di ujung jalur.
+Kasus lain: Memastikan jalur folder sementara bersih dari tanda garis miring ganda di ujung teks.
 
 ```javascript
-import os from 'node:os';
+import os from "node:os";
 
-const cleanPath = os.tmpdir().replace(/[/\\]$/, '');
+const cleanPath = os.tmpdir().replace(/[/\\]$/, "");
 console.log(cleanPath.length > 0);
 // Output: true
 ```
 
 ### `os.homedir()`
 
-Metode `os.homedir()` mengembalikan jalur absolut menuju direktori beranda pengguna aktif tempat konfigurasi aplikasi tingkat pengguna biasanya disimpan.
+Metode `os.homedir()` mengembalikan jalur folder beranda pengguna aktif tempat file dan setelan pribadi biasanya disimpan.
 
 ```javascript
-import os from 'node:os';
+import os from "node:os";
 
 const homeDirectory = os.homedir();
 console.log(typeof homeDirectory);
@@ -292,22 +293,22 @@ console.log(homeDirectory.length > 0);
 // Output: true
 ```
 
-Kasus lain: Menggunakan direktori beranda untuk menentukan lokasi berkas konfigurasi pengguna global secara portabel.
+Kasus lain: Memeriksa ketersediaan folder beranda untuk menentukan lokasi penyimpanan file konfigurasi lokal secara aman.
 
 ```javascript
-import os from 'node:os';
+import os from "node:os";
 
-const hasHome = os.homedir() !== '';
+const hasHome = os.homedir() !== "";
 console.log(hasHome);
 // Output: true
 ```
 
 ### `os.uptime()`
 
-Metode `os.uptime()` mengembalikan bilangan angka yang menyatakan durasi waktu dalam satuan detik sejak sistem operasi host pertama kali dinyalakan.
+Metode `os.uptime()` mengembalikan angka yang menunjukkan berapa lama komputer atau server sudah menyala sejak tombol power ditekan (dalam satuan detik).
 
 ```javascript
-import os from 'node:os';
+import os from "node:os";
 
 const hostUptimeSeconds = os.uptime();
 console.log(typeof hostUptimeSeconds);
@@ -316,10 +317,10 @@ console.log(hostUptimeSeconds > 0);
 // Output: true
 ```
 
-Kasus lain: Mengonversi waktu aktif mesin host ke dalam satuan jam untuk laporan uptime infrastruktur.
+Kasus lain: Mengubah catatan detik aktif komputer ke satuan jam agar lebih mudah dipahami manusia.
 
 ```javascript
-import os from 'node:os';
+import os from "node:os";
 
 const uptimeHours = os.uptime() / 3600;
 console.log(uptimeHours >= 0);
@@ -328,11 +329,11 @@ console.log(uptimeHours >= 0);
 
 ### Perbandingan: Penentuan Jumlah Inti CPU
 
-| Aspek | `os.availableParallelism()` | `os.cpus().length` |
-| :--- | :--- | :--- |
-| **Konteks Komputasi** | Memperhitungkan batas alokasi cgroup container | Hanya membaca total inti fisik mesin host |
-| **Lingkungan Docker/K8s** | Mengembalikan kuota container nyata (misal 2 core) | Mengembalikan jumlah total core fisik server induk (misal 64 core) |
-| **Rekomendasi Skalabilitas** | Standar modern untuk penskalaan worker cluster | Hanya digunakan untuk audit perangkat keras murni |
+| Aspek                        | `os.availableParallelism()`                        | `os.cpus().length`                                    |
+| :--------------------------- | :------------------------------------------------- | :---------------------------------------------------- |
+| **Konteks Perhitungan**      | Memperhitungkan batas alokasi cgroup container     | Hanya membaca total inti fisik komputer induk         |
+| **Lingkungan Docker/K8s**    | Mengembalikan jatah container asli (misal 2 core)  | Mengembalikan total inti server induk (misal 64 core) |
+| **Rekomendasi Skalabilitas** | Standar modern untuk mengatur jumlah proses worker | Hanya digunakan untuk audit perangkat keras murni     |
 
 ---
 
@@ -340,64 +341,67 @@ console.log(uptimeHours >= 0);
 
 ### Mengandalkan `os.loadavg()` pada Sistem Operasi Windows
 
-Sistem operasi Windows tidak memiliki implementasi kernel untuk metrik UNIX Load Average, sehingga `os.loadavg()` selalu mengembalikan `[0, 0, 0]`.
+Sistem operasi Windows tidak menerapkan metrik Load Average ala UNIX, sehingga `os.loadavg()` selalu mengembalikan `[0, 0, 0]`.
 
 ```javascript
 // Salah
 const [load1m] = os.loadavg();
 if (load1m > 2.0) {
-  // Kondisi ini tidak akan pernah tercapai pada server Windows!
+  // Peringatan ini tidak akan pernah menyala di server Windows!
 }
 ```
 
 ```javascript
 // Benar
 const [load1m] = os.loadavg();
-if (os.platform() !== 'win32' && load1m > 2.0) {
-  // Peringatan beban hanya dievaluasi pada platform yang didukung
+if (os.platform() !== "win32" && load1m > 2.0) {
+  // Pengecekan beban hanya dievaluasi pada sistem yang mendukung
 }
 ```
 
 ### Tertukar Antara `os.freemem()` dan Memori Aplikasi Node.js
 
-`os.freemem()` mencerminkan sisa memori RAM seluruh sistem komputer, bukan memori yang tersisa bagi aplikasi Node.js itu sendiri.
+`os.freemem()` menghitung sisa RAM seluruh komputer, bukan sisa memori yang bisa dialokasikan untuk aplikasi Node.js itu sendiri.
 
 ```javascript
 // Salah
-// Mengira ini adalah sisa memori alokasi proses Node.js
+// Mengira ini adalah sisa memori untuk proses Node.js kita
 const appMemory = os.freemem();
 ```
 
 ```javascript
 // Benar
-import process from 'node:process';
+import process from "node:process";
 // Gunakan process.memoryUsage() untuk memantau konsumsi heap aplikasi
 const appHeap = process.memoryUsage().heapUsed;
 ```
 
 ### Menulis Hardcode Jalur `/tmp` untuk Berkas Sementara
 
-Menulis string `/tmp` secara manual menyebabkan kegagalan operasi sistem berkas saat aplikasi dipindahkan ke lingkungan Windows.
+Menulis teks `/tmp` secara manual akan menyebabkan aplikasi gagal saat dijalankan di server Windows.
 
 ```javascript
 // Salah
-const uploadPath = '/tmp/upload-file.dat';
+// Menulis hardcode direktori Linux menyebabkan kegagalan saat dijalankan di Windows
+const tempDirectory = "/tmp";
 ```
 
 ```javascript
 // Benar
-import path from 'node:path';
-const uploadPath = path.join(os.tmpdir(), 'upload-file.dat');
+import os from "node:os";
+
+// Gunakan os.tmpdir() yang secara otomatis mengembalikan folder sementara resmi sistem operasi host
+const tempDirectory = os.tmpdir();
 ```
 
 ---
 
 ## Studi Kasus
 
-Skenario: Membangun penyedia telemetri host mandiri (_host infrastructure telemetry_) yang mengukur pemakaian RAM fisik, mendeteksi alamat IPv4 lokal non-loopback, membaca platform serta batas kuota prosesor, dan menyusun laporan kesehatan server tanpa pustaka pihak ketiga.
+Skenario: Membangun penyedia telemetri server mandiri (_host infrastructure telemetry_) yang mengukur pemakaian RAM fisik, mencari alamat IPv4 lokal yang aktif, membaca jenis sistem operasi dan kuota prosesor, serta menyusun laporan kesehatan server tanpa bantuan library luar.
 
 ```javascript
-import os from 'node:os';
+import os from "node:os";
 
 class HostTelemetry {
   getSystemSummary() {
@@ -417,7 +421,7 @@ class HostTelemetry {
       localIp: this.findLocalIp(),
       ramTotalGb: Number((totalRam / 1024 ** 3).toFixed(2)),
       ramUsedPercentage: Number(ramPercentage),
-      highLoad: os.platform() !== 'win32' ? load1m > coreQuota * 1.5 : false,
+      highLoad: os.platform() !== "win32" ? load1m > coreQuota * 1.5 : false,
       uptimeHours: Number((os.uptime() / 3600).toFixed(2)),
     };
   }
@@ -426,31 +430,31 @@ class HostTelemetry {
     const networkMap = os.networkInterfaces();
     for (const name of Object.keys(networkMap)) {
       for (const net of networkMap[name] || []) {
-        if (net.family === 'IPv4' && !net.internal) {
+        if (net.family === "IPv4" && !net.internal) {
           return net.address;
         }
       }
     }
-    return '127.0.0.1';
+    return "127.0.0.1";
   }
 }
 
 const telemetry = new HostTelemetry();
 const summary = telemetry.getSystemSummary();
 
-console.log(typeof summary.host === 'string');
+console.log(typeof summary.host === "string");
 // Output: true
-console.log(typeof summary.platform === 'string');
+console.log(typeof summary.platform === "string");
 // Output: true
 console.log(summary.coreQuota >= 1);
 // Output: true
 console.log(summary.ramTotalGb > 0);
 // Output: true
-console.log(typeof summary.localIp === 'string');
+console.log(typeof summary.localIp === "string");
 // Output: true
 ```
 
-Desain ini memanfaatkan modul inti `node:os` untuk mengekstraksi seluruh indikator perangkat keras dan jaringan secara komprehensif, aman lintas platform, serta siap diintegrasikan ke endpoint monitoring.
+Desain ini memanfaatkan modul inti `node:os` untuk membaca seluruh indikator perangkat keras dan jaringan secara komprehensif, aman lintas platform, serta siap dipasang pada endpoint monitoring.
 
 ---
 
@@ -458,14 +462,16 @@ Desain ini memanfaatkan modul inti `node:os` untuk mengekstraksi seluruh indikat
 
 ### Soal 1 (Dasar)
 
-Buat fungsi `calculateRamStatus()` yang menghitung penggunaan memori sistem host menggunakan `os.totalmem()` dan `os.freemem()`, kemudian mengembalikan objek berisi total RAM (GB), RAM bebas (GB), dan persentase RAM yang terpakai dengan format desimal dua angka di belakang koma.
+Buat fungsi `calculateRamStatus()` yang menghitung penggunaan memori komputer menggunakan `os.totalmem()` dan `os.freemem()`. Kembalikan objek berisi total RAM (GB), RAM bebas (GB), dan persentase RAM yang terpakai dengan format desimal dua angka di belakang koma.
 
-Contoh masukan:
+Contoh input:
+
 ```javascript
 calculateRamStatus();
 ```
 
-Contoh keluaran yang diharapkan:
+Contoh output yang diharapkan:
+
 ```javascript
 {
   totalGb: 16.00,
@@ -478,47 +484,49 @@ Batasan: Gunakan modul bawaan `node:os`. Rumus konversi gigabyte menggunakan pem
 
 ### Soal 2 (Menengah)
 
-Buat fungsi `getActiveAdapters()` yang menyisir seluruh antarmuka jaringan dari `os.networkInterfaces()` dan mengembalikan larik objek ringkas yang hanya memuat antarmuka bertipe `IPv4` non-internal (bukan `127.0.0.1`). Setiap elemen larik wajib memuat properti `name`, `ip`, dan `mac`.
+Buat fungsi `getActiveAdapters()` yang menyisir seluruh antarmuka jaringan dari `os.networkInterfaces()` dan mengembalikan array objek ringkas yang hanya memuat kartu jaringan bertipe `IPv4` non-internal (bukan `127.0.0.1`). Setiap elemen di dalam array harus memiliki properti `name`, `ip`, dan `mac`.
 
-Contoh masukan:
+Contoh input:
+
 ```javascript
 getActiveAdapters();
 ```
 
-Contoh keluaran yang diharapkan:
+Contoh output yang diharapkan:
+
 ```javascript
 [
   {
-    name: 'eth0',
-    ip: '192.168.1.10',
-    mac: '00:1a:2b:3c:4d:5e'
-  }
-]
+    name: "eth0",
+    ip: "192.168.1.10",
+    mac: "00:1a:2b:3c:4d:5e",
+  },
+];
 ```
 
-Batasan: Wajib memfilter hanya alamat dengan `family === 'IPv4'` dan `internal === false`. Jika tidak ada antarmuka yang cocok, kembalikan larik kosong `[]`.
+Batasan: Wajib memfilter hanya alamat dengan `family === 'IPv4'` dan `internal === false`. Jika tidak ada yang cocok, kembalikan array kosong `[]`.
 
 ### Soal 3 (Menantang)
 
-Buat fungsi evaluator kelayakan beban kerja `evaluateServerLoad(loadThresholdPercentage)` yang menganalisis kemampuan komputasi mesin host sebelum menerima pekerjaan berat baru.
+Buat fungsi penilai kelayakan beban server `evaluateServerLoad(loadThresholdPercentage)` yang memeriksa kesiapan komputer host sebelum menerima tugas komputasi berat dengan aturan berikut:
 
-Ketentuan fungsional:
-
-1. Ambil jumlah konkurensi CPU yang tersedia menggunakan `os.availableParallelism()`.
+1. Ambil jumlah kuota CPU yang tersedia menggunakan `os.availableParallelism()`.
 2. Periksa platform menggunakan `os.platform()`. Jika platform adalah `'win32'`, tetapkan status beban CPU sebagai `'UNAVAILABLE'` dan persentase beban sebagai `null`.
-3. Jika platform bukan Windows, ambil metrik `loadavg()[0]` (1 menit terakhir), lalu hitung rasio persentase utilisasi terhadap kapasitas kuota CPU dengan rumus: `(load1m / coreQuota) * 100`.
-4. Hitung sisa memori RAM bebas dalam persentase terhadap total RAM fisik.
-5. Tentukan status penerimaan beban kerja:
+3. Jika platform bukan Windows, ambil metrik `os.loadavg()[0]` (1 menit terakhir), lalu hitung persentase pemakaian CPU terhadap kuota inti dengan rumus: `(load1m / coreQuota) * 100`.
+4. Hitung sisa memori RAM bebas dalam persentase terhadap total kapasitas RAM fisik.
+5. Tentukan status penerimaan tugas:
    - Jika sisa RAM bebas kurang dari 10%, kembalikan `{ acceptTask: false, reason: 'Critical RAM capacity' }`.
    - Pada platform non-Windows, jika utilisasi CPU melebihi `loadThresholdPercentage`, kembalikan `{ acceptTask: false, reason: 'CPU overloaded' }`.
-   - Jika semua batas terpenuhi, kembalikan `{ acceptTask: true, cpuUsagePercentage: number, freeRamPercentage: number }`.
+   - Jika semua batas aman terpenuhi, kembalikan `{ acceptTask: true, cpuUsagePercentage: number, freeRamPercentage: number }`.
 
-Contoh masukan 1 (Linux/macOS dengan beban aman):
+Contoh input 1 (Linux/macOS dengan beban aman):
+
 ```javascript
 evaluateServerLoad(80);
 ```
 
-Contoh keluaran 1:
+Contoh output 1:
+
 ```javascript
 {
   acceptTask: true,
@@ -527,12 +535,14 @@ Contoh keluaran 1:
 }
 ```
 
-Contoh masukan 2 (Kondisi RAM kritis < 10%):
+Contoh input 2 (Kondisi RAM kritis < 10%):
+
 ```javascript
 evaluateServerLoad(80);
 ```
 
-Contoh keluaran 2:
+Contoh output 2:
+
 ```javascript
 {
   acceptTask: false,

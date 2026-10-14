@@ -1,25 +1,28 @@
 # Events
 
 > Ringkasan
-> - Fungsi: Membangun arsitektur berbasis peristiwa (_event-driven architecture_) melalui objek yang memancarkan sinyal dan meresponsnya secara terpisah.
-> - Digunakan saat: Mengomunikasikan status antar-modul tanpa kopling ketat, menangani notifikasi sistem, pelacakan proses asinkron, dan perancangan pola _observer_.
-> - Aturan praktis: Selalu sediakan pendengar untuk event `'error'` guna mencegah proses terhenti paksa, dan bersihkan pendengar yang tidak lagi dipakai agar terhindar dari kebocoran memori.
+>
+> - Fungsi: Mengembangkan arsitektur berbasis peristiwa (_event-driven architecture_) menggunakan objek pemancar sinyal dan penerima yang saling terpisah.
+> - Digunakan saat: Mengomunikasikan status antar-modul tanpa ikatan erat (_loose coupling_), mengelola sistem notifikasi, memantau alur proses asinkron, dan menerapkan pola _observer_.
+> - Aturan praktis: Selalu sediakan listener untuk event `'error'` agar aplikasi tidak mendadak mati (_crash_), serta lepas listener yang sudah selesai digunakan agar terhindar dari kebocoran memori (_memory leak_).
 
 ---
 
 ## Tujuan Belajar
 
-- Memahami pola desain _Observer_ yang mendasari modul-modul inti di Node.js.
-- Menerapkan pendaftaran dan pelepasan pendengar menggunakan metode `on`, `once`, `off`, dan `removeAllListeners`.
-- Memancarkan event beserta data payload secara terstruktur via `emit`.
-- Mengendalikan batas maksimum pendengar dan menganalisis potensi kebocoran memori.
-- Menangani event khusus `'error'` dan mengintegrasikan event ke dalam alur Promise melalui utilitas `once()`.
+- Memahami cara kerja pola desain _Observer_ yang mendasari berbagai modul inti di Node.js.
+- Mendaftarkan dan mencopot fungsi listener menggunakan metode `on`, `once`, `off`, dan `removeAllListeners`.
+- Memancarkan sinyal peristiwa beserta data payload secara teratur lewat metode `emit`.
+- Mengontrol ambang batas maksimal listener dan mencegah penumpukan fungsi di memori.
+- Menangani event khusus `'error'` dan menyelaraskan penantian event ke dalam alur Promise menggunakan utilitas `once()`.
 
 ---
 
 ## Konsep
 
-> Pola `EventEmitter` dianalogikan seperti stasiun pemancar radio dan pesawat penerima. Stasiun radio (`emitter`) menyiarkan sinyal pada frekuensi tertentu (`emit`) tanpa perlu mengetahui siapa saja atau berapa banyak perangkat yang sedang mendengarkan. Pesawat radio pendengar (`listener`) yang menyetel frekuensi yang sama (`on`) akan langsung menerima siaran tersebut dan memproses pesan secara seketika. Jika saluran dimatikan (`off`), penerima tidak lagi memproses sinyal dari frekuensi itu.
+Pola kerja `EventEmitter` bisa kita bayangkan seperti stasiun radio dan radio penerima di rumah kita. Stasiun pemancar (`emitter`) menyiarkan siaran pada frekuensi tertentu (`emit`), tanpa perlu tahu siapa saja listener-nya atau ada berapa banyak perangkat yang sedang menyala.
+
+Di sisi lain, setiap radio yang menyetel saluran pada frekuensi yang cocok (`on`) akan langsung menangkap dan memutar siaran tersebut seketika. Apabila listener mematikan radio atau berpindah gelombang (`off`), perangkat tersebut tidak akan lagi merespons siaran dari stasiun pemancar tadi.
 
 ```mermaid
 flowchart LR
@@ -33,88 +36,88 @@ flowchart LR
 
 ## Referensi
 
-| Item | Fungsi | Catatan |
-| :--- | :----- | :------ |
-| **`emitter.on()`** | Mendaftarkan fungsi pendengar untuk event tertentu secara persisten | Alias dari metode `addListener()`, dipanggil setiap kali event dipancarkan |
-| **`emitter.once()`** | Mendaftarkan pendengar yang hanya dieksekusi satu kali | Otomatis dilepas setelah event pertama kali dipancarkan |
-| **`emitter.emit()`** | Memancarkan event dan mengeksekusi pendengar secara sinkron | Mengembalikan nilai boolean `true` jika memiliki pendengar, `false` jika tidak |
-| **`emitter.off()`** | Menghapus satu fungsi pendengar tertentu dari antrean event | Alias dari metode `removeListener()`, membutuhkan referensi fungsi yang sama |
-| **`emitter.removeAllListeners()`** | Menghapus seluruh pendengar dari suatu event atau semua event | Digunakan saat pembersihan sumber daya sebelum objek dibuang |
-| **`emitter.listenerCount()`** | Menghitung jumlah pendengar aktif pada event tertentu | Membantu audit diagnostik dan pemantauan alokasi memori |
-| **`emitter.setMaxListeners()`** | Mengatur batas peringatan jumlah pendengar pada satu instance | Nilai bawaan adalah 10 untuk mendeteksi potensi kebocoran memori |
-| **`events.once()`** | Mengubah penantian event menjadi Promise yang dapat di-await | Fungsi pembantu statis dari modul `node:events` |
+| Item                               | Fungsi                                                                   | Catatan                                                                             |
+| :--------------------------------- | :----------------------------------------------------------------------- | :---------------------------------------------------------------------------------- |
+| **`emitter.on()`**                 | Mendaftarkan fungsi listener yang selalu menyala untuk event tertentu    | Alias dari `addListener()`, dipanggil berulang kali setiap kali event dipancarkan   |
+| **`emitter.once()`**               | Mendaftarkan listener yang hanya dieksekusi satu kali                    | Otomatis dilepas setelah event pertama kali terpancar                               |
+| **`emitter.emit()`**               | Memancarkan sinyal event dan memanggil semua listener-nya secara sinkron | Mengembalikan nilai boolean `true` jika memiliki listener, atau `false` jika kosong |
+| **`emitter.off()`**                | Mencopot fungsi listener tertentu dari daftar event                      | Alias dari `removeListener()`, membutuhkan referensi fungsi yang sama persis        |
+| **`emitter.removeAllListeners()`** | Menghapus semua listener dari satu event tertentu atau seluruh event     | Sangat praktis saat membersihkan sumber daya sebelum objek dibuang                  |
+| **`emitter.listenerCount()`**      | Menghitung total listener yang sedang aktif mendengarkan event tertentu  | Berguna untuk proses audit diagnostik dan pemantauan alokasi memori                 |
+| **`emitter.setMaxListeners()`**    | Menyesuaikan batas peringatan jumlah listener pada satu objek            | Nilai bawaannya 10 untuk mendeteksi kemungkinan penumpukan memori                   |
+| **`events.once()`**                | Mengubah penantian sebuah event menjadi Promise yang bisa di-`await`     | Fungsi utilitas praktis dari modul `node:events`                                    |
 
 ### `emitter.on()`
 
-Metode `emitter.on()` digunakan untuk mendaftarkan fungsi pendengar yang akan terus dijalankan setiap kali event yang ditentukan dipancarkan oleh sistem.
+Metode `emitter.on()` digunakan untuk mendaftarkan fungsi listener (_listener_) yang akan dipanggil berulang kali setiap kali event tertentu dipancarkan oleh objek tersebut.
 
 ```javascript
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from "node:events";
 
 const station = new EventEmitter();
 const history = [];
 
-station.on('broadcast', (message) => {
+station.on("broadcast", (message) => {
   history.push(message);
 });
 
-station.emit('broadcast', 'Morning Edition');
-station.emit('broadcast', 'Noon Edition');
+station.emit("broadcast", "Morning Edition");
+station.emit("broadcast", "Noon Edition");
 
 console.log(history);
 // Output: [ 'Morning Edition', 'Noon Edition' ]
 ```
 
-Kasus lain: Mendaftarkan beberapa pendengar pada event yang sama akan dieksekusi secara berurutan sesuai urutan pendaftaran.
+Kasus lain: Jika kita mendaftarkan beberapa listener pada event yang sama, semua listener akan dipanggil berurutan sesuai urutan pendaftarannya.
 
 ```javascript
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from "node:events";
 
 const queue = new EventEmitter();
 const results = [];
 
-queue.on('task', () => results.push('Step 1'));
-queue.on('task', () => results.push('Step 2'));
+queue.on("task", () => results.push("Step 1"));
+queue.on("task", () => results.push("Step 2"));
 
-queue.emit('task');
+queue.emit("task");
 console.log(results);
 // Output: [ 'Step 1', 'Step 2' ]
 ```
 
 ### `emitter.once()`
 
-Metode `emitter.once()` mendaftarkan fungsi pendengar yang hanya dieksekusi satu kali saat event pertama kali dipancarkan, kemudian pendengar tersebut langsung dilepaskan secara otomatis.
+Metode `emitter.once()` mendaftarkan fungsi listener yang hanya akan merespons satu kali saja. Begitu event pertama kali terpancar, fungsi listener langsung dilepaskan secara otomatis.
 
 ```javascript
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from "node:events";
 
 const server = new EventEmitter();
 let loginCount = 0;
 
-server.once('firstLogin', (user) => {
+server.once("firstLogin", (user) => {
   loginCount += 1;
   console.log(`Welcome ${user}`);
 });
 
-server.emit('firstLogin', 'Alice');
+server.emit("firstLogin", "Alice");
 // Output: Welcome Alice
 
-server.emit('firstLogin', 'Bob');
+server.emit("firstLogin", "Bob");
 console.log(loginCount);
 // Output: 1
 ```
 
-Kasus lain: Pemancaran event berikutnya setelah pemanggilan pertama diabaikan secara aman tanpa memicu galat.
+Kasus lain: Pemancaran event berikutnya setelah pemanggilan pertama akan diabaikan dengan aman tanpa memicu error.
 
 ```javascript
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from "node:events";
 
 const toggle = new EventEmitter();
 let counter = 0;
 
-toggle.once('activate', () => counter++);
-toggle.emit('activate');
-toggle.emit('activate');
+toggle.once("activate", () => counter++);
+toggle.emit("activate");
+toggle.emit("activate");
 
 console.log(counter);
 // Output: 1
@@ -122,31 +125,31 @@ console.log(counter);
 
 ### `emitter.emit()`
 
-Metode `emitter.emit()` memancarkan nama event tertentu dan mengeksekusi semua pendengar terdaftar secara sinkron bersama argumen payload yang disertakan.
+Metode `emitter.emit()` memancarkan nama event tertentu ke seluruh listener terdaftar dan mengeksekusinya secara sinkron bersama data pendukung yang kita kirimkan.
 
 ```javascript
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from "node:events";
 
 const paymentProcessor = new EventEmitter();
 
-paymentProcessor.on('success', (id, amount) => {
+paymentProcessor.on("success", (id, amount) => {
   console.log(`Invoice ${id}: USD ${amount}`);
 });
 
-const hasListeners = paymentProcessor.emit('success', 'INV-001', 500);
+const hasListeners = paymentProcessor.emit("success", "INV-001", 500);
 // Output: Invoice INV-001: USD 500
 
 console.log(hasListeners);
 // Output: true
 ```
 
-Kasus lain: Memancarkan event yang tidak memiliki pendengar mengembalikan nilai boolean `false`.
+Kasus lain: Jika kita memancarkan event yang belum memiliki listener sama sekali, metode ini mengembalikan nilai boolean `false`.
 
 ```javascript
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from "node:events";
 
 const emitter = new EventEmitter();
-const delivered = emitter.emit('unhandledEvent', 'payload');
+const delivered = emitter.emit("unhandledEvent", "payload");
 
 console.log(delivered);
 // Output: false
@@ -154,71 +157,71 @@ console.log(delivered);
 
 ### `emitter.off()`
 
-Metode `emitter.off()` melepaskan fungsi pendengar tertentu dari daftar langganan event. Fungsi yang dilepas harus merujuk pada referensi memori yang sama persis saat didaftarkan.
+Metode `emitter.off()` digunakan untuk mencopot fungsi listener tertentu dari daftar langganan event. Fungsi yang ingin dilepas harus menunjuk ke referensi memori yang sama persis dengan fungsi saat didaftarkan.
 
 ```javascript
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from "node:events";
 
 const system = new EventEmitter();
 const messages = [];
 
 const logger = (text) => messages.push(text);
 
-system.on('log', logger);
-system.emit('log', 'Activity 1');
+system.on("log", logger);
+system.emit("log", "Activity 1");
 
-system.off('log', logger);
-system.emit('log', 'Activity 2');
+system.off("log", logger);
+system.emit("log", "Activity 2");
 
 console.log(messages);
 // Output: [ 'Activity 1' ]
 ```
 
-Kasus lain: Melepas pendengar menggunakan fungsi panah anonim baru tidak akan mencocokkan referensi asli sehingga listener lama tetap aktif.
+Kasus lain: Melepas listener menggunakan fungsi panah anonim baru tidak akan berhasil karena alamat memorinya berbeda, sehingga listener asli tetap aktif.
 
 ```javascript
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from "node:events";
 
 const system = new EventEmitter();
 let counter = 0;
 
-system.on('click', () => counter++);
-system.off('click', () => counter++);
+system.on("click", () => counter++);
+system.off("click", () => counter++);
 
-system.emit('click');
+system.emit("click");
 console.log(counter);
 // Output: 1
 ```
 
 ### `emitter.removeAllListeners()`
 
-Metode `emitter.removeAllListeners()` menghapus semua pendengar yang terdaftar pada satu nama event, atau menghapus seluruh pendengar dari setiap event jika dipanggil tanpa argumen.
+Metode `emitter.removeAllListeners()` menghapus seluruh listener dari suatu nama event tertentu, atau menyapu bersih semua listener dari semua event sekaligus jika dipanggil tanpa menyertakan argumen.
 
 ```javascript
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from "node:events";
 
 const channel = new EventEmitter();
 
-channel.on('temperature', () => {});
-channel.on('temperature', () => {});
-channel.on('humidity', () => {});
+channel.on("temperature", () => {});
+channel.on("temperature", () => {});
+channel.on("humidity", () => {});
 
-channel.removeAllListeners('temperature');
+channel.removeAllListeners("temperature");
 
-console.log(channel.listenerCount('temperature'));
+console.log(channel.listenerCount("temperature"));
 // Output: 0
-console.log(channel.listenerCount('humidity'));
+console.log(channel.listenerCount("humidity"));
 // Output: 1
 ```
 
-Kasus lain: Memanggil metode ini tanpa argumen menghapus seluruh pendengar dari semua event yang ada.
+Kasus lain: Memanggil metode ini tanpa argumen akan membersihkan semua listener di seluruh event.
 
 ```javascript
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from "node:events";
 
 const channel = new EventEmitter();
-channel.on('ping', () => {});
-channel.on('pong', () => {});
+channel.on("ping", () => {});
+channel.on("pong", () => {});
 
 channel.removeAllListeners();
 console.log(channel.eventNames().length);
@@ -227,36 +230,36 @@ console.log(channel.eventNames().length);
 
 ### `emitter.listenerCount()`
 
-Metode `emitter.listenerCount()` mengembalikan angka integer yang menunjukkan total pendengar yang saat ini terdaftar pada sebuah nama event.
+Metode `emitter.listenerCount()` mengembalikan angka yang menunjukkan jumlah listener yang sedang aktif mendengarkan suatu event tertentu.
 
 ```javascript
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from "node:events";
 
 const audit = new EventEmitter();
-audit.on('transaction', () => {});
-audit.on('transaction', () => {});
+audit.on("transaction", () => {});
+audit.on("transaction", () => {});
 
-const total = audit.listenerCount('transaction');
+const total = audit.listenerCount("transaction");
 console.log(total);
 // Output: 2
 ```
 
-Kasus lain: Menghitung pendengar pada event yang belum pernah dibuat menghasilkan nilai 0.
+Kasus lain: Menghitung listener pada event yang belum pernah dibuat akan menghasilkan nilai 0.
 
 ```javascript
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from "node:events";
 
 const audit = new EventEmitter();
-console.log(audit.listenerCount('unknownEvent'));
+console.log(audit.listenerCount("unknownEvent"));
 // Output: 0
 ```
 
 ### `emitter.setMaxListeners()`
 
-Metode `emitter.setMaxListeners()` mengubah batas peringatan jumlah pendengar maksimum pada satu instance. Jika jumlah pendengar melebihi batas ini, Node.js mencetak peringatan potensi kebocoran memori.
+Secara bawaan, jika ada lebih dari 10 listener pada satu event, Node.js akan menampilkan peringatan di terminal untuk mencegah kebocoran memori. Kita bisa menaikkan atau menurunkan batas ini menggunakan `emitter.setMaxListeners()`.
 
 ```javascript
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from "node:events";
 
 const dispatcher = new EventEmitter();
 dispatcher.setMaxListeners(25);
@@ -265,10 +268,10 @@ console.log(dispatcher.getMaxListeners());
 // Output: 25
 ```
 
-Kasus lain: Menetapkan batas menjadi 0 menonaktifkan peringatan kuota pendengar tanpa batas.
+Kasus lain: Mengisi nilai 0 akan menonaktifkan peringatan kuota listener secara keseluruhan (tanpa batas).
 
 ```javascript
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from "node:events";
 
 const unlimited = new EventEmitter();
 unlimited.setMaxListeners(0);
@@ -279,33 +282,33 @@ console.log(unlimited.getMaxListeners());
 
 ### `events.once()`
 
-Fungsi utilitas `once()` dari modul `node:events` mengonversi penantian suatu event menjadi Promise sehingga proses pemanggilan dapat diselaraskan menggunakan kata kunci `await`.
+Fungsi pembantu `once()` dari modul `node:events` memungkinkan kita menunggu terjadinya suatu event menggunakan Promise, sehingga alur kodenya bisa dipadukan secara rapi dengan kata kunci `await`.
 
 ```javascript
-import { EventEmitter, once } from 'node:events';
+import { EventEmitter, once } from "node:events";
 
 const uploader = new EventEmitter();
 
 setTimeout(() => {
-  uploader.emit('complete', { status: 'success', filename: 'image.png' });
+  uploader.emit("complete", { status: "success", filename: "image.png" });
 }, 10);
 
-const [result] = await once(uploader, 'complete');
+const [result] = await once(uploader, "complete");
 console.log(result.status, result.filename);
 // Output: success image.png
 ```
 
-Kasus lain: Membatalkan penantian event menggunakan `AbortSignal` yang melempar galat `AbortError`.
+Kasus lain: Kita juga bisa membatalkan penantian event dengan memanfaatkan `AbortSignal`, yang akan melempar error `AbortError` jika sinyal pembatalan aktif.
 
 ```javascript
-import { EventEmitter, once } from 'node:events';
+import { EventEmitter, once } from "node:events";
 
 const emitter = new EventEmitter();
 const ac = new AbortController();
 ac.abort();
 
 try {
-  await once(emitter, 'data', { signal: ac.signal });
+  await once(emitter, "data", { signal: ac.signal });
 } catch (error) {
   console.log(error.name);
   // Output: AbortError
@@ -316,82 +319,82 @@ try {
 
 ## Kesalahan Umum
 
-### Memancarkan Event 'error' Tanpa Mendaftarkan Pendengar
+### Memancarkan Event 'error' Tanpa Mendaftarkan Listener
 
-Memancarkan event bernama `'error'` tanpa ada listener yang mendengarkan menyebabkan Node.js menganggapnya sebagai pengecualian yang tidak tertangani dan menghentikan proses aplikasi.
+Event bernama `'error'` memiliki perlakuan khusus di Node.js. Jika event ini terpancar tanpa ada fungsi listener yang menangani, Node.js akan menganggapnya sebagai pengecualian tak terduga (_uncaught exception_) dan langsung menghentikan aplikasi secara paksa.
 
 ```javascript
 // Salah
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from "node:events";
 
 const emitter = new EventEmitter();
-emitter.emit('error', new Error('Connection failed'));
+emitter.emit("error", new Error("Connection failed"));
 ```
 
 ```javascript
 // Benar
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from "node:events";
 
 const emitter = new EventEmitter();
-emitter.on('error', (err) => {
-  console.log('Handled:', err.message);
+emitter.on("error", (err) => {
+  console.log("Handled:", err.message);
 });
-emitter.emit('error', new Error('Connection failed'));
+emitter.emit("error", new Error("Connection failed"));
 ```
 
-### Mengasumsikan Bahwa `emit()` Berjalan Secara Asinkron
+### Mengira Bahwa `emit()` Berjalan Asinkron
 
-Metode `emit()` mengeksekusi semua listener secara sinkron dan berurutan, sehingga tidak menunggu Promise di dalam fungsi listener selesai.
+Metode `emit()` sebenarnya mengeksekusi semua fungsi listener secara sinkron dan berurutan. Artinya, `emit()` tidak akan otomatis menunggu fungsi `async` di dalam listener selesai berjalan.
 
 ```javascript
 // Salah
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from "node:events";
 
 const emitter = new EventEmitter();
-emitter.on('save', async () => {
+emitter.on("save", async () => {
   await new Promise((resolve) => setTimeout(resolve, 100));
 });
-await emitter.emit('save');
+await emitter.emit("save");
 ```
 
 ```javascript
 // Benar
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from "node:events";
 
 const emitter = new EventEmitter();
 const taskQueue = [];
 
-emitter.on('save', (tasks) => {
+emitter.on("save", (tasks) => {
   tasks.push(new Promise((resolve) => setTimeout(resolve, 10)));
 });
 
-emitter.emit('save', taskQueue);
+emitter.emit("save", taskQueue);
 await Promise.all(taskQueue);
 ```
 
-### Menambahkan Pendengar Berulang Tanpa Membersihkannya
+### Mendaftarkan Listener Berulang Kali Tanpa Membersihkannya
 
-Mendaftarkan listener di dalam fungsi penanganan rute tanpa pernah memanggil `off` menumpuk referensi fungsi di memori hingga memicu peringatan kebocoran memori.
+Jika kita mendaftarkan listener di dalam fungsi penangan request server tanpa pernah mencopotnya dengan `off()`, jumlah listener akan terus menumpuk di memori pada setiap request yang masuk, hingga akhirnya memicu peringatan kebocoran memori.
 
 ```javascript
 // Salah
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from "node:events";
 
 const bus = new EventEmitter();
 function handleRequest() {
-  bus.on('complete', () => {});
+  bus.on("complete", () => {});
 }
 ```
 
 ```javascript
 // Benar
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from "node:events";
 
 const bus = new EventEmitter();
 function handleRequest() {
   const onComplete = () => {};
-  bus.on('complete', onComplete);
-  bus.off('complete', onComplete);
+  bus.on("complete", onComplete);
+  bus.off("complete", onComplete);
 }
 ```
 
@@ -399,49 +402,52 @@ function handleRequest() {
 
 ## Studi Kasus
 
-Skenario: Membangun sistem alur kerja pemrosesan pesanan belanja berbasis `EventEmitter` yang mengoordinasikan audit, konfirmasi, dan penanganan galat secara terisolasi tanpa kopling erat.
+Skenario: Membangun sistem alur kerja pemrosesan pesanan toko daring berbasis `EventEmitter` yang mengoordinasikan pencatatan audit, pengiriman konfirmasi, dan penanganan error secara terpisah tanpa saling bergantung erat.
 
 ```javascript
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from "node:events";
 
 class OrderProcessor extends EventEmitter {
   processOrder(order) {
     if (!order.id || order.total <= 0) {
-      this.emit('error', new Error('Invalid order payload'));
+      this.emit("error", new Error("Invalid order payload"));
       return;
     }
 
-    this.emit('created', order);
-    this.emit('success', { id: order.id, timestamp: '2026-10-12T00:00:00.000Z' });
+    this.emit("created", order);
+    this.emit("success", {
+      id: order.id,
+      timestamp: "2026-10-12T00:00:00.000Z",
+    });
   }
 }
 
 const processor = new OrderProcessor();
 const auditLogs = [];
 
-processor.on('error', (err) => {
-  console.log('Handled error:', err.message);
+processor.on("error", (err) => {
+  console.log("Handled error:", err.message);
 });
 
-processor.on('created', (order) => {
+processor.on("created", (order) => {
   auditLogs.push(`Order ${order.id} with total ${order.total}`);
 });
 
-processor.once('success', (summary) => {
+processor.once("success", (summary) => {
   console.log(`Confirmation email sent for order ${summary.id}`);
 });
 
-processor.processOrder({ id: 'ORD-99', total: 150000 });
+processor.processOrder({ id: "ORD-99", total: 150000 });
 // Output: Confirmation email sent for order ORD-99
 
-processor.processOrder({ id: 'ORD-INVALID', total: 0 });
+processor.processOrder({ id: "ORD-INVALID", total: 0 });
 // Output: Handled error: Invalid order payload
 
 console.log(auditLogs);
 // Output: [ 'Order ORD-99 with total 150000' ]
 ```
 
-Desain ini memisahkan logika bisnis validasi pesanan dari aksi sampingan seperti pengiriman notifikasi dan pencatatan riwayat audit. Pemisahan berbasis event ini memungkinkan penambahan modul pendengar baru di masa mendatang tanpa perlu memodifikasi logika inti kelas `OrderProcessor`.
+Arsitektur ini memisahkan logika utama validasi transaksi dari aksi tambahan seperti pengiriman email dan pencatatan audit. Melalui pola event ini, kita bisa menambahkan aksi-aksi baru di masa depan secara leluasa tanpa perlu mengubah logika inti di dalam kelas `OrderProcessor`.
 
 ---
 
@@ -451,40 +457,40 @@ Desain ini memisahkan logika bisnis validasi pesanan dari aksi sampingan seperti
 
 Buat kelas `AlarmSystem` yang mewarisi `EventEmitter`. Kelas ini memiliki metode `trigger(location)` yang memancarkan event `'alarm'` dengan payload berupa objek `{ location, timestamp: '2026-10-12T00:00:00.000Z' }`.
 
-Contoh masukan:
+Contoh input:
 
 ```javascript
 const alarm = new AlarmSystem();
-alarm.on('alarm', (info) => console.log(info.location));
-alarm.trigger('Warehouse B');
+alarm.on("alarm", (info) => console.log(info.location));
+alarm.trigger("Warehouse B");
 ```
 
-Contoh keluaran yang diharapkan:
+Contoh output yang diharapkan:
 
 ```javascript
 // Warehouse B
 ```
 
-Batasan: Wajib menggunakan sintaks pewarisan kelas `extends EventEmitter` dari modul `node:events`.
+Batasan: Gunakan sintaks pewarisan kelas `extends EventEmitter` dari modul `node:events`.
 
 ### Soal 2 (Menengah)
 
-Buat kelas `DownloadQueue` yang mewarisi `EventEmitter`. Kelas ini memiliki metode `addTask(filename)` dan `execute()`. Saat `execute()` dipanggil, kelas memancarkan event `'progress'` untuk setiap berkas yang diproses, dan memancarkan event `'complete'` di akhir bersama array berisi daftar seluruh berkas yang telah tuntas.
+Buat kelas `DownloadQueue` yang mewarisi `EventEmitter`. Kelas ini memiliki metode `addTask(filename)` dan `execute()`. Saat `execute()` dipanggil, kelas harus memancarkan event `'progress'` untuk setiap berkas yang sedang diproses, serta memancarkan event `'complete'` di akhir dengan menyertakan array berisi daftar seluruh berkas yang berhasil dituntaskan.
 
-Contoh masukan:
+Contoh input:
 
 ```javascript
 const queue = new DownloadQueue();
-queue.addTask('photo.jpg');
-queue.addTask('archive.zip');
+queue.addTask("photo.jpg");
+queue.addTask("archive.zip");
 
-queue.on('progress', (filename) => console.log('Processing:', filename));
-queue.on('complete', (files) => console.log('Total files:', files.length));
+queue.on("progress", (filename) => console.log("Processing:", filename));
+queue.on("complete", (files) => console.log("Total files:", files.length));
 
 queue.execute();
 ```
 
-Contoh keluaran yang diharapkan:
+Contoh output yang diharapkan:
 
 ```javascript
 // Processing: photo.jpg
@@ -492,56 +498,61 @@ Contoh keluaran yang diharapkan:
 // Total files: 2
 ```
 
-Batasan: Wajib menggunakan `EventEmitter`, dan dilarang memutasikan array masukan luar.
+Batasan: Gunakan `EventEmitter` dan hindari mengubah struktur array data input dari luar.
 
 ### Soal 3 (Menantang)
 
-Buat kelas `ReliableTaskEmitter` yang mengelola eksekusi tugas bertahap dengan mekanisme percobaan ulang (_retry_) terpadu.
+Buat kelas `ReliableTaskEmitter` yang mengelola eksekusi tugas bertahap dengan mekanisme percobaan ulang (_retry_) otomatis saat terjadi kegagalan.
 
-Metode `runTask(taskName, taskFn, maxRetries = 3)`:
-- Memancarkan event `'retry'` setiap kali percobaan dieksekusi dengan nomor putaran percobaan.
-- Jika fungsi tugas melempar galat, tangkap secara internal dan coba kembali hingga mencapai batas `maxRetries`.
-- Jika percobaan berhasil sebelum batas terlampaui, pancarkan event `'success'` bersama hasil eksekusi dan hentikan iterasi.
-- Jika seluruh batas percobaan terlampaui dan tugas tetap gagal, pancarkan event `'error'` dengan pesan galat akhir (wajib dipasang pendengar `'error'` agar proses tidak crash).
+Ketentuan metode `runTask(taskName, taskFn, maxRetries = 3)`:
 
-Contoh masukan 1:
+- Memancarkan event `'retry'` setiap kali percobaan dijalankan ulang beserta nomor putarannya.
+- Jika fungsi tugas melempar error, tangkap error tersebut secara internal dan coba kembali sampai mencapai batas `maxRetries`.
+- Jika percobaan berhasil sebelum batas terlewati, pancarkan event `'success'` bersama nilai hasil eksekusi dan segera hentikan perulangan.
+- Jika seluruh kuota percobaan habis dan tugas masih gagal, pancarkan event `'error'` dengan menyertakan pesan error akhir (pastikan listener `'error'` terdaftar agar aplikasi tidak crash).
+
+Contoh input 1 (kasus sukses setelah retry):
 
 ```javascript
 const emitter = new ReliableTaskEmitter();
 let count = 0;
 
-emitter.on('success', (result) => console.log('Result:', result));
-await emitter.runTask('calculation', async () => {
+emitter.on("success", (result) => console.log("Result:", result));
+await emitter.runTask("calculation", async () => {
   count++;
-  if (count < 2) throw new Error('Temporary failure');
+  if (count < 2) throw new Error("Temporary failure");
   return 42;
 });
 ```
 
-Contoh keluaran 1:
+Contoh output 1:
 
 ```javascript
 // Result: 42
 ```
 
-Contoh masukan 2:
+Contoh input 2 (kasus gagal hingga kuota habis):
 
 ```javascript
 const emitter = new ReliableTaskEmitter();
-emitter.on('error', (err) => console.log('Fatal error:', err.message));
+emitter.on("error", (err) => console.log("Fatal error:", err.message));
 
-await emitter.runTask('network', async () => {
-  throw new Error('Server unreachable');
-}, 2);
+await emitter.runTask(
+  "network",
+  async () => {
+    throw new Error("Server unreachable");
+  },
+  2,
+);
 ```
 
-Contoh keluaran 2:
+Contoh output 2:
 
 ```javascript
 // Fatal error: Server unreachable
 ```
 
-Batasan: Dilarang menggunakan pustaka eksternal. Wajib mengimplementasikan penanganan galat aman pada event `'error'` tanpa membiarkan runtime terhenti paksa.
+Batasan: Dilarang menggunakan library eksternal pihak ketiga. Terapkan penanganan error yang aman pada event `'error'` tanpa menyebabkan runtime terhenti mendadak.
 
 ---
 

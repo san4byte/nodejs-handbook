@@ -18,7 +18,9 @@ function triggerCrash() {
 try {
   triggerCrash();
 } catch (err) {
-  console.log('Menuliskan laporan diagnosa Node.js secara manual via process.report.writeReport()...');
+  console.log(
+    'Menuliskan laporan diagnosa Node.js secara manual via process.report.writeReport()...',
+  );
   process.report.writeReport();
   console.log('Laporan diagnosa berhasil disimpan ke report-error.json');
 }

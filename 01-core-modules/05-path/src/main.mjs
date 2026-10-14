@@ -12,10 +12,9 @@
  */
 
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 // 1. Resolusi Jalur File Dinamis di ES Modules
-const currentFile = fileURLToPath(import.meta.url);
+const currentFile = import.meta.filename;
 const currentDir = path.dirname(currentFile);
 
 console.log('=== 1. Ekstraksi Komponen Berkas Dinamis ===');

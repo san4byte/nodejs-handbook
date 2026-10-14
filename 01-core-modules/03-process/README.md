@@ -1,30 +1,31 @@
 # Process
 
 > Ringkasan
-> - Fungsi: Mengakses informasi runtime, konfigurasi variabel lingkungan, status memori, serta mengendalikan siklus hidup proses Node.js yang sedang berjalan.
-> - Digunakan saat: Membaca kredensial lingkungan, memproses argumen baris perintah, memantau penggunaan RAM, dan menangani prosedur terminasi aman (_graceful shutdown_).
-> - Aturan praktis: Selalu gunakan kode keluar `0` untuk terminasi normal dan kode selain `0` untuk kegagalan fatal; tangkap sinyal sistem operasi untuk membersihkan koneksi sebelum proses berakhir.
+>
+> - Fungsi: Membaca informasi runtime, variabel lingkungan, penggunaan memori RAM, serta mengendalikan jalan dan matinya aplikasi Node.js.
+> - Digunakan saat: Mengambil konfigurasi rahasia dari environment, membaca argumen baris perintah terminal, memantau konsumsi RAM, dan mematikan server secara rapi (_graceful shutdown_).
+> - Aturan praktis: Selalu gunakan status keluar `0` jika aplikasi selesai normal dan selain `0` jika gagal; pasang penangkap sinyal OS agar aplikasi sempat menutup koneksi database sebelum berhenti.
 
 ---
 
 ## Tujuan Belajar
 
-- Mengakses konfigurasi lingkungan dan metadata proses aktif melalui properti objek `process`.
-- Membedakan direktori kerja runtime (`process.cwd()`) dengan lokasi berkas kode sumber.
-- Membaca dan menafsirkan komponen penggunaan memori melalui `process.memoryUsage()`.
-- Mengukur interval waktu berpresisi tinggi hingga satuan nanodetik menggunakan `process.hrtime.bigint()`.
-- Mengimplementasikan penanganan sinyal sistem operasi (`SIGINT`, `SIGTERM`) untuk penghentian aplikasi secara bersih.
+- Membaca konfigurasi aplikasi dan informasi proses aktif melalui objek `process`.
+- Membedakan folder kerja terminal saat ini (`process.cwd()`) dengan lokasi fisik file kode sumber.
+- Membaca dan memahami rincian penggunaan memori RAM lewat `process.memoryUsage()`.
+- Mengukur durasi eksekusi kode super presisi hingga skala nanodetik menggunakan `process.hrtime.bigint()`.
+- Menangani sinyal sistem operasi (`SIGINT`, `SIGTERM`) untuk mematikan server dengan aman tanpa memutus data di tengah jalan.
 
 ---
 
 ## Konsep
 
-> Runtime Node.js dapat dianalogikan sebagai sebuah kendaraan yang melaju di jalan raya. Objek `process` adalah panel instrumen di ruang kemudi: indikator bensin memantau alokasi RAM (`process.memoryUsage()`), speedometer mengukur waktu tempuh komputasi (`process.hrtime.bigint()`), buku rute menyimpan konfigurasi operasional (`process.env`), dan kunci kontak mematikan mesin (`process.exit()`). Saat petugas lalu lintas menginstruksikan berhenti (_sinyal SIGTERM_), pengemudi yang disiplin menyalakan lampu sein, memperlambat kendaraan, menurunkan muatan secara aman (_graceful shutdown_), baru kemudian mematikan mesin.
+> Bayangkan aplikasi Node.js seperti sebuah mobil yang sedang melaju di jalan raya. Objek `process` adalah panel instrumen di depan sopir: indikator bensin memantau alokasi RAM (`process.memoryUsage()`), speedometer mengukur kecepatan komputasi (`process.hrtime.bigint()`), buku peta menyimpan setelan operasional (`process.env`), dan kunci kontak mematikan mesin (`process.exit()`). Saat lampu merah menyala atau ada aba-aba berhenti (_sinyal SIGTERM_), sopir yang tertib tidak langsung mencabut kunci, melainkan mengerem perlahan, menyelesaikan antrean penumpang (_graceful shutdown_), baru kemudian mematikan mesin mobil.
 
 ```mermaid
 flowchart TD
-    SIG["Sinyal OS Diterima (SIGINT / SIGTERM)"] --> STOP["1. Hentikan Penerimaan Permintaan Baru"]
-    STOP --> DRAIN["2. Selesaikan Tugas Berjalan & Putus Koneksi Database"]
+    SIG["Sinyal OS Diterima (SIGINT / SIGTERM)"] --> STOP["1. Tolak Permintaan Baru"]
+    STOP --> DRAIN["2. Tuntaskan Tugas Berjalan & Putus Koneksi Database"]
     DRAIN --> EXIT0["3. Keluar Bersih: process.exit(0)"]
     STOP -.-> TIMEOUT["Batas Waktu Darurat: setTimeout(10s) -> process.exit(1)"]
 ```
@@ -33,35 +34,35 @@ flowchart TD
 
 ## Referensi
 
-| Item | Fungsi | Catatan |
-| :--- | :--- | :--- |
-| **`process.env`** | Membaca variabel lingkungan dari sistem host operasi | Seluruh nilai bertipe string atau bernilai `undefined` jika tak ada |
-| **`process.argv`** | Mengambil larik argumen mentah dari baris perintah terminal | Indeks 0 adalah biner Node.js, indeks 1 adalah berkas yang dijalankan |
-| **`process.exit(code)`** | Menghentikan proses secara langsung dengan kode status keluar | Kode `0` menunjukkan keberhasilan, kode selain `0` menandakan galat |
-| **`process.cwd()`** | Mengembalikan direktori kerja saat ini (_Current Working Directory_) | Mengacu pada folder tempat perintah terminal dijalankan |
-| **`process.uptime()`** | Menghitung durasi aktif proses dalam satuan detik | Mengembalikan bilangan pecahan yang terus bertambah selama runtime |
-| **`process.memoryUsage()`** | Menghasilkan cuplikan alokasi memori proses dalam satuan byte | Menyediakan rincian `rss`, `heapTotal`, `heapUsed`, dan `external` |
-| **`process.hrtime.bigint()`** | Mengukur waktu komputasi beresolusi tinggi dalam skala nanodetik | Menggunakan jam monotonik perangkat keras sehingga kebal drift jam |
-| **`process.on(event, fn)`** | Mendaftarkan fungsi penanganan sinyal dan peristiwa siklus hidup | Menangani sinyal sistem operasi seperti `SIGINT` dan `SIGTERM` |
+| Item                          | Fungsi                                                              | Catatan                                                                   |
+| :---------------------------- | :------------------------------------------------------------------ | :------------------------------------------------------------------------ |
+| **`process.env`**             | Membaca variabel lingkungan dari sistem operasi host                | Semua nilainya selalu bertipe string atau `undefined` jika tidak ada      |
+| **`process.argv`**            | Mengambil daftar argumen mentah dari baris perintah terminal        | Indeks 0 adalah biner Node.js, indeks 1 adalah file yang dijalankan       |
+| **`process.exit(code)`**      | Menghentikan jalannya aplikasi seketika dengan kode status tertentu | Angka `0` tanda sukses, angka selain `0` menandakan adanya error          |
+| **`process.cwd()`**           | Mengembalikan jalur direktori kerja terminal saat ini               | Menunjuk ke folder tempat kamu mengetikkan perintah di terminal           |
+| **`process.uptime()`**        | Menghitung berapa lama proses Node.js sudah aktif dalam detik       | Mengembalikan angka desimal yang terus bertambah selama runtime aktif     |
+| **`process.memoryUsage()`**   | Mengambil laporan ringkas penggunaan memori dalam satuan byte       | Menyajikan rincian `rss`, `heapTotal`, `heapUsed`, dan `external`         |
+| **`process.hrtime.bigint()`** | Mengukur waktu komputasi beresolusi tinggi dalam skala nanodetik    | Berbasis jam perangkat keras sehingga kebal terhadap koreksi jam kalender |
+| **`process.on(event, fn)`**   | Memasang fungsi listener sinyal dan siklus hidup proses             | Menangani sinyal dari sistem operasi seperti `SIGINT` dan `SIGTERM`       |
 
 ### `process.env`
 
-Properti `process.env` berisi representasi objek dari variabel lingkungan sistem operasi. Properti ini menjadi standar industri untuk membaca konfigurasi aplikasi tanpa menuliskannya langsung ke dalam kode sumber.
+Properti `process.env` berisi representasi objek dari variabel lingkungan sistem operasi. Properti ini menjadi standar utama untuk membaca setelan aplikasi (seperti port server atau mode rilis) tanpa menulis rahasia langsung di kode sumber.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
-process.env.APP_ENV = 'production';
+process.env.APP_ENV = "production";
 const environment = process.env.APP_ENV;
 
 console.log(environment);
 // Output: production
 ```
 
-Kasus lain: Nilai variabel yang belum didefinisikan pada sistem operasi akan selalu menghasilkan `undefined`.
+Kasus lain: Jika sebuah variabel belum pernah didaftarkan di sistem operasi, membacanya akan selalu menghasilkan `undefined`.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
 const secretKey = process.env.NON_EXISTENT_KEY;
 console.log(secretKey === undefined);
@@ -70,10 +71,10 @@ console.log(secretKey === undefined);
 
 ### `process.argv`
 
-Properti `process.argv` mengembalikan larik string yang memuat argumen yang diberikan pengguna saat menjalankan perintah di terminal. Dua elemen pertama selalu merujuk pada biner eksekusi Node.js dan path berkas utama.
+Properti `process.argv` mengembalikan array string yang memuat seluruh teks yang kamu ketikkan di terminal saat menjalankan perintah Node.js. Dua item pertama selalu berisi lokasi biner Node.js dan path file utama.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
 const args = process.argv;
 console.log(Array.isArray(args));
@@ -82,10 +83,10 @@ console.log(args.length > 0);
 // Output: true
 ```
 
-Kasus lain: Mengambil argumen pengguna tambahan dapat dilakukan dengan memotong dua elemen awal menggunakan `.slice(2)`.
+Kasus lain: Untuk mengambil argumen tambahan yang diketikkan pengguna, cukup potong dua elemen awal menggunakan `.slice(2)`.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
 const userArgs = process.argv.slice(2);
 console.log(Array.isArray(userArgs));
@@ -94,10 +95,10 @@ console.log(Array.isArray(userArgs));
 
 ### `process.exit(code)`
 
-Metode `process.exit()` memaksa proses Node.js berhenti seketika. Meneruskan angka `0` menandakan proses selesai dengan normal, sedangkan angka `1` atau lebih menandakan penghentian akibat galat fatal.
+Metode `process.exit()` memaksa proses Node.js berhenti seketika itu juga. Memberikan angka `0` menandakan aplikasi selesai dengan sukses, sedangkan angka `1` atau lebih menandakan penghentian darurat akibat error.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
 function checkReadiness(isReady) {
   if (!isReady) {
@@ -111,10 +112,10 @@ console.log(process.exitCode);
 // Output: 0
 ```
 
-Kasus lain: Mengatur properti `process.exitCode` lebih disukai daripada memanggil `process.exit()` langsung karena memungkinkan Event Loop menuntaskan operasi asinkron yang sedang berjalan.
+Kasus lain: Mengatur properti `process.exitCode` biasanya lebih disukai daripada memanggil `process.exit()` langsung, karena memberi kesempatan bagi Event Loop untuk menyelesaikan tugas asinkron yang sedang nanggung.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
 process.exitCode = 1;
 console.log(process.exitCode);
@@ -124,10 +125,10 @@ process.exitCode = 0;
 
 ### `process.cwd()`
 
-Metode `process.cwd()` mengembalikan string jalur absolut direktori kerja tempat terminal mengeksekusi perintah. Nilai ini bergantung pada lokasi terminal saat memanggil perintah, bukan letak fisik berkas kode.
+Metode `process.cwd()` mengembalikan string jalur folder tempat terminal sedang berada saat menjalankan perintah `node`. Nilai ini tergantung pada posisi kursor terminal, bukan di mana file JavaScript itu disimpan secara fisik.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
 const workingDirectory = process.cwd();
 console.log(typeof workingDirectory);
@@ -136,22 +137,22 @@ console.log(workingDirectory.length > 0);
 // Output: true
 ```
 
-Kasus lain: Membandingkan jalur kerja saat ini dengan direktori akar dapat dilakukan untuk memvalidasi batas akses aplikasi.
+Kasus lain: Memastikan hasil `process.cwd()` bertipe string dan valid untuk memeriksa apakah folder kerja bisa diakses dengan benar.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
-const isString = typeof process.cwd() === 'string';
+const isString = typeof process.cwd() === "string";
 console.log(isString);
 // Output: true
 ```
 
 ### `process.uptime()`
 
-Metode `process.uptime()` mengembalikan angka dalam satuan detik yang menunjukkan berapa lama proses Node.js telah berjalan sejak pertama kali diinisialisasi.
+Metode `process.uptime()` mengembalikan angka dalam detik yang menunjukkan berapa lama aplikasi Node.js kamu sudah menyala sejak pertama kali dijalankan.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
 const uptimeSeconds = process.uptime();
 console.log(typeof uptimeSeconds);
@@ -160,10 +161,10 @@ console.log(uptimeSeconds >= 0);
 // Output: true
 ```
 
-Kasus lain: Menghitung pembulatan durasi aktif dalam format detik penuh untuk kebutuhan telemetri endpoint status.
+Kasus lain: Kamu bisa membulatkan angkanya ke bawah menggunakan `Math.floor()` untuk membuat laporan status kesehatan server yang rapi.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
 const roundedSeconds = Math.floor(process.uptime());
 console.log(Number.isInteger(roundedSeconds));
@@ -172,10 +173,10 @@ console.log(Number.isInteger(roundedSeconds));
 
 ### `process.memoryUsage()`
 
-Metode `process.memoryUsage()` mengembalikan objek ringkasan alokasi memori proses dalam satuan byte. Properti `heapUsed` mencerminkan ukuran memori yang sedang aktif dipakai oleh objek-objek JavaScript V8.
+Metode `process.memoryUsage()` memberikan gambaran alokasi memori RAM yang dipakai oleh aplikasi dalam ukuran byte. Properti `heapUsed` mencerminkan ukuran memori yang sedang aktif dipakai oleh variabel dan objek JavaScript.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
 const memory = process.memoryUsage();
 console.log(typeof memory.rss);
@@ -186,10 +187,10 @@ console.log(memory.heapUsed <= memory.heapTotal);
 // Output: true
 ```
 
-Kasus lain: Mengonversi byte ke megabyte mempermudah pembacaan metrik kapasitas RAM.
+Kasus lain: Membagi nilainya dengan `1024 / 1024` mempermudah kita membaca ukuran memori ke dalam satuan Megabyte (MB).
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
 const heapMb = process.memoryUsage().heapUsed / 1024 / 1024;
 console.log(heapMb > 0);
@@ -198,10 +199,10 @@ console.log(heapMb > 0);
 
 ### `process.hrtime.bigint()`
 
-Metode `process.hrtime.bigint()` mengembalikan stempel waktu perangkat keras dalam tipe data `bigint` dengan satuan nanodetik. Metode ini dirancang untuk pembandingan durasi kinerja algoritma tanpa terganggu penyesuaian jam sistem.
+Metode `process.hrtime.bigint()` mengembalikan catatan waktu perangkat keras bertipe `bigint` dalam satuan nanodetik. Fitur ini sangat cocok untuk menguji efisiensi algoritma karena kebal terhadap perubahan jam komputer.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
 const startTime = process.hrtime.bigint();
 let counter = 0;
@@ -217,10 +218,10 @@ console.log(durationNanoseconds >= 0n);
 // Output: true
 ```
 
-Kasus lain: Mengonversi selisih durasi nanodetik ke milidetik presisi pecahan dengan membaginya dengan `1_000_000n`.
+Kasus lain: Mengubah selisih nanodetik ke milidetik cukup dengan membaginya dengan angka `1_000_000n`.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
 const start = process.hrtime.bigint();
 const end = process.hrtime.bigint();
@@ -231,121 +232,126 @@ console.log(durationMs >= 0);
 
 ### `process.on(event, fn)`
 
-Metode `process.on()` menyematkan pendengar peristiwa pada siklus hidup proses, termasuk penanganan interupsi sinyal POSIX seperti `SIGINT` (Ctrl+C) atau `SIGTERM` (sinyal penghentian container).
+Metode `process.on()` dipakai untuk memasang listener pada siklus hidup aplikasi, termasuk menangani sinyal sistem operasi seperti `SIGINT` (saat kamu menekan tombol Ctrl+C di terminal).
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
-let signalStatus = 'PENDING';
+let signalStatus = "PENDING";
 const handler = () => {
-  signalStatus = 'SIGNAL_RECEIVED';
+  signalStatus = "SIGNAL_RECEIVED";
 };
 
-process.on('customEvent', handler);
-process.emit('customEvent');
+process.on("customEvent", handler);
+process.emit("customEvent");
 
 console.log(signalStatus);
 // Output: SIGNAL_RECEIVED
 
-process.removeListener('customEvent', handler);
+process.removeListener("customEvent", handler);
 ```
 
-Kasus lain: Mencegah penumpukan listener dengan melepas pendengar peristiwa menggunakan `removeListener`.
+Kasus lain: Untuk mencegah penumpukan fungsi listener di memori, lepaskan listener yang sudah tidak terpakai menggunakan `removeListener`.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
 const testListener = () => {};
-process.on('testSignal', testListener);
-console.log(process.listenerCount('testSignal') >= 1);
+process.on("testSignal", testListener);
+console.log(process.listenerCount("testSignal") >= 1);
 // Output: true
-process.removeListener('testSignal', testListener);
+process.removeListener("testSignal", testListener);
 ```
 
 ### Perbandingan: Kode Keluar Status `process.exit`
 
-| Nilai Kode | Makna Standar | Respon Sistem Orkestrasi (Docker/K8s) | Status Baris Perintah (`$?`) |
-| :--- | :--- | :--- | :--- |
-| **`0`** | Sukses / Normal | Tugas selesai sempurna; pod tidak di-restart darurat | Menghasilkan kode keluar `0` (lulus) |
-| **`1`** | Galat Fatal Umum | Aplikasi rusak; pod ditandai CrashLoopBackOff | Menghasilkan kode keluar `1` (gagal) |
-| **`130`** | Dihentikan oleh Pengguna | Interupsi terminal via Ctrl+C (`128 + SIGINT`) | Menandakan interupsi manual dari luar |
+| Nilai Kode | Makna Umum         | Respon Sistem Orkestrasi (Docker/K8s)                | Status di Baris Perintah (`$?`)              |
+| :--------- | :----------------- | :--------------------------------------------------- | :------------------------------------------- |
+| **`0`**    | Sukses / Normal    | Tugas selesai; container tidak di-restart paksa      | Menghasilkan kode keluar `0` (berhasil)      |
+| **`1`**    | Error / Error Umum | Aplikasi rusak; container ditandai CrashLoop         | Menghasilkan kode keluar `1` (gagal)         |
+| **`130`**  | Dihentikan Manual  | Pengguna menekan Ctrl+C di terminal (`128 + SIGINT`) | Menandakan pembatalan langsung oleh pengguna |
 
 ---
 
 ## Kesalahan Umum
 
-### Menelan Galat pada `uncaughtException` Tanpa Mematikan Proses
+### Membiarkan Error pada `uncaughtException` Tanpa Mematikan Proses
 
-Menangkap kesalahan fatal sinkron tetapi tidak mematikan proses menyebabkan aplikasi berjalan dalam status memori yang korup (_undefined state_).
+Menangkap error fatal tetapi membiarkan aplikasi tetap berjalan bisa membuat memori aplikasi berada dalam kondisi rusak dan tidak bisa diprediksi.
 
 ```javascript
 // Salah
-process.on('uncaughtException', (error) => {
-  console.log('Error caught but process keeps running:', error.message);
+process.on("uncaughtException", (error) => {
+  console.log(
+    "Error tertangkap tapi aplikasi dibiarkan terus jalan:",
+    error.message,
+  );
 });
 ```
 
 ```javascript
 // Benar
-process.on('uncaughtException', (error) => {
-  console.error('Fatal uncaught error, terminating process:', error.message);
+process.on("uncaughtException", (error) => {
+  console.error(
+    "Error fatal tidak tertangani, aplikasi dimatikan:",
+    error.message,
+  );
   process.exit(1);
 });
 ```
 
-### Mengasumsikan Nilai `process.env` Mengembalikan Tipe Non-String
+### Mengira Nilai `process.env` Mengembalikan Tipe Selain String
 
-Semua nilai yang diambil dari `process.env` selalu berupa string. Membandingkan nilai string dengan boolean atau angka secara langsung menyebabkan galat logika.
+Semua nilai yang diambil dari `process.env` selalu berupa string. Membandingkan nilai string dengan boolean atau angka secara langsung bisa memicu kesalahan logika.
 
 ```javascript
 // Salah
-process.env.DEBUG = 'false';
+process.env.DEBUG = "false";
 if (process.env.DEBUG) {
-  // Evaluasi menghasilkan true karena string "false" bernilai truthy!
+  // Kondisi ini tetap true karena string "false" dianggap truthy di JavaScript!
 }
 ```
 
 ```javascript
 // Benar
-process.env.DEBUG = 'false';
-const isDebug = process.env.DEBUG === 'true';
+process.env.DEBUG = "false";
+const isDebug = process.env.DEBUG === "true";
 if (isDebug) {
-  // Blok tidak akan dieksekusi jika bernilai string "false"
+  // Blok ini tidak akan jalan jika nilainya adalah string "false"
 }
 ```
 
-### Mengasumsikan `process.cwd()` Identik dengan Folder Berkas
+### Mengira `process.cwd()` Selalu Sama dengan Lokasi File Kode
 
-Menggunakan `process.cwd()` untuk mencari berkas internal modul akan gagal apabila perintah `node` dieksekusi dari direktori lain di luar akar proyek.
+Memakai `process.cwd()` untuk mencari file internal aplikasi akan gagal jika perintah `node` dijalankan dari luar folder proyek.
 
 ```javascript
 // Salah
-import path from 'node:path';
-import process from 'node:process';
-const configPath = path.join(process.cwd(), 'config.json');
+import process from "node:process";
+
+// Mengira posisi terminal selalu sama dengan tempat file disimpan
+const configPath = `${process.cwd()}/config.json`;
 ```
 
 ```javascript
 // Benar
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-const moduleDirectory = path.dirname(fileURLToPath(import.meta.url));
-const configPath = path.join(moduleDirectory, 'config.json');
+// Gunakan properti bawaan import.meta.dirname untuk menunjuk langsung ke folder file kode
+const configPath = `${import.meta.dirname}/config.json`;
 ```
 
 ---
 
 ## Studi Kasus
 
-Skenario: Membangun pengawas kesehatan proses server (_process health monitor_) yang membaca konfigurasi port dan lingkungan dari `process.env`, memantau penggunaan alokasi heap RAM via `process.memoryUsage()`, mengukur latensi operasi dengan `process.hrtime.bigint()`, dan mengembalikan diagnosa status sistem.
+Skenario: Membangun pengawas kesehatan proses server (_process health monitor_) yang membaca setelan port dan lingkungan dari `process.env`, memantau alokasi RAM via `process.memoryUsage()`, mengukur durasi pengecekan memakai `process.hrtime.bigint()`, serta menyusun status kesehatan sistem secara mandiri.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
 class ProcessMonitor {
   constructor(options = {}) {
     this.heapThresholdMb = options.heapThresholdMb || 250;
-    this.environment = process.env.NODE_ENV || 'development';
+    this.environment = process.env.NODE_ENV || "development";
     this.port = Number(process.env.PORT) || 3000;
   }
 
@@ -359,7 +365,7 @@ class ProcessMonitor {
     const isHealthy = usedHeapMb < this.heapThresholdMb;
 
     return {
-      status: isHealthy ? 'HEALTHY' : 'CRITICAL',
+      status: isHealthy ? "HEALTHY" : "CRITICAL",
       pid: process.pid,
       uptimeSeconds: Math.floor(process.uptime()),
       environment: this.environment,
@@ -370,8 +376,8 @@ class ProcessMonitor {
   }
 }
 
-process.env.NODE_ENV = 'production';
-process.env.PORT = '8080';
+process.env.NODE_ENV = "production";
+process.env.PORT = "8080";
 
 const monitor = new ProcessMonitor({ heapThresholdMb: 500 });
 const report = monitor.getHealthReport();
@@ -382,13 +388,13 @@ console.log(report.environment);
 // Output: production
 console.log(report.port);
 // Output: 8080
-console.log(typeof report.pid === 'number');
+console.log(typeof report.pid === "number");
 // Output: true
 console.log(report.heapMb > 0);
 // Output: true
 ```
 
-Desain ini memanfaatkan pembacaan `process.env` dengan nilai cadangan baku, menghitung penggunaan RAM dari `process.memoryUsage()`, serta mencatat durasi diagnostik memakai `process.hrtime.bigint()` tanpa dependensi eksternal.
+Desain ini memanfaatkan pembacaan `process.env` dengan nilai cadangan, memantau penggunaan RAM dari `process.memoryUsage()`, serta mencatat durasi diagnostik memakai `process.hrtime.bigint()` tanpa dependensi eksternal.
 
 ---
 
@@ -396,14 +402,16 @@ Desain ini memanfaatkan pembacaan `process.env` dengan nilai cadangan baku, meng
 
 ### Soal 1 (Dasar)
 
-Buat fungsi `formatMemoryStatistics()` yang memanggil `process.memoryUsage()` dan mengembalikan objek dengan nilai alokasi `rssMb`, `heapTotalMb`, dan `heapUsedMb` yang sudah dikonversi ke dalam satuan Megabyte (MB) dengan pembulatan dua angka di belakang koma.
+Buat fungsi `formatMemoryStatistics()` yang memanggil `process.memoryUsage()` dan mengembalikan objek dengan nilai alokasi `rssMb`, `heapTotalMb`, dan `heapUsedMb` yang sudah diubah ke satuan Megabyte (MB) dengan pembulatan dua angka di belakang koma.
 
-Contoh masukan:
+Contoh input:
+
 ```javascript
 formatMemoryStatistics();
 ```
 
-Contoh keluaran yang diharapkan:
+Contoh output yang diharapkan:
+
 ```javascript
 {
   rssMb: 35.42,
@@ -412,13 +420,14 @@ Contoh keluaran yang diharapkan:
 }
 ```
 
-Batasan: Gunakan properti bawaan `process.memoryUsage()`. Seluruh nilai wajib bertipe angka positif.
+Batasan: Gunakan properti bawaan `process.memoryUsage()`. Semua nilai pada objek output harus berupa angka positif.
 
 ### Soal 2 (Menengah)
 
-Buat fungsi `measureFunctionLatency(targetFunction)` yang menerima sebuah fungsi sinkron, mengeksekusinya satu kali, dan mengembalikan objek berisi hasil keluaran fungsi target serta durasi eksekusinya dalam satuan mikrodetik (µs) menggunakan `process.hrtime.bigint()`.
+Buat fungsi `measureFunctionLatency(targetFunction)` yang menerima sebuah fungsi sinkron, menjalankannya satu kali, dan mengembalikan objek berisi hasil pemanggilan fungsi tersebut serta durasi waktu eksekusinya dalam satuan mikrodetik (µs) menggunakan `process.hrtime.bigint()`.
 
-Contoh masukan:
+Contoh input:
+
 ```javascript
 measureFunctionLatency(() => {
   let count = 0;
@@ -427,7 +436,8 @@ measureFunctionLatency(() => {
 });
 ```
 
-Contoh keluaran yang diharapkan:
+Contoh output yang diharapkan:
+
 ```javascript
 {
   result: 49995000,
@@ -435,28 +445,28 @@ Contoh keluaran yang diharapkan:
 }
 ```
 
-Batasan: Gunakan `process.hrtime.bigint()` untuk mengukur waktu. Konversikan selisih durasi nanodetik ke mikrodetik dengan rumus pembagian `1_000`.
+Batasan: Gunakan `process.hrtime.bigint()` untuk mengukur waktu. Ubah selisih durasi nanodetik ke mikrodetik dengan rumus pembagian `1_000`.
 
 ### Soal 3 (Menantang)
 
-Buat fungsi koordinator konfigurasi dan terminasi `initializeApplication(envSchema)` yang memvalidasi integritas environment variable saat server pertama kali dinyalakan.
+Buat fungsi pemvalidasi konfigurasi server `initializeApplication(envSchema)` yang memeriksa kesiapan environment variable saat aplikasi pertama kali dinyalakan dengan aturan:
 
-Ketentuan fungsional:
+1. `envSchema` menerima objek berisi daftar variabel yang wajib ada, misalnya `{ PORT: 'number', DATABASE_URL: 'string' }`.
+2. Lakukan pengecekan pada setiap kunci skema di `process.env`. Jika ada variabel yang tidak ada atau gagal diubah ke tipe yang diminta, kumpulkan seluruh pesan kesalahan tersebut.
+3. Jika konfigurasi tidak lengkap, kembalikan objek `{ ready: false, errors: string[] }` dan ubah `process.exitCode = 1` tanpa langsung mematikan aplikasi agar pemanggil sempat mencatat log error.
+4. Jika seluruh variabel valid, pasang listener sinyal `SIGINT` menggunakan `process.once()`. Listener ini harus mengembalikan status sukses dan menyetel `process.exitCode = 0`.
+5. Kembalikan objek konfigurasi yang nilainya sudah diubah ke tipe data yang sesuai (`number` atau `string`).
 
-1. `envSchema` menerima objek definisi variabel yang wajib ada, misalnya `{ PORT: 'number', DATABASE_URL: 'string' }`.
-2. Lakukan iterasi terhadap seluruh kunci skema pada `process.env`. Jika ada variabel yang tidak ditemukan atau gagal dikonversi ke tipe yang diminta, kumpulkan seluruh daftar kesalahan tersebut.
-3. Jika terdapat galat konfigurasi, kembalikan objek `{ ready: false, errors: string[] }` dan ubah `process.exitCode = 1` tanpa mematikan proses seketika agar pemanggil dapat mencatat log.
-4. Jika seluruh variabel valid, daftarkan pendengar peristiwa sinyal `SIGINT` menggunakan `process.once()`. Pendengar ini harus mengembalikan status penghentian teratur dan menetapkan `process.exitCode = 0`.
-5. Kembalikan objek konfigurasi yang sudah dikonversi ke tipe data yang sesuai (`number` atau `string`).
+Contoh input 1:
 
-Contoh masukan 1:
 ```javascript
-process.env.PORT = '3000';
-process.env.DATABASE_URL = 'postgres://localhost/db';
-initializeApplication({ PORT: 'number', DATABASE_URL: 'string' });
+process.env.PORT = "3000";
+process.env.DATABASE_URL = "postgres://localhost/db";
+initializeApplication({ PORT: "number", DATABASE_URL: "string" });
 ```
 
-Contoh keluaran 1:
+Contoh output 1:
+
 ```javascript
 {
   ready: true,
@@ -467,14 +477,16 @@ Contoh keluaran 1:
 }
 ```
 
-Contoh masukan 2:
+Contoh input 2:
+
 ```javascript
 delete process.env.DATABASE_URL;
-process.env.PORT = 'not-a-number';
-initializeApplication({ PORT: 'number', DATABASE_URL: 'string' });
+process.env.PORT = "not-a-number";
+initializeApplication({ PORT: "number", DATABASE_URL: "string" });
 ```
 
-Contoh keluaran 2:
+Contoh output 2:
+
 ```javascript
 {
   ready: false,
@@ -485,7 +497,7 @@ Contoh keluaran 2:
 }
 ```
 
-Batasan: Dilarang menggunakan pustaka validasi pihak ketiga. Wajib memanipulasi `process.env`, `process.exitCode`, dan penanganan sinyal secara mandiri.
+Batasan: Dilarang menggunakan library validasi pihak ketiga. Wajib mengelola `process.env`, `process.exitCode`, dan penanganan sinyal secara mandiri.
 
 ---
 

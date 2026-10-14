@@ -1,25 +1,28 @@
 # Stream
 
 > Ringkasan
-> - Fungsi: Memproses aliran data secara bertahap dalam potongan-potongan kecil (_chunks_) tanpa memuat seluruh berkas ke memori RAM sekaligus.
-> - Digunakan saat: Menangani berkas berukuran besar, transfer data jaringan HTTP/TCP, pemrosesan log streaming, dan kompresi data.
-> - Aturan praktis: Selalu gunakan `pipeline` dari `node:stream/promises` alih-alih `pipe()` manual untuk menjamin pembersihan sumber daya dan penanganan galat otomatis, serta kendalikan fenomena _backpressure_.
+>
+> - Fungsi: Memproses aliran data secara bertahap dalam potongan-potongan kecil (_chunks_) tanpa perlu memuat seluruh isi berkas ke memori RAM sekaligus.
+> - Digunakan saat: Menangani berkas berukuran raksasa, transfer data jaringan HTTP/TCP, pemrosesan log berkelanjutan, dan kompresi data.
+> - Aturan praktis: Selalu gunakan `pipeline` dari `node:stream/promises` daripada `pipe()` biasa agar pembersihan sumber daya dan penanganan error berjalan otomatis, serta selalu kendalikan tekanan balik (_backpressure_).
 
 ---
 
 ## Tujuan Belajar
 
-- Memahami konsep streaming dan efisiensi memori yang dihasilkan dibandingkan pembacaan data sekaligus.
-- Membedakan empat jenis utama stream: _Readable_, _Writable_, _Duplex_, dan _Transform_.
-- Membaca dan menulis data chunk menggunakan iterasi asinkron `for await...of` dan metode `write()`.
-- Mengendalikan fenomena tekanan balik (_backpressure_) menggunakan event `drain`.
-- Menyambungkan pipa stream secara aman menggunakan utilitas `pipeline` dari `node:stream/promises`.
+- Memahami konsep streaming dan keuntungan efisiensi memori dibanding membaca seluruh data sekaligus.
+- Mengenal empat jenis utama stream: _Readable_, _Writable_, _Duplex_, dan _Transform_.
+- Membaca dan menulis potongan data (_chunk_) menggunakan perulangan asinkron `for await...of` dan metode `write()`.
+- Mengendalikan tekanan balik (_backpressure_) menggunakan event `drain`.
+- Menghubungkan rantai stream secara aman menggunakan utilitas `pipeline` dari `node:stream/promises`.
 
 ---
 
 ## Konsep
 
-> Menangani data dianalogikan seperti menonton film berdurasi panjang. Pendekatan tanpa stream (`readFile`) mewajibkan pengunduhan seluruh berkas film (misalnya 4 GB) ke dalam RAM sebelum detik pertama film dapat diputar. Sebaliknya, streaming hanya mengambil beberapa megabyte pertama (_chunk_), langsung memutarnya di layar, dan terus mengalirkan potongan berikutnya di latar belakang. Konsumsi memori tetap stabil dan kecil meskipun ukuran total data mencapai puluhan gigabyte.
+Kita bisa membayangkan stream seperti perbedaan antara mengunduh film utuh dengan menontonnya secara streaming di internet. Jika tanpa stream (`readFile`), kita harus menunggu seluruh berkas film (misalnya berukuran 4 GB) terunduh lengkap ke dalam memori RAM komputer sebelum detik pertama film bisa diputar di layar.
+
+Sebaliknya dengan streaming, aplikasi hanya mengambil beberapa megabyte awal (_chunk_), langsung memutarnya di layar, dan terus mengalirkan potongan-potongan berikutnya di latar belakang sambil film berjalan. Penggunaan memori RAM aplikasi akan tetap rendah dan stabil, meskipun data yang diproses mencapai puluhan gigabyte.
 
 ```mermaid
 flowchart LR
@@ -32,39 +35,39 @@ flowchart LR
 
 ## Referensi
 
-| Item | Fungsi | Catatan |
-| :--- | :----- | :------ |
-| **`Readable`** | Aliran data sumber yang hanya dapat dibaca | Mendukung pembacaan via event `data` atau perulangan `for await...of` |
-| **`Writable`** | Aliran data tujuan tempat data ditulis | Menerima data chunk via `write()` dan ditutup dengan `end()` |
-| **`Transform`** | Aliran duplex yang memodifikasi atau menyaring data saat melintas | Mengimplementasikan method internal `_transform` untuk memproses chunk |
-| **`pipeline()`** | Menghubungkan beberapa stream secara aman berbasis Promise | Otomatis membersihkan dan menutup semua stream jika terjadi galat di tengah jalan |
-| **`finished()`** | Memantau kapan suatu stream selesai diproses atau tertutup | Mengembalikan Promise yang diselesaikan saat stream ditutup |
-| **`writable.write()`** | Menulis potongan chunk data ke dalam antrean writable stream | Mengembalikan nilai boolean `false` jika internal buffer telah penuh |
-| **`writable.end()`** | Menandai bahwa tidak ada lagi data yang akan ditulis ke stream | Memancarkan event `finish` setelah seluruh data dalam antrean selesai dibilas |
+| Item                   | Fungsi                                                           | Catatan                                                                           |
+| :--------------------- | :--------------------------------------------------------------- | :-------------------------------------------------------------------------------- |
+| **`Readable`**         | Aliran sumber data yang bisa dibaca                              | Mendukung pembacaan lewat event `data` atau perulangan `for await...of`           |
+| **`Writable`**         | Aliran tujuan tempat data dialirkan dan disimpan                 | Menerima data chunk lewat `write()` dan diakhiri dengan `end()`                   |
+| **`Transform`**        | Aliran duplex yang memodifikasi data saat melintas               | Memanfaatkan fungsi internal `_transform` untuk mengolah data chunk               |
+| **`pipeline()`**       | Menghubungkan beberapa aliran stream berbasis Promise            | Otomatis membersihkan dan menutup semua stream jika terjadi error di tengah jalan |
+| **`finished()`**       | Memberi tahu kapan suatu stream selesai mengalir atau tertutup   | Mengembalikan Promise yang selesai saat siklus stream tuntas                      |
+| **`writable.write()`** | Mengirimkan potongan data chunk ke dalam antrean writable stream | Menghasilkan nilai boolean `false` jika penampung internal stream sedang penuh    |
+| **`writable.end()`**   | Menandai bahwa pengiriman data ke stream sudah selesai           | Memancarkan event `finish` setelah semua data di antrean selesai diproses         |
 
 ### `Readable`
 
-Kelas `Readable` merepresentasikan sumber data yang dapat dikonsumsi secara bertahap. Metode statis `Readable.from()` mempermudah pembuatan stream pembacaan dari iterable atau array.
+Kelas `Readable` merepresentasikan sumber data yang dapat kita baca sedikit demi sedikit secara bertahap. Metode praktis `Readable.from()` mempermudah kita membuat aliran baca dari sebuah array data atau objek iterable.
 
 ```javascript
-import { Readable } from 'node:stream';
+import { Readable } from "node:stream";
 
-const source = Readable.from(['Line 1\n', 'Line 2\n']);
+const source = Readable.from(["Line 1\n", "Line 2\n"]);
 const chunks = [];
 
 for await (const chunk of source) {
   chunks.push(chunk);
 }
 
-console.log(chunks.join('').trim());
+console.log(chunks.join("").trim());
 // Output: Line 1
 // Line 2
 ```
 
-Kasus lain: Menangani pembacaan stream dari sumber kosong menghasilkan nol iterasi tanpa memicu galat.
+Kasus lain: Membaca stream dari sumber yang kosong akan langsung selesai tanpa pengulangan dan tanpa menghasilkan error.
 
 ```javascript
-import { Readable } from 'node:stream';
+import { Readable } from "node:stream";
 
 const emptySource = Readable.from([]);
 let totalChunks = 0;
@@ -79,10 +82,10 @@ console.log(totalChunks);
 
 ### `Writable`
 
-Kelas `Writable` merepresentasikan tujuan akhir tempat data dialirkan dan disimpan, seperti penulisan berkas atau respons jaringan.
+Kelas `Writable` merepresentasikan tujuan akhir tempat data dialirkan, misalnya penulisan berkas ke penyimpanan atau pengiriman respons jaringan.
 
 ```javascript
-import { Writable } from 'node:stream';
+import { Writable } from "node:stream";
 
 const chunks = [];
 const destination = new Writable({
@@ -92,20 +95,20 @@ const destination = new Writable({
   },
 });
 
-destination.write('Chunk A');
-destination.write('Chunk B');
+destination.write("Chunk A");
+destination.write("Chunk B");
 destination.end();
 
-destination.on('finish', () => {
-  console.log(chunks.join(' - '));
+destination.on("finish", () => {
+  console.log(chunks.join(" - "));
 });
 // Output: Chunk A - Chunk B
 ```
 
-Kasus lain: Menulis ke stream yang telah ditutup memicu event `'error'` dengan kode `ERR_STREAM_WRITE_AFTER_END`.
+Kasus lain: Menulis data ke stream yang sudah ditutup akan memicu event `'error'` dengan kode `ERR_STREAM_WRITE_AFTER_END`.
 
 ```javascript
-import { Writable } from 'node:stream';
+import { Writable } from "node:stream";
 
 const writer = new Writable({
   write(chunk, encoding, callback) {
@@ -114,20 +117,20 @@ const writer = new Writable({
 });
 
 writer.end();
-writer.on('error', (err) => {
+writer.on("error", (err) => {
   console.log(err.code);
 });
 
-writer.write('new data');
+writer.write("new data");
 // Output: ERR_STREAM_WRITE_AFTER_END
 ```
 
 ### `Transform`
 
-Kelas `Transform` adalah jenis stream khusus yang menerima data masukan, melakukan manipulasi komputasi secara langsung, lalu menghasilkan keluaran data baru.
+Kelas `Transform` adalah jenis stream khusus yang menerima data input, mengolah atau memodifikasi datanya di tengah jalan, lalu mengalirkan data baru ke saluran berikutnya.
 
 ```javascript
-import { Transform } from 'node:stream';
+import { Transform } from "node:stream";
 
 const uppercase = new Transform({
   transform(chunk, encoding, callback) {
@@ -135,54 +138,54 @@ const uppercase = new Transform({
   },
 });
 
-uppercase.on('data', (data) => {
+uppercase.on("data", (data) => {
   console.log(data.toString());
 });
 
-uppercase.write('hello stream');
+uppercase.write("hello stream");
 uppercase.end();
 // Output: HELLO STREAM
 ```
 
-Kasus lain: Meneruskan galat di dalam proses transformasi melalui callback pertama `callback(error)`.
+Kasus lain: Meneruskan error di tengah proses transformasi dengan memanggil parameter pertama callback `callback(error)`.
 
 ```javascript
-import { Transform } from 'node:stream';
+import { Transform } from "node:stream";
 
 const validator = new Transform({
   transform(chunk, encoding, callback) {
-    if (chunk.toString().includes('forbidden')) {
-      callback(new Error('Forbidden word detected'));
+    if (chunk.toString().includes("forbidden")) {
+      callback(new Error("Forbidden word detected"));
     } else {
       callback(null, chunk);
     }
   },
 });
 
-validator.on('error', (err) => {
+validator.on("error", (err) => {
   console.log(err.message);
 });
 
-validator.write('forbidden word here');
+validator.write("forbidden word here");
 // Output: Forbidden word detected
 ```
 
 ### `pipeline()`
 
-Fungsi `pipeline()` dari `node:stream/promises` mengalirkan data melewati rangkaian stream dan menangani penutupan serta pembersihan memori jika terjadi kegagalan.
+Fungsi `pipeline()` dari modul `node:stream/promises` mengalirkan data melewati rantai beberapa stream secara aman, serta otomatis menutup seluruh stream jika terjadi gangguan di tengah jalan.
 
 ```javascript
-import { Readable, Writable, Transform } from 'node:stream';
-import { pipeline } from 'node:stream/promises';
+import { Readable, Writable, Transform } from "node:stream";
+import { pipeline } from "node:stream/promises";
 
-const source = Readable.from(['coffee', 'tea']);
+const source = Readable.from(["coffee", "tea"]);
 const formatter = new Transform({
   transform(chunk, encoding, callback) {
     callback(null, `[${chunk}]`);
   },
 });
 
-let result = '';
+let result = "";
 const destination = new Writable({
   write(chunk, encoding, callback) {
     result += chunk.toString();
@@ -195,15 +198,15 @@ console.log(result);
 // Output: [coffee][tea]
 ```
 
-Kasus lain: Menangani galat di tengah aliran pipa, di mana semua stream di dalam rantai otomatis dihancurkan.
+Kasus lain: Menangani error di tengah alur pipa, di mana semua stream di dalam rantai otomatis dihancurkan dan dibersihkan dari memori.
 
 ```javascript
-import { Readable, Writable } from 'node:stream';
-import { pipeline } from 'node:stream/promises';
+import { Readable, Writable } from "node:stream";
+import { pipeline } from "node:stream/promises";
 
 const brokenSource = new Readable({
   read() {
-    this.destroy(new Error('Source connection lost'));
+    this.destroy(new Error("Source connection lost"));
   },
 });
 
@@ -223,31 +226,31 @@ try {
 
 ### `finished()`
 
-Fungsi `finished()` dari `node:stream/promises` memberikan sinyal Promise saat suatu stream telah menyelesaikan seluruh siklusnya atau ditutup secara tuntas.
+Fungsi `finished()` dari modul `node:stream/promises` memberi tahu kita lewat Promise saat suatu stream telah menyelesaikan seluruh tugasnya atau ditutup dengan tuntas.
 
 ```javascript
-import { Readable } from 'node:stream';
-import { finished } from 'node:stream/promises';
+import { Readable } from "node:stream";
+import { finished } from "node:stream/promises";
 
-const source = Readable.from(['data 1', 'data 2']);
+const source = Readable.from(["data 1", "data 2"]);
 source.resume();
 
 await finished(source);
-console.log('Stream finished processing');
+console.log("Stream finished processing");
 // Output: Stream finished processing
 ```
 
-Kasus lain: Menangkap penutupan abnormal ketika stream dihancurkan bersama objek galat sebelum selesai.
+Kasus lain: Menangkap kondisi saat stream dipaksa berhenti atau dihancurkan bersama objek error sebelum selesai.
 
 ```javascript
-import { Readable } from 'node:stream';
-import { finished } from 'node:stream/promises';
+import { Readable } from "node:stream";
+import { finished } from "node:stream/promises";
 
 const source = new Readable({
   read() {},
 });
 
-source.destroy(new Error('Cancelled'));
+source.destroy(new Error("Cancelled"));
 
 try {
   await finished(source);
@@ -259,10 +262,10 @@ try {
 
 ### `writable.write()`
 
-Metode `writable.write()` menyuntikkan potongan data ke dalam stream. Metode ini mengembalikan `false` jika kapasitas penampung internal telah mencapai batas ambang (`highWaterMark`).
+Metode `writable.write()` digunakan untuk mengirimkan potongan data ke dalam stream. Metode ini mengembalikan nilai boolean `false` jika penampung internalnya sudah mencapai batas ambang maksimal (`highWaterMark`), yang berarti pengirim harus menunggu sejenak.
 
 ```javascript
-import { Writable } from 'node:stream';
+import { Writable } from "node:stream";
 
 const writer = new Writable({
   highWaterMark: 10,
@@ -271,21 +274,21 @@ const writer = new Writable({
   },
 });
 
-const canAcceptMore = writer.write('1234567890123');
+const canAcceptMore = writer.write("1234567890123");
 console.log(canAcceptMore);
 // Output: false
 
-writer.on('drain', () => {
-  console.log('Buffer drained');
+writer.on("drain", () => {
+  console.log("Buffer drained");
   writer.end();
 });
 // Output: Buffer drained
 ```
 
-Kasus lain: Menulis data kecil di bawah kapasitas ambang mengembalikan nilai `true`.
+Kasus lain: Menulis data kecil di bawah batas kapasitas ambang akan langsung mengembalikan nilai boolean `true`.
 
 ```javascript
-import { Writable } from 'node:stream';
+import { Writable } from "node:stream";
 
 const writer = new Writable({
   highWaterMark: 100,
@@ -294,7 +297,7 @@ const writer = new Writable({
   },
 });
 
-const canAcceptMore = writer.write('short');
+const canAcceptMore = writer.write("short");
 console.log(canAcceptMore);
 // Output: true
 
@@ -303,11 +306,11 @@ writer.end();
 
 ### `writable.end()`
 
-Metode `writable.end()` menandakan akhir dari pengiriman data, memastikan seluruh potongan yang tersisa dalam antrean ditulis tuntas sebelum stream ditutup.
+Metode `writable.end()` menandakan bahwa seluruh data sudah selesai dikirimkan, memastikan sisa data di antrean tertulis tuntas sebelum stream benar-benar ditutup.
 
 ```javascript
-import { Writable } from 'node:stream';
-import { finished } from 'node:stream/promises';
+import { Writable } from "node:stream";
+import { finished } from "node:stream/promises";
 
 const output = [];
 const writer = new Writable({
@@ -317,19 +320,19 @@ const writer = new Writable({
   },
 });
 
-writer.write('data');
-writer.end('final');
+writer.write("data");
+writer.end("final");
 await finished(writer);
 
-console.log(output.join(' - '));
+console.log(output.join(" - "));
 // Output: data - final
 ```
 
-Kasus lain: Memanggil `end()` tanpa parameter data apa pun untuk sekadar menutup antrean.
+Kasus lain: Memanggil `end()` tanpa menyertakan data baru hanya untuk menutup antrean penulisan.
 
 ```javascript
-import { Writable } from 'node:stream';
-import { finished } from 'node:stream/promises';
+import { Writable } from "node:stream";
+import { finished } from "node:stream/promises";
 
 const writer = new Writable({
   write(chunk, encoding, callback) {
@@ -340,18 +343,18 @@ const writer = new Writable({
 writer.end();
 await finished(writer);
 
-console.log('Shutdown complete');
+console.log("Shutdown complete");
 // Output: Shutdown complete
 ```
 
 ### Perbandingan: Empat Jenis Stream di Node.js
 
-| Jenis Stream | Arah Aliran Data | Contoh Implementasi Bawaan |
-| :--- | :--- | :--- |
-| **Readable** | Hanya membaca dari sumber data | `fs.createReadStream()`, `Readable.from()` |
-| **Writable** | Hanya menulis ke tujuan data | `fs.createWriteStream()`, `process.stdout` |
-| **Duplex** | Membaca dan menulis secara independen | `net.Socket` (koneksi dua arah TCP) |
-| **Transform** | Membaca, memodifikasi data, lalu menulis hasil | `zlib.createGzip()`, `crypto.createCipheriv()` |
+| Jenis Stream  | Arah Aliran Data                                        | Contoh Penggunaan Nyata                        |
+| :------------ | :------------------------------------------------------ | :--------------------------------------------- |
+| **Readable**  | Hanya membaca dari sumber data                          | `fs.createReadStream()`, `Readable.from()`     |
+| **Writable**  | Hanya menulis ke tujuan data                            | `fs.createWriteStream()`, `process.stdout`     |
+| **Duplex**    | Membaca dan menulis secara mandiri dua arah             | `net.Socket` (koneksi dua arah TCP)            |
+| **Transform** | Membaca, mengubah isi data, lalu mengalirkan hasil baru | `zlib.createGzip()`, `crypto.createCipheriv()` |
 
 ---
 
@@ -359,11 +362,11 @@ console.log('Shutdown complete');
 
 ### Mengabaikan Tekanan Balik (Backpressure) Saat Menulis Data
 
-Memanggil `writer.write()` secara terus-menerus tanpa memeriksa nilai kembalian boolean dapat menyebabkan penumpukan memori RAM tak terbatas jika kecepatan produsen melampaui konsumen.
+Memanggil `writer.write()` terus-menerus tanpa memedulikan nilai kembalian `false` bisa membuat memori RAM melonjak drastis tanpa batas jika pengirim data jauh lebih cepat daripada penerima data.
 
 ```javascript
 // Salah
-import { Writable } from 'node:stream';
+import { Writable } from "node:stream";
 
 const writer = new Writable({
   write(chunk, encoding, callback) {
@@ -372,14 +375,14 @@ const writer = new Writable({
 });
 
 for (let i = 0; i < 100_000; i++) {
-  writer.write('data'); // Memori membengkak karena buffer internal meluap
+  writer.write("data"); // Memori membengkak karena penampung internal meluap
 }
 ```
 
 ```javascript
 // Benar
-import { Writable } from 'node:stream';
-import { once } from 'node:events';
+import { Writable } from "node:stream";
+import { once } from "node:events";
 
 const writer = new Writable({
   write(chunk, encoding, callback) {
@@ -388,38 +391,38 @@ const writer = new Writable({
 });
 
 for (let i = 0; i < 100; i++) {
-  const canAccept = writer.write('data');
+  const canAccept = writer.write("data");
   if (!canAccept) {
-    await once(writer, 'drain'); // Berhenti sementara hingga buffer kosong kembali
+    await once(writer, "drain"); // Berhenti sejenak sampai penampung kosong kembali
   }
 }
 ```
 
-### Menggunakan `readable.pipe(writable)` Manual Tanpa Penanganan Galat
+### Menggunakan `readable.pipe(writable)` Manual Tanpa Penanganan Error
 
-Penggunaan `.pipe()` biasa tidak menutup atau membebaskan deskriptor stream tujuan secara otomatis apabila stream sumber melempar galat.
+Menyambungkan aliran dengan `.pipe()` biasa tidak otomatis menutup stream tujuan jika stream sumber mengalami error di tengah jalan, sehingga rawan memicu kebocoran memori atau koneksi menggantung.
 
 ```javascript
 // Salah
 readable.pipe(writable);
-// Jika readable melempar galat, writable tetap terbuka dan memicu kebocoran memori
+// Jika readable melempar error, writable tetap menggantung terbuka
 ```
 
 ```javascript
 // Benar
-import { pipeline } from 'node:stream/promises';
+import { pipeline } from "node:stream/promises";
 
 await pipeline(readable, writable);
-// Menutup seluruh stream secara otomatis jika terjadi galat pada salah satunya
+// Menutup seluruh saluran stream secara otomatis jika terjadi error di salah satunya
 ```
 
-### Tidak Menghancurkan Stream Saat Terjadi Pembatalan Operasi
+### Lupa Menghancurkan Stream Saat Operasi Dibatalkan
 
-Mengabaikan pemanggilan `destroy()` ketika klien membatalkan koneksi menyebabkan operasi pembacaan disk atau jaringan tetap berjalan sia-sia di latar belakang.
+Jika koneksi klien terputus mendadak tetapi kita lupa memanggil `destroy()`, proses pembacaan berkas atau jaringan akan terus berjalan sia-sia di latar belakang.
 
 ```javascript
 // Salah
-stream.on('close', () => {
+stream.on("close", () => {
   // Tidak membatalkan pembacaan aktif pada stream sumber
 });
 ```
@@ -427,18 +430,18 @@ stream.on('close', () => {
 ```javascript
 // Benar
 stream.destroy();
-// Menghentikan aliran data dan membebaskan alokasi sumber daya sistem seketika
+// Menghentikan aliran data dan membebaskan sumber daya memori seketika
 ```
 
 ---
 
 ## Studi Kasus
 
-Skenario: Membangun saluran pemrosesan berkas log berbasis teks berformat CSV menjadi baris data terfilter menggunakan kelas `Transform` dan utilitas `pipeline` dari `node:stream/promises`.
+Skenario: Membangun saluran pemrosesan berkas log berformat CSV untuk menyaring pesan error secara bertahap menggunakan kelas `Transform` dan fungsi `pipeline` dari `node:stream/promises`.
 
 ```javascript
-import { Readable, Writable, Transform } from 'node:stream';
-import { pipeline } from 'node:stream/promises';
+import { Readable, Writable, Transform } from "node:stream";
+import { pipeline } from "node:stream/promises";
 
 class CsvLogFilterTransform extends Transform {
   constructor(targetLevel) {
@@ -447,12 +450,12 @@ class CsvLogFilterTransform extends Transform {
   }
 
   _transform(chunk, encoding, callback) {
-    const lines = chunk.toString().trim().split('\n');
+    const lines = chunk.toString().trim().split("\n");
     for (const line of lines) {
       if (!line) continue;
-      const [timestamp, level, message] = line.split(',');
+      const [timestamp, level, message] = line.split(",");
       if (level === this.targetLevel) {
-        this.push(JSON.stringify({ timestamp, level, message }) + '\n');
+        this.push(JSON.stringify({ timestamp, level, message }) + "\n");
       }
     }
     callback();
@@ -460,14 +463,14 @@ class CsvLogFilterTransform extends Transform {
 }
 
 const csvData = [
-  '2026-10-12T00:00:00Z,INFO,Server running\n',
-  '2026-10-12T00:01:00Z,ERROR,Database connection failed\n',
-  '2026-10-12T00:02:00Z,INFO,Health check passed\n',
-  '2026-10-12T00:03:00Z,ERROR,Gateway timeout\n',
+  "2026-10-12T00:00:00Z,INFO,Server running\n",
+  "2026-10-12T00:01:00Z,ERROR,Database connection failed\n",
+  "2026-10-12T00:02:00Z,INFO,Health check passed\n",
+  "2026-10-12T00:03:00Z,ERROR,Gateway timeout\n",
 ];
 
 const source = Readable.from(csvData);
-const errorFilter = new CsvLogFilterTransform('ERROR');
+const errorFilter = new CsvLogFilterTransform("ERROR");
 const filteredLogs = [];
 
 const destination = new Writable({
@@ -485,7 +488,7 @@ console.log(filteredLogs);
 // ]
 ```
 
-Desain ini memproses data secara bertahap potongan demi potongan tanpa harus mengumpulkan seluruh isi teks berkas log ke dalam variabel string raksasa. Penggunaan `pipeline` menjamin pembersihan sumber daya stream secara otomatis apabila terjadi pengecualian saat proses transformasi berlangsung.
+Dengan arsitektur ini, data log disaring baris demi baris secara bertahap tanpa perlu menampung seluruh teks dokumen ke dalam variabel string raksasa di memori. Penggunaan `pipeline` juga memastikan seluruh aliran ditutup dengan bersih jika sewaktu-waktu terjadi error pada proses transformasi.
 
 ---
 
@@ -493,36 +496,36 @@ Desain ini memproses data secara bertahap potongan demi potongan tanpa harus men
 
 ### Soal 1 (Dasar)
 
-Buat fungsi `countStreamSize(readableStream)` yang menerima instance `Readable`, membaca seluruh potongan data chunk menggunakan perulangan asinkron `for await...of`, lalu mengembalikan total ukuran seluruh chunk dalam satuan byte.
+Buat fungsi `countStreamSize(readableStream)` yang menerima instance `Readable`, membaca seluruh potongan data chunk menggunakan perulangan asinkron `for await...of`, lalu mengembalikan total ukuran seluruh data dalam satuan byte.
 
-Contoh masukan:
+Contoh input:
 
 ```javascript
-import { Readable } from 'node:stream';
+import { Readable } from "node:stream";
 
-const stream = Readable.from(['Hello ', 'World']);
+const stream = Readable.from(["Hello ", "World"]);
 await countStreamSize(stream);
 ```
 
-Contoh keluaran yang diharapkan:
+Contoh output yang diharapkan:
 
 ```javascript
-11
+11;
 ```
 
-Batasan: Dilarang menggabungkan seluruh potongan menjadi satu string besar di memori; akumulasikan ukuran byte secara bertahap menggunakan properti `length` pada buffer chunk.
+Batasan: Hindari menggabungkan seluruh potongan data menjadi string besar di memori. Hitung akumulasi ukuran byte secara bertahap menggunakan properti `length` pada buffer chunk.
 
 ### Soal 2 (Menengah)
 
-Buat kelas `PrefixTransform` yang mewarisi `Transform` dari `node:stream`. Kelas ini menerima parameter awalan string `prefix` pada konstruktornya (misalnya `"[AUDIT] "`). Setiap baris teks yang mengalir melalui stream harus disematkan awalan tersebut sebelum diteruskan ke saluran tujuan.
+Buat kelas `PrefixTransform` yang mewarisi `Transform` dari `node:stream`. Kelas ini menerima parameter awalan string `prefix` pada konstruktornya (misalnya `"[AUDIT] "`). Setiap baris teks yang mengalir melalui stream harus disematkan awalan tersebut sebelum dialirkan ke tujuan berikutnya.
 
-Contoh masukan:
+Contoh input:
 
 ```javascript
-import { Readable, Writable } from 'node:stream';
-import { pipeline } from 'node:stream/promises';
+import { Readable, Writable } from "node:stream";
+import { pipeline } from "node:stream/promises";
 
-const source = Readable.from(['Server running\nConnection established\n']);
+const source = Readable.from(["Server running\nConnection established\n"]);
 const results = [];
 const destination = new Writable({
   write(chunk, encoding, callback) {
@@ -531,37 +534,38 @@ const destination = new Writable({
   },
 });
 
-await pipeline(source, new PrefixTransform('[AUDIT] '), destination);
-console.log(results.join(''));
+await pipeline(source, new PrefixTransform("[AUDIT] "), destination);
+console.log(results.join(""));
 ```
 
-Contoh keluaran yang diharapkan:
+Contoh output yang diharapkan:
 
 ```javascript
 // [AUDIT] Server running
 // [AUDIT] Connection established
 ```
 
-Batasan: Wajib menggunakan `Transform` stream native dari modul `node:stream`.
+Batasan: Gunakan kelas `Transform` bawaan dari modul `node:stream`.
 
 ### Soal 3 (Menantang)
 
-Buat fungsi penyalinan terkontrol `copyStreamThrottled(readable, writable, delayMs = 20)`.
+Buat fungsi pengiriman data terkontrol `copyStreamThrottled(readable, writable, delayMs = 20)`.
 
-Fungsi ini wajib:
-- Membaca chunk dari `readable` secara bertahap.
+Ketentuan fungsional:
+
+- Membaca potongan chunk dari `readable` secara bertahap.
 - Menulis chunk ke `writable` menggunakan `writable.write(chunk)`.
-- Jika `write()` mengembalikan `false` (indikasi buffer tujuan penuh akibat _backpressure_), fungsi harus menunda penulisan berikutnya hingga event `'drain'` dipancarkan.
-- Memberikan jeda waktu `delayMs` milidetik di antara pengiriman setiap chunk untuk membatasi beban I/O.
-- Memanggil `writable.end()` setelah seluruh data `readable` habis dibaca, serta menunggu penyelesaian akhir melalui fungsi utilitas `finished` dari `node:stream/promises`.
-- Jika terjadi galat pada `readable` atau `writable`, hancurkan kedua stream via `.destroy(error)` dan lemparkan galat tersebut ke fungsi pemanggil.
+- Jika pemanggilan `write()` menghasilkan nilai `false` (tanda bahwa buffer tujuan sedang penuh karena _backpressure_), tunda pengiriman berikutnya hingga event `'drain'` dipancarkan.
+- Berikan jeda waktu `delayMs` milidetik di antara pengiriman setiap chunk untuk meratakan beban kerja I/O.
+- Panggil `writable.end()` setelah seluruh data `readable` selesai dialirkan, dan tunggu konfirmasi selesai melalui fungsi utilitas `finished` dari `node:stream/promises`.
+- Jika terjadi error pada `readable` maupun `writable`, hancurkan kedua stream lewat `.destroy(error)` dan teruskan error tersebut ke pemanggil fungsi.
 
-Contoh masukan:
+Contoh input:
 
 ```javascript
-import { Readable, Writable } from 'node:stream';
+import { Readable, Writable } from "node:stream";
 
-const source = Readable.from(['packet-1', 'packet-2', 'packet-3']);
+const source = Readable.from(["packet-1", "packet-2", "packet-3"]);
 const destination = new Writable({
   highWaterMark: 10,
   write(chunk, encoding, callback) {
@@ -573,7 +577,7 @@ const stats = await copyStreamThrottled(source, destination, 10);
 console.log(stats);
 ```
 
-Contoh keluaran yang diharapkan:
+Contoh output yang diharapkan:
 
 ```javascript
 {
@@ -582,7 +586,7 @@ Contoh keluaran yang diharapkan:
 }
 ```
 
-Batasan: Dilarang menggunakan paket pihak ketiga dari NPM. Wajib menangani event `'drain'` dan penyelesaian `finished` secara asinkron.
+Batasan: Dilarang memakai modul luar dari NPM. Kelola event `'drain'` dan penyelesaian `finished` secara mandiri.
 
 ---
 

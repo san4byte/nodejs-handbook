@@ -4,11 +4,11 @@ const emiter = new EventEmitter();
 
 // addListener(eventName, listener)
 emiter.addListener('hello', (name) => {
-    console.info(`hello ${name}`);
+  console.info(`hello ${name}`);
 });
 
 emiter.addListener('hello', (name) => {
-    console.info(`hallo ${name}`);
+  console.info(`hallo ${name}`);
 });
 
 // emit(eventName, args)

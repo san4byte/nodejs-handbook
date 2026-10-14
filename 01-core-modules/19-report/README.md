@@ -1,25 +1,28 @@
 # Report
 
 > Ringkasan
-> - Fungsi: Menghasilkan dokumen laporan diagnostik mendalam dalam format JSON yang merangkum status internal proses Node.js, mesin V8, thread pool Libuv, dan lingkungan sistem operasi.
-> - Digunakan saat: Menyelidiki insiden aplikasi tumbang mendadak (_post-mortem debugging_), menganalisis kebocoran memori (_memory leak_), atau mengumpulkan telemetri performa fatal di server produksi.
-> - Aturan praktis: Selalu aktifkan `process.report.excludeEnv = true` agar variabel lingkungan yang memuat token rahasia dan kata sandi database tidak bocor ke dalam berkas diagnostik JSON.
+>
+> - Fungsi: Menghasilkan dokumen laporan diagnostik mendalam berformat JSON yang merangkum kondisi internal proses Node.js, mesin V8, antrean Libuv, dan lingkungan sistem operasi.
+> - Digunakan saat: Menyelidiki penyebab aplikasi mati mendadak (_post-mortem debugging_), menganalisis kebocoran memori (_memory leak_), atau mengumpulkan data performa saat terjadi masalah fatal di server produksi.
+> - Aturan praktis: Selalu aktifkan `process.report.excludeEnv = true` agar variabel lingkungan yang menyimpan kunci rahasia dan kata sandi database tidak bocor ke dalam berkas laporan JSON.
 
 ---
 
 ## Tujuan Belajar
 
-- Mengonfigurasi pemicu laporan otomatis melalui properti `process.report`.
-- Menghasilkan laporan diagnostik berbasis berkas disk menggunakan `writeReport()`.
-- Mengekstrak struktur data laporan diagnostik langsung di memori dengan `getReport()`.
-- Melindungi data kredensial sensitif dengan menonaktifkan dump variabel lingkungan via `excludeEnv`.
-- Mengurai komponen laporan utama: heap V8, tumpukan panggilan (_call stack_), dan metrik Libuv.
+- Mengonfigurasi pembuatan laporan diagnostik otomatis lewat properti `process.report`.
+- Menghasilkan berkas laporan diagnostik ke media penyimpanan menggunakan `writeReport()`.
+- Mengambil struktur data laporan diagnostik langsung di memori dengan `getReport()`.
+- Melindungi data kredensial rahasia dengan menyembunyikan variabel lingkungan via `excludeEnv`.
+- Memahami isi komponen utama laporan: alokasi heap V8, jejak _call stack_, dan metrik Libuv.
 
 ---
 
 ## Konsep
 
-> Fitur `process.report` dianalogikan seperti kotak hitam (_flight data recorder_) pada pesawat terbang. Selama penerbangan berjalan normal, kotak hitam bersiaga merekam parameter telemetri penting. Jika terjadi turbulensi ekstrem atau kegagalan mesin mendadak (_fatal error_ atau _crash_), instrumen ini secara otomatis mengabadikan rekaman presisi mengenai status kemudi, temperatur mesin, tekanan kabin, dan percakapan kokpit. Tim penyelidik keselamatan perangkat lunak kemudian dapat membuka rekaman terstruktur tersebut untuk menemukan akar penyebab kegagalan tanpa perlu menebak-nebak kondisi saat insiden berlangsung.
+Fitur `process.report` bisa kita bayangkan seperti kotak hitam (_flight data recorder_) pada pesawat terbang. Selama penerbangan berjalan lancar, kotak hitam bersiap merekam berbagai parameter operasional penting di latar belakang.
+
+Jika tiba-tiba terjadi masalah fatal atau mesin pesawat mati mendadak (_fatal error_ atau _crash_), instrumen ini secara otomatis mengabadikan rekaman presisi mengenai status kemudi, temperatur mesin, tekanan kabin, dan percakapan kokpit. Tim penyelidik kemudian dapat membuka rekaman terstruktur tersebut untuk menemukan akar penyebab masalah tanpa perlu menebak-nebak kondisi saat insiden berlangsung.
 
 ```mermaid
 flowchart TD
@@ -35,29 +38,29 @@ flowchart TD
 
 ## Referensi
 
-| Item | Fungsi | Catatan |
-| :--- | :--- | :--- |
-| **`writeReport()`** | Menghasilkan dan menulis berkas laporan diagnostik berformat JSON ke disk | Menerima argumen opsional nama jalur berkas dan objek galat kustom |
-| **`getReport()`** | Mengembalikan seluruh struktur data laporan diagnostik langsung sebagai objek JavaScript | Berjalan murni di memori tanpa memicu operasi penulisan berkas ke disk |
-| **`reportOnFatalError`** | Mengaktifkan pembuatan laporan otomatis ketika terjadi galat fatal internal V8 | Sangat krusial untuk menangkap bukti insiden _JavaScript heap out of memory_ |
-| **`reportOnUncaughtException`** | Memicu pembuatan laporan otomatis saat terjadi pengecualian galat yang tidak tertangkap | Menangkap jejak tumpukan fungsi tepat sebelum proses keluar secara abnormal |
-| **`reportOnSignal`** | Memicu pembuatan laporan diagnostik saat proses menerima sinyal sistem operasi | Berguna untuk inspeksi proses server yang sedang berjalan via sinyal POSIX |
-| **`excludeEnv`** | Menghilangkan kunci dan nilai `process.env` dari dokumen laporan yang dihasilkan | Mencegah kebocoran rahasia sistem seperti API key dan kata sandi basis data |
-| **`directory`** | Menentukan jalur folder penyimpanan berkas laporan diagnostik | Nilai bawaan adalah direktori kerja proses saat ini (`process.cwd()`) |
-| **`filename`** | Mengatur penamaan berkas laporan diagnostik | Mendukung pembuatan pola penamaan khusus agar tidak menimpa laporan lama |
-| **`compact`** | Menulis isi dokumen JSON laporan dalam satu baris ringkas tanpa spasi indentasi | Menghemat alokasi ruang penyimpanan disk pada server produksi |
+| Item                            | Fungsi                                                                          | Catatan                                                                            |
+| :------------------------------ | :------------------------------------------------------------------------------ | :--------------------------------------------------------------------------------- |
+| **`writeReport()`**             | Membuat dan menyimpan berkas laporan diagnostik JSON ke disk                    | Menerima parameter nama jalur berkas dan objek error kustom                        |
+| **`getReport()`**               | Mengembalikan seluruh data laporan diagnostik langsung sebagai objek JavaScript | Berjalan murni di memori tanpa menulis berkas fisik ke disk                        |
+| **`reportOnFatalError`**        | Menulis laporan otomatis saat terjadi error fatal internal pada mesin V8        | Sangat penting untuk menangkap bukti saat memori heap habis (_heap out of memory_) |
+| **`reportOnUncaughtException`** | Memicu laporan otomatis saat ada error JavaScript yang tidak tertangkap         | Mengabadikan jejak call stack fungsi sebelum aplikasi terhenti                     |
+| **`reportOnSignal`**            | Membuat laporan saat proses menerima sinyal sistem operasi tertentu             | Berguna untuk memeriksa status server yang sedang berjalan via sinyal POSIX        |
+| **`excludeEnv`**                | Menghapus daftar `process.env` dari dokumen laporan yang dibuat                 | Mencegah bocornya kunci API dan kata sandi rahasia di laporan                      |
+| **`directory`**                 | Menentukan folder tempat menyimpan berkas laporan diagnostik                    | Nilai bawaannya adalah direktori kerja saat ini (`process.cwd()`)                  |
+| **`filename`**                  | Mengatur pola nama berkas laporan diagnostik                                    | Mendukung penamaan khusus agar tidak menimpa berkas laporan lama                   |
+| **`compact`**                   | Menuliskan JSON laporan dalam satu baris rapat tanpa indentasi                  | Menghemat ruang penyimpanan disk pada server produksi                              |
 
 ### `writeReport()`
 
-Metode `writeReport()` mengekstrak kondisi menyeluruh dari runtime Node.js dan menyimpannya sebagai berkas berformat JSON ke sistem berkas lokal. Metode ini mengembalikan nama berkas lengkap yang berhasil ditulis.
+Metode `writeReport()` mengambil potret menyeluruh dari kondisi runtime Node.js dan menyimpannya sebagai berkas JSON ke penyimpanan lokal. Metode ini mengembalikan nama berkas lengkap yang berhasil dibuat.
 
 ```javascript
-import process from 'node:process';
-import os from 'node:os';
-import path from 'node:path';
-import fs from 'node:fs/promises';
+import process from "node:process";
+import os from "node:os";
+import path from "node:path";
+import fs from "node:fs/promises";
 
-const targetPath = path.join(os.tmpdir(), 'test-report.json');
+const targetPath = path.join(os.tmpdir(), "test-report.json");
 const reportFilename = process.report.writeReport(targetPath);
 
 console.log(typeof reportFilename);
@@ -70,19 +73,19 @@ console.log(fileStats.size > 0);
 await fs.unlink(targetPath);
 ```
 
-Kasus lain: Melewatkan objek galat kustom ke dalam `writeReport()` untuk menyematkan konteks galat spesifik ke dalam data tumpukan laporan.
+Kasus lain: Menyelipkan objek error kustom ke dalam `writeReport()` untuk menyematkan pesan error spesifik ke dalam data tumpukan laporan.
 
 ```javascript
-import process from 'node:process';
-import os from 'node:os';
-import path from 'node:path';
-import fs from 'node:fs/promises';
+import process from "node:process";
+import os from "node:os";
+import path from "node:path";
+import fs from "node:fs/promises";
 
-const customError = new Error('Payment gateway connection lost');
-const targetPath = path.join(os.tmpdir(), 'error-report.json');
+const customError = new Error("Payment gateway connection lost");
+const targetPath = path.join(os.tmpdir(), "error-report.json");
 
 process.report.writeReport(targetPath, customError);
-const content = JSON.parse(await fs.readFile(targetPath, 'utf-8'));
+const content = JSON.parse(await fs.readFile(targetPath, "utf-8"));
 
 console.log(content.javascriptStack.message);
 // Output: Error: Payment gateway connection lost
@@ -92,10 +95,10 @@ await fs.unlink(targetPath);
 
 ### `getReport()`
 
-Metode `getReport()` mengembalikan representasi objek JavaScript dari seluruh status diagnostik secara langsung di memori tanpa menyentuh disk. Metode ini ideal untuk meneruskan metrik diagnosa ke layanan monitoring eksternal.
+Metode `getReport()` mengembalikan seluruh data laporan diagnostik langsung sebagai objek JavaScript di memori tanpa membuat berkas ke disk. Cara ini sangat pas untuk mengirimkan metrik pemeriksaan ke dasbor monitoring eksternal.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
 const report = process.report.getReport();
 
@@ -107,12 +110,12 @@ console.log(typeof report.javascriptHeap.usedMemory);
 // Output: number
 ```
 
-Kasus lain: Melewatkan objek galat untuk membedah call stack fungsi secara instan tanpa menulis berkas.
+Kasus lain: Memberikan objek error untuk memeriksa call stack fungsi secara instan di memori.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
-const customError = new TypeError('Incompatible data type');
+const customError = new TypeError("Incompatible data type");
 const diagnostic = process.report.getReport(customError);
 
 console.log(diagnostic.javascriptStack.message);
@@ -121,10 +124,10 @@ console.log(diagnostic.javascriptStack.message);
 
 ### `reportOnFatalError`
 
-Properti boolean `reportOnFatalError` mengonfigurasi runtime agar secara otomatis menulis dokumen diagnostik ke disk saat mesin V8 mengalami galat fatal yang tidak dapat dipulihkan, seperti kehabisan alokasi memori heap.
+Properti boolean `reportOnFatalError` mengatur agar Node.js otomatis membuat berkas laporan saat mesin V8 mengalami error fatal yang tidak tertangani, misalnya saat kehabisan alokasi memori heap.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
 process.report.reportOnFatalError = true;
 
@@ -132,10 +135,10 @@ console.log(process.report.reportOnFatalError);
 // Output: true
 ```
 
-Kasus lain: Menonaktifkan pemicu fatal error untuk menghemat ruang disk jika sistem sudah memiliki mekanisme pelaporan terpisah.
+Kasus lain: Menonaktifkan fitur pembuatan laporan otomatis saat terjadi error fatal.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
 process.report.reportOnFatalError = false;
 
@@ -145,10 +148,10 @@ console.log(process.report.reportOnFatalError);
 
 ### `reportOnUncaughtException`
 
-Properti boolean `reportOnUncaughtException` memicu pembuatan laporan diagnostik secara otomatis setiap kali ada galat JavaScript yang tidak ditangkap oleh blok `try...catch` sebelum proses dihentikan.
+Properti boolean `reportOnUncaughtException` memicu pembuatan laporan diagnostik secara otomatis setiap kali ada error JavaScript yang tidak ditangkap oleh blok `try...catch`.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
 process.report.reportOnUncaughtException = true;
 
@@ -156,10 +159,10 @@ console.log(process.report.reportOnUncaughtException);
 // Output: true
 ```
 
-Kasus lain: Menghindari pembuatan berkas laporan berulang ketika pengembang sudah menangani event `uncaughtException` secara manual.
+Kasus lain: Mematikan pemicu otomatis ini jika penanganan pengecualian tak terduga sudah dikelola sendiri secara manual.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
 process.report.reportOnUncaughtException = false;
 
@@ -169,10 +172,10 @@ console.log(process.report.reportOnUncaughtException);
 
 ### `reportOnSignal`
 
-Properti boolean `reportOnSignal` memungkinkan pembuatan laporan diagnostik saat proses yang sedang berjalan menerima sinyal sistem operasi tertentu (secara bawaan sinyal `SIGUSR2` pada sistem operasi POSIX).
+Properti boolean `reportOnSignal` memungkinkan pembuatan laporan diagnostik saat aplikasi menerima sinyal sistem operasi tertentu (secara bawaan sinyal `SIGUSR2` pada sistem operasi berbasis POSIX/Linux).
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
 process.report.reportOnSignal = true;
 
@@ -180,10 +183,10 @@ console.log(process.report.reportOnSignal);
 // Output: true
 ```
 
-Kasus lain: Memeriksa nama sinyal sistem yang dikonfigurasikan sebagai pemicu laporan diagnostik.
+Kasus lain: Memeriksa nama sinyal sistem yang dijadikan pemicu pembuatan laporan diagnostik.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
 console.log(process.report.signal);
 // Output: SIGUSR2
@@ -191,37 +194,37 @@ console.log(process.report.signal);
 
 ### `excludeEnv`
 
-Properti boolean `excludeEnv` mengatur apakah variabel lingkungan (`process.env`) diikutsertakan di dalam berkas laporan diagnostik. Menyetel properti ini ke `true` mencegah kebocoran kredensial rahasia.
+Properti boolean `excludeEnv` mengatur apakah daftar variabel lingkungan (`process.env`) ikut dicatat ke dalam dokumen laporan. Mengubahnya menjadi `true` adalah langkah penting untuk mencegah kebocoran data rahasia.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
 process.report.excludeEnv = true;
 const report = process.report.getReport();
 
-console.log('environmentVariables' in report);
+console.log("environmentVariables" in report);
 // Output: false
 ```
 
-Kasus lain: Ketika bernilai `false`, seluruh variabel lingkungan akan dicatat lengkap di bawah kunci `environmentVariables`.
+Kasus lain: Jika disetel `false`, seluruh variabel lingkungan akan dicatat lengkap di bawah kunci `environmentVariables`.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
 process.report.excludeEnv = false;
 const report = process.report.getReport();
 
-console.log('environmentVariables' in report);
+console.log("environmentVariables" in report);
 // Output: true
 ```
 
 ### `directory`
 
-Properti `directory` menentukan jalur folder penyimpanan berkas diagnostik saat `writeReport()` dipanggil tanpa argumen jalur atau saat laporan dipicu secara otomatis oleh sistem.
+Properti `directory` menentukan lokasi folder penyimpanan berkas laporan saat `writeReport()` dipanggil tanpa menyebutkan nama jalur berkas secara eksplisit.
 
 ```javascript
-import process from 'node:process';
-import os from 'node:os';
+import process from "node:process";
+import os from "node:os";
 
 process.report.directory = os.tmpdir();
 
@@ -229,45 +232,45 @@ console.log(process.report.directory === os.tmpdir());
 // Output: true
 ```
 
-Kasus lain: Membaca nilai bawaan direktori laporan sebelum diubah yang berupa string kosong (mengikuti direktori kerja saat ini).
+Kasus lain: Membaca nilai bawaan direktori laporan sebelum diubah yang berupa string kosong (mengikuti folder kerja aplikasi saat ini).
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
-process.report.directory = '';
+process.report.directory = "";
 console.log(process.report.directory);
 // Output:
 ```
 
 ### `filename`
 
-Properti `filename` menetapkan pola nama berkas laporan yang akan digunakan saat proses menghasilkan laporan otomatis.
+Properti `filename` digunakan untuk menetapkan pola nama berkas laporan yang akan dipakai saat sistem membuat laporan otomatis.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
-process.report.filename = 'diagnostic-audit.json';
+process.report.filename = "diagnostic-audit.json";
 
 console.log(process.report.filename);
 // Output: diagnostic-audit.json
 ```
 
-Kasus lain: Menyetel kembali nama berkas ke string kosong agar Node.js menggunakan penamaan pola default bawaan yang memuat timestamp dan PID.
+Kasus lain: Mengosongkan kembali nama berkas agar Node.js menggunakan pola nama default bawaan yang menyertakan informasi tanggal dan nomor PID.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
-process.report.filename = '';
+process.report.filename = "";
 console.log(process.report.filename);
 // Output:
 ```
 
 ### `compact`
 
-Properti boolean `compact` mengontrol pemformatan JSON laporan diagnostik. Jika bernilai `true`, laporan ditulis sebagai teks JSON satu baris rapat tanpa indentasi.
+Properti boolean `compact` mengontrol format kerapatan JSON pada laporan. Jika disetel `true`, berkas laporan ditulis dalam satu baris panjang tanpa spasi indentasi agar lebih hemat ukuran disk.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
 process.report.compact = true;
 
@@ -275,10 +278,10 @@ console.log(process.report.compact);
 // Output: true
 ```
 
-Kasus lain: Menyetel ke `false` agar berkas yang dihasilkan terformat rapi dengan indentasi multi-baris sehingga mudah dibaca secara visual oleh pengembang.
+Kasus lain: Menyetel ke `false` agar berkas laporan tersusun rapi dengan indentasi multi-baris sehingga nyaman dibaca langsung oleh manusia.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
 process.report.compact = false;
 
@@ -288,12 +291,12 @@ console.log(process.report.compact);
 
 ### Perbandingan: `writeReport()` vs `getReport()`
 
-| Karakteristik | `writeReport()` | `getReport()` |
-| :--- | :--- | :--- |
-| **Media Luaran** | Berkas fisik JSON yang disimpan ke disk | Objek JavaScript mentah di memori heap |
-| **Operasi I/O** | Melakukan penulisan I/O berkas ke sistem penyimpanan | Murni operasi pembacaan struktur internal runtime di memori |
-| **Tujuan Pemakaian** | Analisis pasca-kegagalan sistem (_post-mortem crash analysis_) | Pemeriksaan kesehatan berkala dan integrasi telemetri mikro |
-| **Kebutuhan Ruang Disk** | Mengurangi kapasitas ruang disk pada server | Tidak menggunakan ruang penyimpanan disk |
+| Karakteristik        | `writeReport()`                                       | `getReport()`                                     |
+| :------------------- | :---------------------------------------------------- | :------------------------------------------------ |
+| **Bentuk Hasil**     | Berkas fisik JSON yang disimpan ke disk               | Objek JavaScript langsung di memori RAM           |
+| **Operasi I/O**      | Melakukan operasi tulis berkas ke penyimpanan         | Murni membaca struktur internal runtime di memori |
+| **Tujuan Pemakaian** | Analisis pasca-insiden (_post-mortem crash analysis_) | Pemantauan berkala dan integrasi dasbor telemetri |
+| **Penggunaan Disk**  | Mengurangi kapasitas ruang simpan disk                | Tidak menggunakan ruang simpan disk sama sekali   |
 
 ---
 
@@ -301,11 +304,11 @@ console.log(process.report.compact);
 
 ### Membiarkan Variabel Lingkungan Terekspos di Laporan Produksi
 
-Secara bawaan `excludeEnv` bernilai `false`. Jika berkas JSON diagnostik terunggah ke penyimpanan publik atau log aggregator tanpa sanitasi, rahasia seperti kunci JWT dan kata sandi database akan terbongkar.
+Secara bawaan properti `excludeEnv` bernilai `false`. Jika berkas laporan JSON diagnostik tidak sengaja terunggah ke tempat umum, informasi rahasia seperti kunci JWT dan kata sandi database akan ikut terbuka.
 
 ```javascript
 // Salah
-import process from 'node:process';
+import process from "node:process";
 
 process.report.reportOnFatalError = true;
 // Seluruh isi process.env akan dicatat di dalam berkas laporan!
@@ -313,55 +316,55 @@ process.report.reportOnFatalError = true;
 
 ```javascript
 // Benar
-import process from 'node:process';
+import process from "node:process";
 
 process.report.excludeEnv = true;
 process.report.reportOnFatalError = true;
 // Data variabel lingkungan dibersihkan secara aman dari laporan
 ```
 
-### Memanggil `writeReport()` di Dalam Perulangan Permintaan Aktif
+### Memanggil `writeReport()` di Dalam Perulangan Request Server
 
-Menghasilkan dump diagnostik lengkap membutuhkan waktu komputasi untuk memeriksa tumpukan memori V8 dan melakukan penulisan berkas ke disk. Memanggilnya di dalam penanganan permintaan HTTP biasa akan memicu latensi tinggi dan memblokir Event Loop.
+Menghasilkan dokumen diagnostik lengkap membutuhkan waktu komputasi untuk memeriksa tumpukan memori V8 dan menulis berkas ke penyimpanan. Memanggilnya di dalam rute HTTP reguler akan memperlambat kinerja server dan menahan Event Loop.
 
 ```javascript
 // Salah
 function handleRequest(req, res) {
-  process.report.writeReport(); // Menghambat pemrosesan permintaan lain!
-  res.end('OK');
+  process.report.writeReport(); // Menghambat penanganan request pengguna lain!
+  res.end("OK");
 }
 ```
 
 ```javascript
 // Benar
 function handleRequest(req, res) {
-  // Hanya picu penulisan laporan jika terdeteksi kondisi kritis yang nyata
+  // Hanya panggil penulisan laporan jika terdeteksi anomali kritis yang nyata
   if (isCriticalAnomaly) {
     process.report.writeReport();
   }
-  res.end('OK');
+  res.end("OK");
 }
 ```
 
-### Tidak Menentukan Direktori Penyimpanan Khusus
+### Lupa Menentukan Folder Penyimpanan Khusus
 
-Jika properti `directory` tidak dikonfigurasi, berkas laporan diagnostik otomatis akan tercecer di direktori kerja aktif proyek, berisiko masuk ke repositori version control (_git commit_) jika pola berkas tidak masuk `.gitignore`.
+Jika properti `directory` tidak ditentukan, berkas laporan otomatis akan tersimpan berceceran di direktori kerja aktif proyek, berisiko ikut terunggah ke repositori Git jika polanya belum dimasukkan ke `.gitignore`.
 
 ```javascript
 // Salah
-import process from 'node:process';
+import process from "node:process";
 
 process.report.reportOnUncaughtException = true;
-// Laporan akan dibuat langsung di folder root aplikasi
+// Berkas laporan akan dibuat langsung di folder utama aplikasi
 ```
 
 ```javascript
 // Benar
-import process from 'node:process';
-import os from 'node:os';
-import path from 'node:path';
+import process from "node:process";
+import os from "node:os";
+import path from "node:path";
 
-process.report.directory = path.join(os.tmpdir(), 'node-reports');
+process.report.directory = path.join(os.tmpdir(), "node-reports");
 process.report.reportOnUncaughtException = true;
 ```
 
@@ -369,10 +372,10 @@ process.report.reportOnUncaughtException = true;
 
 ## Studi Kasus
 
-Skenario: Membangun modul pengawas kesehatan memori otomatis (_automated heap health monitor_) yang memantau rasio pemakaian memori V8 Heap secara terprogram. Jika penggunaan heap melebihi ambang batas aman 85%, sistem secara aman mengambil snapshot diagnostik internal via `getReport()`, mengecualikan variabel lingkungan rahasia, dan menyusun laporan insiden ringkas sebelum terjadi kegagalan fatal kehabisan memori.
+Skenario: Membangun modul pengawas kesehatan memori otomatis (_automated heap health monitor_) yang memantau rasio pemakaian memori V8 Heap secara berkala. Jika penggunaan heap melebihi ambang batas aman 85%, sistem secara aman mengambil snapshot diagnostik via `getReport()`, menyembunyikan variabel lingkungan rahasia, dan menyusun laporan insiden ringkas sebelum terjadi kegagalan fatal akibat kehabisan memori.
 
 ```javascript
-import process from 'node:process';
+import process from "node:process";
 
 function inspectMemoryHealth(ratioThreshold = 0.85) {
   // Pastikan variabel lingkungan selalu terlindungi
@@ -408,7 +411,7 @@ console.log(typeof serverStatus.isCritical);
 // Output: boolean
 ```
 
-Desain ini dipilih karena memanfaatkan metode `getReport()` yang beroperasi langsung di memori tanpa membebani disk dengan operasi I/O, serta menegakkan perlindungan data sensitif dengan selalu menyetel `excludeEnv = true`.
+Pendekatan ini mengandalkan `getReport()` yang beroperasi langsung di memori tanpa membebani media penyimpanan dengan operasi I/O, serta selalu memastikan kerahasiaan data sensitif dengan menyetel `excludeEnv = true`.
 
 ---
 
@@ -416,14 +419,16 @@ Desain ini dipilih karena memanfaatkan metode `getReport()` yang beroperasi lang
 
 ### Soal 1 (Dasar)
 
-Buat fungsi `getDiagnosticSummary()` yang memanggil `process.report.getReport()` dan mengembalikan objek ringkas berisi properti: `nodeVersion` (string), `arch` (string), `libuvLoopCount` (number jumlah entri array handles pada libuv atau 0 jika tidak tersedia), serta `usedHeapBytes` (number dari `javascriptHeap.usedMemory`).
+Buat fungsi `getDiagnosticSummary()` yang memanggil `process.report.getReport()` dan mengembalikan objek ringkas berisi properti: `nodeVersion` (string), `arch` (string), `libuvLoopCount` (angka jumlah entri pada libuv atau 0 jika kosong), serta `usedHeapBytes` (angka dari `javascriptHeap.usedMemory`).
 
-Contoh masukan:
+Contoh input:
+
 ```javascript
 getDiagnosticSummary();
 ```
 
-Contoh keluaran yang diharapkan:
+Contoh output yang diharapkan:
+
 ```javascript
 {
   nodeVersion: 'v24.15.0',
@@ -437,14 +442,16 @@ Batasan: Gunakan objek bawaan `process.report` tanpa dependensi eksternal.
 
 ### Soal 2 (Menengah)
 
-Buat fungsi `configureSecureReport(dirPath, customFilename)` yang mengatur konfigurasi `process.report` ke status proteksi tinggi. Fungsi harus mengatur direktori penyimpanan ke `dirPath`, menetapkan pola nama berkas ke `customFilename`, mengaktifkan `excludeEnv = true`, mengaktifkan `compact = true`, serta mengaktifkan pemicu otomatis `reportOnFatalError = true`. Kembalikan objek status konfigurasi yang memvalidasi bahwa seluruh nilai properti tersebut telah terpasang dengan benar.
+Buat fungsi `configureSecureReport(dirPath, customFilename)` yang menyetel konfigurasi `process.report` ke tingkat keamanan tinggi. Fungsi harus mengatur folder penyimpanan ke `dirPath`, menetapkan nama berkas ke `customFilename`, mengaktifkan `excludeEnv = true`, menyetel `compact = true`, serta mengaktifkan pemicu otomatis `reportOnFatalError = true`. Kembalikan objek status konfigurasi yang memvalidasi bahwa seluruh nilai properti tersebut telah terpasang dengan tepat.
 
-Contoh masukan:
+Contoh input:
+
 ```javascript
-configureSecureReport('/tmp/audit-reports', 'critical-report.json');
+configureSecureReport("/tmp/audit-reports", "critical-report.json");
 ```
 
-Contoh keluaran yang diharapkan:
+Contoh output yang diharapkan:
+
 ```javascript
 {
   configuredDirectory: '/tmp/audit-reports',
@@ -459,24 +466,27 @@ Batasan: Gunakan modul bawaan `node:process` tanpa dependensi pihak ketiga.
 
 ### Soal 3 (Menantang)
 
-Buat fungsi penyaring dan penganalisis anomali diagnostik terprogram bernama `analyzeCriticalIncident(errorObject, uptimeThresholdSeconds)`. Fungsi ini menerima objek galat dan ambang batas minimal durasi berjalan proses.
+Buat fungsi penganalisis anomali diagnostik terprogram bernama `analyzeCriticalIncident(errorObject, uptimeThresholdSeconds)`. Fungsi ini menerima objek error dan ambang batas minimal durasi berjalan aplikasi.
 
 Ketentuan pemrosesan:
-- Pastikan `process.report.excludeEnv = true` aktif sebelum mengambil data.
+
+- Pastikan pengaturan `process.report.excludeEnv = true` aktif sebelum mengambil data.
 - Ambil objek laporan diagnostik di memori menggunakan `process.report.getReport(errorObject)`.
-- Validasi apakah durasi uptime proses saat insiden terjadi berada di bawah `uptimeThresholdSeconds` (menandakan insiden _crash_ saat startup) atau sesudahnya.
-- Ekstrak 2 baris teratas dari `javascriptStack.stack` fungsi yang memicu galat ke dalam array `stackSnippet`.
-- Hitung persentase penggunaan heap terhadap batas maksimal heap (`javascriptHeap.memoryLimit`) dengan format dua desimal dan simbol `%`.
-- Jika rasio heap di atas 80% ATAU insiden terjadi di bawah batas uptime (`startupCrash: true`), tandai tingkat keparahan sebagai `'HIGH'`. Jika tidak, tandai sebagai `'MEDIUM'`.
+- Periksa apakah durasi uptime aplikasi saat insiden terjadi berada di bawah `uptimeThresholdSeconds` (menandakan insiden _crash_ saat startup) atau sesudahnya.
+- Ambil 2 baris teratas dari `javascriptStack.stack` yang memicu error ke dalam array `stackSnippet`.
+- Hitung persentase pemakaian heap terhadap batas maksimal heap (`javascriptHeap.memoryLimit`) dalam format dua angka di belakang koma dengan simbol `%`.
+- Jika rasio heap di atas 80% ATAU insiden terjadi di bawah batas uptime (`startupCrash: true`), beri tanda tingkat keparahan sebagai `'HIGH'`. Jika tidak, beri tanda sebagai `'MEDIUM'`.
 - Kembalikan objek kesimpulan insiden tanpa menulis berkas fisik ke disk.
 
-Contoh masukan:
+Contoh input:
+
 ```javascript
-const sampleError = new Error('Message queue connection refused');
+const sampleError = new Error("Message queue connection refused");
 analyzeCriticalIncident(sampleError, 60);
 ```
 
-Contoh keluaran yang diharapkan:
+Contoh output yang diharapkan:
+
 ```javascript
 {
   severity: 'HIGH',
@@ -494,7 +504,7 @@ Contoh keluaran yang diharapkan:
 }
 ```
 
-Batasan: Tidak boleh melakukan penulisan berkas ke disk (`writeReport` tidak boleh digunakan). Murni analisis memori terprogram via `getReport()`.
+Batasan: Dilarang melakukan penulisan berkas ke disk (`writeReport` tidak boleh digunakan). Lakukan analisis murni di memori via `getReport()`.
 
 ---
 

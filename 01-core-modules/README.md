@@ -1,6 +1,6 @@
-# Modul 01: Core Modules dan Runtime Architecture
+# Core Modules dan Runtime Architecture
 
-Dokumentasi ini merangkum arsitektur internal runtime Node.js serta pustaka modul bawaan (_core modules_) yang tersedia secara native tanpa dependensi eksternal dari NPM.
+Dokumentasi ini merangkum arsitektur internal runtime Node.js serta library modul bawaan (_core modules_) yang tersedia secara native tanpa dependensi eksternal dari NPM.
 
 ---
 
@@ -19,7 +19,7 @@ Dokumentasi ini merangkum arsitektur internal runtime Node.js serta pustaka modu
 6. [URL](06-url/README.md)
    Standar WHATWG URL API, pemecahan komponen alamat, dan manipulasi parameter via `URLSearchParams`.
 7. [File System](07-file-system/README.md)
-   Operasi berkas dan direktori berbasis Promise, scanning entri direktori, pola atomic write, dan kode galat sistem.
+   Operasi berkas dan direktori berbasis Promise, scanning entri direktori, pola atomic write, dan kode error sistem.
 8. [Events](08-events/README.md)
    Pola Event-Driven Architecture native via `EventEmitter`, pengelolaan listener, dan mitigasi kebocoran memori.
 9. [Buffer](09-buffer/README.md)
@@ -49,7 +49,7 @@ Dokumentasi ini merangkum arsitektur internal runtime Node.js serta pustaka modu
 21. [Debugger](21-debugger/README.md)
     Titik henti program `debugger`, inspeksi nilai variabel runtime, dan integrasi V8 Inspector.
 22. [Console](22-console/README.md)
-    Pencetakan diagnostik, format tabular, dan pembuatan instans kustom console ke berkas disk stream.
+    Pencetakan diagnostik, format tabular, dan pembuatan instance kustom console ke berkas disk stream.
 
 ---
 

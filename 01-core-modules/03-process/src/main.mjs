@@ -1,16 +1,4 @@
-/**
- * 02 - Process Demonstration (Industry Standard)
- *
- * Demonstrasi menyeluruh objek process di tingkat industri:
- * 1. Inspeksi Metadata & Resource Usage (Memory Profiling & CPU Time)
- * 2. High-Resolution Benchmarking (nanoseconds via hrtime)
- * 3. Environment & Parameter Handling
- * 4. Error Trapping (uncaughtException & unhandledRejection)
- * 5. Production Graceful Shutdown (SIGINT & SIGTERM Handling)
- */
-
 import process from 'node:process';
-import { parseArgs } from 'node:util';
 
 console.log('=== 1. Process Identity & Runtime Metadata ===');
 console.log('Node.js Version :', process.version);
@@ -43,23 +31,30 @@ console.log(
   `Kalkulasi selesai. Durasi: ${durationMs.toFixed(3)} ms (${durationNs} nanodetik)`,
 );
 
-console.log('\n=== 4. Modern CLI Argument Parsing (parseArgs) ===');
-// Memanfaatkan utilitas parsing argumen bawaan Node.js modern
-try {
-  const { values, positionals } = parseArgs({
-    args: process.argv.slice(2),
-    options: {
-      port: { type: 'string', short: 'p', default: '3000' },
-      env: { type: 'string', short: 'e', default: 'development' },
-      debug: { type: 'boolean', short: 'd', default: false },
-    },
-    allowPositionals: true,
-  });
-  console.log('Parsed Options     :', values);
-  console.log('Positional Argumen :', positionals);
-} catch (err) {
-  console.warn('Peringatan parsing argumen:', err.message);
+console.log('\n=== 4. CLI Argument Inspection & Parsing (process.argv) ===');
+// Parsing argumen baris perintah manual menggunakan process.argv
+const rawArgs = process.argv.slice(2);
+const parsedOptions = {
+  port: '3000',
+  env: 'development',
+  debug: false,
+};
+const positionals = [];
+
+for (let i = 0; i < rawArgs.length; i++) {
+  const arg = rawArgs[i];
+  if (arg === '--port' || arg === '-p') {
+    parsedOptions.port = rawArgs[++i] || parsedOptions.port;
+  } else if (arg === '--env' || arg === '-e') {
+    parsedOptions.env = rawArgs[++i] || parsedOptions.env;
+  } else if (arg === '--debug' || arg === '-d') {
+    parsedOptions.debug = true;
+  } else if (!arg.startsWith('-')) {
+    positionals.push(arg);
+  }
 }
+console.log('Parsed Options     :', parsedOptions);
+console.log('Positional Argumen :', positionals);
 
 console.log('\n=== 5. Environment Configuration ===');
 const port = process.env.PORT || 8080;

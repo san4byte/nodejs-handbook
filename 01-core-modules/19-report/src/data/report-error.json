@@ -1,0 +1,545 @@
+
+{
+  "header": {
+    "reportVersion": 5,
+    "event": "JavaScript API",
+    "trigger": "API",
+    "filename": "/home/jokosantoso/code/nodejs-handbook/01-core-modules/19-report/src/data/report-error.json",
+    "dumpEventTime": "2026-10-14T21:21:43Z",
+    "dumpEventTimeStamp": "1791987703291",
+    "processId": 46,
+    "threadId": 0,
+    "cwd": "/home/jokosantoso/code/nodejs-handbook",
+    "commandLine": [
+      "/home/jokosantoso/.nvm/versions/node/v24.21.0/bin/node",
+      "01-core-modules/19-report/src/main.mjs"
+    ],
+    "nodejsVersion": "v24.21.0",
+    "glibcVersionRuntime": "2.43",
+    "glibcVersionCompiler": "2.28",
+    "wordSize": 64,
+    "arch": "x64",
+    "platform": "linux",
+    "componentVersions": {
+      "acorn": "8.18.0",
+      "ada": "4.0.0",
+      "amaro": "1.1.11",
+      "ares": "1.34.8",
+      "brotli": "1.2.0",
+      "cldr": "48.0",
+      "icu": "78.3",
+      "llhttp": "9.4.3",
+      "merve": "1.2.2",
+      "modules": "137",
+      "napi": "10",
+      "nbytes": "0.1.4",
+      "ncrypto": "0.0.1",
+      "nghttp2": "1.70.0",
+      "nghttp3": "",
+      "ngtcp2": "",
+      "node": "24.21.0",
+      "openssl": "3.5.8",
+      "simdjson": "4.6.7",
+      "simdutf": "6.4.0",
+      "sqlite": "3.53.4",
+      "tz": "2026c",
+      "undici": "7.29.1",
+      "unicode": "17.0",
+      "uv": "1.52.1",
+      "uvwasi": "0.0.23",
+      "v8": "13.6.233.17-node.53",
+      "zlib": "1.3.2.1-motley-8002e91",
+      "zstd": "1.5.7"
+    },
+    "release": {
+      "name": "node",
+      "lts": "Krypton",
+      "headersUrl": "https://nodejs.org/download/release/v24.21.0/node-v24.21.0-headers.tar.gz",
+      "sourceUrl": "https://nodejs.org/download/release/v24.21.0/node-v24.21.0.tar.gz"
+    },
+    "osName": "Linux",
+    "osRelease": "6.6.114.1-microsoft-standard-WSL2",
+    "osVersion": "#1 SMP PREEMPT_DYNAMIC Mon Dec  1 20:46:23 UTC 2025",
+    "osMachine": "x86_64",
+    "cpus": [
+      {
+        "model": "Intel(R) Core(TM) i5-8350U CPU @ 1.70GHz",
+        "speed": 0,
+        "user": 292700,
+        "nice": 940,
+        "sys": 304220,
+        "idle": 33616080,
+        "irq": 0
+      },
+      {
+        "model": "Intel(R) Core(TM) i5-8350U CPU @ 1.70GHz",
+        "speed": 0,
+        "user": 380410,
+        "nice": 860,
+        "sys": 232250,
+        "idle": 33640750,
+        "irq": 0
+      },
+      {
+        "model": "Intel(R) Core(TM) i5-8350U CPU @ 1.70GHz",
+        "speed": 0,
+        "user": 362180,
+        "nice": 920,
+        "sys": 287120,
+        "idle": 33592970,
+        "irq": 0
+      },
+      {
+        "model": "Intel(R) Core(TM) i5-8350U CPU @ 1.70GHz",
+        "speed": 0,
+        "user": 277380,
+        "nice": 950,
+        "sys": 214310,
+        "idle": 33791920,
+        "irq": 0
+      },
+      {
+        "model": "Intel(R) Core(TM) i5-8350U CPU @ 1.70GHz",
+        "speed": 0,
+        "user": 355760,
+        "nice": 910,
+        "sys": 289160,
+        "idle": 33598130,
+        "irq": 0
+      },
+      {
+        "model": "Intel(R) Core(TM) i5-8350U CPU @ 1.70GHz",
+        "speed": 0,
+        "user": 281310,
+        "nice": 890,
+        "sys": 211400,
+        "idle": 33782280,
+        "irq": 0
+      },
+      {
+        "model": "Intel(R) Core(TM) i5-8350U CPU @ 1.70GHz",
+        "speed": 0,
+        "user": 359860,
+        "nice": 1010,
+        "sys": 296060,
+        "idle": 33590510,
+        "irq": 0
+      },
+      {
+        "model": "Intel(R) Core(TM) i5-8350U CPU @ 1.70GHz",
+        "speed": 0,
+        "user": 292140,
+        "nice": 930,
+        "sys": 214710,
+        "idle": 33769600,
+        "irq": 0
+      }
+    ],
+    "networkInterfaces": [
+      {
+        "name": "lo",
+        "internal": true,
+        "mac": "00:00:00:00:00:00",
+        "address": "127.0.0.1",
+        "netmask": "255.0.0.0",
+        "family": "IPv4"
+      },
+      {
+        "name": "lo",
+        "internal": true,
+        "mac": "00:00:00:00:00:00",
+        "address": "::1",
+        "netmask": "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
+        "family": "IPv6",
+        "scopeid": 0
+      }
+    ],
+    "host": "sandbox"
+  },
+  "javascriptStack": {
+    "message": "Error [ERR_SYNTHETIC]: JavaScript Callstack",
+    "stack": [
+      "at Object.writeReport (node:internal/process/report:51:13)",
+      "at file:///home/jokosantoso/code/nodejs-handbook/01-core-modules/19-report/src/main.mjs:24:18",
+      "at ModuleJob.run (node:internal/modules/esm/module_job:561:25)",
+      "at async node:internal/modules/esm/loader:647:26"
+    ],
+    "errorProperties": {
+      "code": "ERR_SYNTHETIC"
+    }
+  },
+  "javascriptHeap": {
+    "totalMemory": 6856704,
+    "executableMemory": 524288,
+    "totalCommittedMemory": 6823936,
+    "availableMemory": 2344812968,
+    "totalGlobalHandlesMemory": 8192,
+    "usedGlobalHandlesMemory": 2656,
+    "usedMemory": 5038904,
+    "memoryLimit": 2348810240,
+    "mallocedMemory": 172128,
+    "externalMemory": 1926022,
+    "peakMallocedMemory": 254032,
+    "nativeContextCount": 1,
+    "detachedContextCount": 0,
+    "doesZapGarbage": 0,
+    "heapSpaces": {
+      "read_only_space": {
+        "memorySize": 0,
+        "committedMemory": 0,
+        "capacity": 0,
+        "used": 0,
+        "available": 0
+      },
+      "new_space": {
+        "memorySize": 1048576,
+        "committedMemory": 790528,
+        "capacity": 1048512,
+        "used": 679864,
+        "available": 368648
+      },
+      "old_space": {
+        "memorySize": 3317760,
+        "committedMemory": 3407872,
+        "capacity": 3316264,
+        "used": 3041968,
+        "available": 274296
+      },
+      "code_space": {
+        "memorySize": 524288,
+        "committedMemory": 524288,
+        "capacity": 524224,
+        "used": 39936,
+        "available": 484288
+      },
+      "shared_space": {
+        "memorySize": 0,
+        "committedMemory": 0,
+        "capacity": 0,
+        "used": 0,
+        "available": 0
+      },
+      "trusted_space": {
+        "memorySize": 1699840,
+        "committedMemory": 1835008,
+        "capacity": 1698664,
+        "used": 1014976,
+        "available": 683688
+      },
+      "shared_trusted_space": {
+        "memorySize": 0,
+        "committedMemory": 0,
+        "capacity": 0,
+        "used": 0,
+        "available": 0
+      },
+      "new_large_object_space": {
+        "memorySize": 0,
+        "committedMemory": 0,
+        "capacity": 1048512,
+        "used": 0,
+        "available": 1048512
+      },
+      "large_object_space": {
+        "memorySize": 266240,
+        "committedMemory": 266240,
+        "capacity": 262160,
+        "used": 262160,
+        "available": 0
+      },
+      "code_large_object_space": {
+        "memorySize": 0,
+        "committedMemory": 0,
+        "capacity": 0,
+        "used": 0,
+        "available": 0
+      },
+      "shared_large_object_space": {
+        "memorySize": 0,
+        "committedMemory": 0,
+        "capacity": 0,
+        "used": 0,
+        "available": 0
+      },
+      "shared_trusted_large_object_space": {
+        "memorySize": 0,
+        "committedMemory": 0,
+        "capacity": 0,
+        "used": 0,
+        "available": 0
+      },
+      "trusted_large_object_space": {
+        "memorySize": 0,
+        "committedMemory": 0,
+        "capacity": 0,
+        "used": 0,
+        "available": 0
+      }
+    }
+  },
+  "nativeStack": [
+    {
+      "pc": "0x0000000000a08534",
+      "symbol": "node::TriggerNodeReport(v8::Isolate*, node::Environment*, char const*, char const*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, v8::Local<v8::Value>) [/home/jokosantoso/.nvm/versions/node/v24.21.0/bin/node]"
+    },
+    {
+      "pc": "0x0000000000a08b37",
+      "symbol": "node::TriggerNodeReport(node::Environment*, char const*, char const*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, v8::Local<v8::Value>) [/home/jokosantoso/.nvm/versions/node/v24.21.0/bin/node]"
+    },
+    {
+      "pc": "0x0000000000a0d37e",
+      "symbol": "node::report::WriteReport(v8::FunctionCallbackInfo<v8::Value> const&) [/home/jokosantoso/.nvm/versions/node/v24.21.0/bin/node]"
+    },
+    {
+      "pc": "0x000072c2b3dcf08d",
+      "symbol": ""
+    }
+  ],
+  "resourceUsage": {
+    "free_memory": 5745954816,
+    "total_memory": 8239820800,
+    "rss": 49414144,
+    "constrained_memory": 18446744073709551615,
+    "available_memory": 5745954816,
+    "userCpuSeconds": 0.037128,
+    "kernelCpuSeconds": 0.011138,
+    "cpuConsumptionPercent": 4.8266,
+    "userCpuConsumptionPercent": 3.7128,
+    "kernelCpuConsumptionPercent": 1.1138,
+    "maxRss": 49414144,
+    "pageFaults": {
+      "IORequired": 10,
+      "IONotRequired": 3109
+    },
+    "fsActivity": {
+      "reads": 1176,
+      "writes": 16
+    }
+  },
+  "uvthreadResourceUsage": {
+    "userCpuSeconds": 0.034142,
+    "kernelCpuSeconds": 0.01138,
+    "cpuConsumptionPercent": 4.5522,
+    "userCpuConsumptionPercent": 3.4142,
+    "kernelCpuConsumptionPercent": 1.138,
+    "fsActivity": {
+      "reads": 1176,
+      "writes": 16
+    }
+  },
+  "libuv": [
+    {
+      "type": "async",
+      "is_active": true,
+      "is_referenced": false,
+      "address": "0x000000003463a410"
+    },
+    {
+      "type": "async",
+      "is_active": true,
+      "is_referenced": false,
+      "address": "0x0000000006b81c60"
+    },
+    {
+      "type": "timer",
+      "is_active": false,
+      "is_referenced": false,
+      "address": "0x00000000346bf148",
+      "repeat": 0,
+      "firesInMsFromNow": -34373160,
+      "expired": true
+    },
+    {
+      "type": "check",
+      "is_active": true,
+      "is_referenced": false,
+      "address": "0x00000000346bf1e0"
+    },
+    {
+      "type": "idle",
+      "is_active": false,
+      "is_referenced": true,
+      "address": "0x00000000346bf258"
+    },
+    {
+      "type": "prepare",
+      "is_active": true,
+      "is_referenced": false,
+      "address": "0x00000000346bf2d0"
+    },
+    {
+      "type": "check",
+      "is_active": true,
+      "is_referenced": false,
+      "address": "0x00000000346bf348"
+    },
+    {
+      "type": "async",
+      "is_active": true,
+      "is_referenced": false,
+      "address": "0x00000000346bf3c0"
+    },
+    {
+      "type": "pipe",
+      "is_active": false,
+      "is_referenced": true,
+      "address": "0x0000000034720d70",
+      "localEndpoint": null,
+      "remoteEndpoint": null,
+      "sendBufferSize": 0,
+      "recvBufferSize": 0,
+      "fd": 1,
+      "stdio": "stdout",
+      "writeQueueSize": 0,
+      "readable": false,
+      "writable": true
+    },
+    {
+      "type": "tty",
+      "is_active": false,
+      "is_referenced": true,
+      "address": "0x00000000347215e0",
+      "width": 80,
+      "height": 24,
+      "fd": 18,
+      "writeQueueSize": 0,
+      "readable": true,
+      "writable": true
+    },
+    {
+      "type": "pipe",
+      "is_active": false,
+      "is_referenced": true,
+      "address": "0x0000000034721860",
+      "localEndpoint": null,
+      "remoteEndpoint": null,
+      "sendBufferSize": 0,
+      "recvBufferSize": 0,
+      "fd": 2,
+      "stdio": "stderr",
+      "writeQueueSize": 0,
+      "readable": false,
+      "writable": true
+    },
+    {
+      "type": "signal",
+      "is_active": true,
+      "is_referenced": false,
+      "address": "0x00000000346f07c8",
+      "signum": 12,
+      "signal": "SIGUSR2"
+    },
+    {
+      "type": "loop",
+      "is_active": false,
+      "address": "0x0000000006b94aa0",
+      "loopIdleTimeSeconds": 0
+    }
+  ],
+  "workers": [
+  ],
+  "environmentVariables": {
+    "SHELL": "/bin/bash",
+    "ANTIGRAVITY_LS_ADDRESS": "localhost:39181",
+    "WSL2_GUI_APPS_ENABLED": "1",
+    "WSL_DISTRO_NAME": "Ubuntu-26.04",
+    "JJ_PAGER": "cat",
+    "NODE_EXTRA_CA_CERTS": "/etc/ssl/certs/ca-certificates.crt",
+    "COPILOT_CLI_ENABLED_FEATURE_FLAGS": "SHELL_SPAWN_BACKEND",
+    "ELECTRON_RUN_AS_NODE": "1",
+    "NAME": "jokosantoso",
+    "PWD": "/home/jokosantoso/code/nodejs-handbook",
+    "USERPROFILE": "/home/jokosantoso",
+    "LOGNAME": "jokosantoso",
+    "COPILOT_OTEL_FILE_EXPORTER_PATH": "/dev/null",
+    "VSCODE_ESM_ENTRYPOINT": "vs/workbench/api/node/extensionHostProcess",
+    "_": "/usr/bin/python3",
+    "HOME": "/home/jokosantoso",
+    "LANG": "C.UTF-8",
+    "WSL_INTEROP": "/run/WSL/55228_interop",
+    "WAYLAND_DISPLAY": "wayland-0",
+    "ANTIGRAVITY_AGENTAPI_EXE": "/home/jokosantoso/.gemini/bin/agy",
+    "VSCODE_L10N_BUNDLE_LOCATION": "",
+    "ANTIGRAVITY_CSRF_TOKEN": "ee8013e8-4dc6-4492-9843-6726fb746c05",
+    "ANTIGRAVITY_CONVERSATION_ID": "1c25485c-3b79-44bc-a25a-1432643c61a1",
+    "VSCODE_HANDLES_SIGPIPE": "true",
+    "TERM": "dumb",
+    "USER": "jokosantoso",
+    "GIT_PAGER": "cat",
+    "ANTIGRAVITY_SOURCE_METADATA": "{\"tool\":{\"conversationId\":\"1c25485c-3b79-44bc-a25a-1432643c61a1\",\"stepIndex\":471,\"toolCall\":{\"id\":\"call_1871924\",\"name\":\"run_command\",\"argumentsJson\":\"{\\\"CommandLine\\\":\\\"python3 -c \\\\\\\"\\\\nimport subprocess\\\\n\\\\nnode_bin = '/home/jokosantoso/.nvm/versions/node/v24.21.0/bin/node'\\\\ntests = [\\\\n    '01-core-modules/10-stream/src/main.mjs',\\\\n    '01-core-modules/16-worker-threads/src/main.mjs',\\\\n    '01-core-modules/19-report/src/main.mjs',\\\\n    '01-core-modules/22-console/src/main.mjs',\\\\n]\\\\n\\\\nfor t in tests:\\\\n    res = subprocess.run([node_bin, t], capture_output=True, text=True)\\\\n    status = 'OK' if res.returncode == 0 else f'ERR ({res.stderr[:60]})'\\\\n    print(f'{t}: {status}')\\\\n\\\\\\\"\\\",\\\"Cwd\\\":\\\"/home/jokosantoso/code/nodejs-handbook\\\",\\\"IsDaemon\\\":false,\\\"RequestedTerminalID\\\":\\\"\\\",\\\"RunPersistent\\\":false,\\\"WaitMsBeforeAsync\\\":5000,\\\"toolAction\\\":\\\"Testing more scripts\\\",\\\"toolSummary\\\":\\\"Verify stream, worker, report, and console scripts\\\"}\",\"thinkingSignature\":\"EqoCCqcCAWkUfRN1a2VFJhPOerC9PFtz95PPnTpwXV+i/jAIa021L1EJ99CyqZ7ZftxN7ybSH5ikB/KGeYBmY8HqHCLIiWD35130Cplm/Egl/vEeg2qNKltuYlnnM7htRI5FCzeurbMOLs30WTZ4EbIi3U1UpSNiQ67JRQj7cexgUAfAhx36jZatub66pmrbG4VeLDPN1MbRi/n8uAKGB3+cl80hPOFmT2DNf28fL/WsxuMEO/cU5SaCQYDVyv5h0G5iHn7QPp6nOmJEyM8wO+8qj4LF68gRoOciZ9xpyjuEffWAysEM6J0CUff3iGwdkYAZz5CaUrJAvTDPbb3j+h5OgMvs/mXCWFnT3qB9XfJMHbMdR5/jGLns0iculADeX6/HGTXWV2VrWetCGg==\"}}}",
+    "SHLVL": "0",
+    "PAGER": "cat",
+    "VSCODE_CWD": "/mnt/c/Users/joko7/AppData/Local/Programs/Microsoft VS Code",
+    "VSCODE_RECONNECTION_GRACE_TIME": "10800000",
+    "ANTIGRAVITY_AGENT": "1",
+    "ANTIGRAVITY_TRAJECTORY_ID": "3faaec71-312c-4bac-a1e0-2af7c5818ffc",
+    "XDG_RUNTIME_DIR": "/run/user/1000",
+    "SSL_CERT_FILE": "/etc/ssl/certs/ca-certificates.crt",
+    "WSLENV": "VSCODE_WSL_EXT_LOCATION/up",
+    "ANTIGRAVITY_LS_VERSION": "cli-2.23.0",
+    "VSCODE_WSL_EXT_LOCATION": "/mnt/c/Users/joko7/.vscode/extensions/ms-vscode-remote.remote-wsl-0.104.3",
+    "ANTIGRAVITY_PROJECT_ID": "e96522a4-5aaf-4513-b8bc-145bf0d2bcbc",
+    "PATH": "/home/jokosantoso/.gemini/antigravity/bin:/home/jokosantoso/.vscode-server/bin/7baac39ec3ca969dab74ac12c097f6a486e46593/bin/remote-cli:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/wsl/lib:/mnt/c/WINDOWS/system32:/mnt/c/WINDOWS:/mnt/c/WINDOWS/System32/Wbem:/mnt/c/WINDOWS/System32/WindowsPowerShell/v1.0/:/mnt/c/WINDOWS/System32/OpenSSH/:/mnt/c/Program Files/Git/cmd:/mnt/c/Users/joko7/AppData/Local/Author Software/nvm:/mnt/c/Users/joko7/AppData/Local/Author Software/nvm/.nodejs:/mnt/c/Users/joko7/AppData/Local/Microsoft/WindowsApps:/mnt/c/Users/joko7/AppData/Local/Programs/Microsoft VS Code/bin",
+    "AGY_ENABLE_HUB": "1",
+    "ANTIGRAVITY_VSCODE_HOST": "1",
+    "APPLICATION_INSIGHTS_NO_STATSBEAT": "true",
+    "VSCODE_NLS_CONFIG": "{\"userLocale\":\"en\",\"osLocale\":\"en\",\"resolvedLanguage\":\"en\",\"defaultMessagesFile\":\"/home/jokosantoso/.vscode-server/bin/7baac39ec3ca969dab74ac12c097f6a486e46593/out/nls.messages.json\",\"locale\":\"en\",\"availableLanguages\":{}}",
+    "HOSTTYPE": "x86_64",
+    "ANTIGRAVITY_APP_DATA_DIR": "/home/jokosantoso/.gemini/antigravity",
+    "MXC_BIN_DIR": "/home/jokosantoso/.vscode-server/bin/7baac39ec3ca969dab74ac12c097f6a486e46593/node_modules/@microsoft/mxc-sdk/bin",
+    "VSCODE_HANDLES_UNCAUGHT_ERRORS": "true",
+    "ANTIGRAVITY_AUTH_SUCCESS_APP": "vscode"
+  },
+  "userLimits": {
+    "core_file_size_blocks": {
+      "soft": 0,
+      "hard": "unlimited"
+    },
+    "data_seg_size_bytes": {
+      "soft": "unlimited",
+      "hard": "unlimited"
+    },
+    "file_size_blocks": {
+      "soft": "unlimited",
+      "hard": "unlimited"
+    },
+    "max_locked_memory_bytes": {
+      "soft": 67108864,
+      "hard": 67108864
+    },
+    "max_memory_size_bytes": {
+      "soft": "unlimited",
+      "hard": "unlimited"
+    },
+    "open_files": {
+      "soft": 1048576,
+      "hard": 1048576
+    },
+    "stack_size_bytes": {
+      "soft": 8388608,
+      "hard": "unlimited"
+    },
+    "cpu_time_seconds": {
+      "soft": "unlimited",
+      "hard": "unlimited"
+    },
+    "max_user_processes": {
+      "soft": 31393,
+      "hard": 31393
+    },
+    "virtual_memory_bytes": {
+      "soft": "unlimited",
+      "hard": "unlimited"
+    }
+  },
+  "sharedObjects": [
+    "linux-vdso.so.1",
+    "/usr/lib/x86_64-linux-gnu/libdl.so.2",
+    "/usr/lib/x86_64-linux-gnu/libstdc++.so.6",
+    "/usr/lib/x86_64-linux-gnu/libm.so.6",
+    "/usr/lib/x86_64-linux-gnu/libgcc_s.so.1",
+    "/usr/lib/x86_64-linux-gnu/libpthread.so.0",
+    "/usr/lib/x86_64-linux-gnu/libc.so.6",
+    "/lib64/ld-linux-x86-64.so.2"
+  ]
+}

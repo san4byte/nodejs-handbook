@@ -1,222 +1,178 @@
 # Standard Library
 
 > Ringkasan
-> - Fungsi: Menyediakan modul bawaan native Node.js untuk menangani operasi sistem dasar tanpa instalasi paket pihak ketiga.
-> - Digunakan saat: Menjalankan tugas I/O berkas, manipulasi path, networking, kriptografi, dan utilitas sistem.
-> - Aturan praktis: Selalu gunakan prefiks protokol `node:` pada setiap impor modul bawaan untuk menjamin resolusi C++ internal dan mencegah kerentanan _dependency confusion_.
+>
+> - Fungsi: Menyediakan modul bawaan resmi dari Node.js untuk menangani kebutuhan dasar aplikasi tanpa perlu menginstal paket tambahan dari luar.
+> - Digunakan saat: Memanggil fitur inti Node.js, mengecek ketersediaan modul native, dan memastikan aplikasi memuat modul yang aman dari ancaman pihak ketiga.
+> - Aturan praktis: Selalu gunakan awalan protokol `node:` saat mengimpor modul bawaan agar Node.js langsung memuat modul internal dan terhindar dari salah ambil paket tiruan (_dependency confusion_).
 
 ---
 
 ## Tujuan Belajar
 
-- Mengidentifikasi modul bawaan utama di dalam Standard Library Node.js.
-- Menerapkan prefiks protokol `node:` pada pemanggilan modul native.
-- Membedakan peran mesin V8, pustaka Libuv, dan _C++ bindings_ dalam eksekusi modul bawaan.
-- Menggantikan ketergantungan paket pihak ketiga dengan modul bawaan modern.
+- Memahami apa itu library standar (_Standard Library_) dan bagaimana modul bawaan bekerja di Node.js.
+- Membiasakan penggunaan awalan `node:` saat mengimpor modul bawaan demi keamanan aplikasi.
+- Mengecek keberadaan modul bawaan secara langsung lewat kode menggunakan `node:module`.
+- Mengetahui peran mesin V8, Libuv, dan _C++ bindings_ saat menjalankan modul bawaan.
+- Membedakan modul bawaan runtime dengan paket eksternal yang diinstal melalui NPM.
 
 ---
 
 ## Konsep
 
-> Runtime Node.js dianalogikan sebagai dapur restoran profesional. Mesin V8 bertindak sebagai koki utama yang mengeksekusi instruksi JavaScript. Pustaka Libuv bekerja sebagai tim asisten dapur yang mengurus pekerjaan latar belakang seperti logistik bahan dan jaringan. Modul Standard Library (`node:*`) adalah peralatan dapur standar bawaan yang steril, aman, dan langsung siap pakai tanpa perlu membeli perlengkapan dari toko luar.
+> Bayangkan Node.js seperti laptop baru yang baru kamu beli dari toko. Library standar (_Standard Library_) adalah aplikasi bawaan yang sudah terpasang dari pabrik, seperti kalkulator, pengatur jam, dan terminal. Kamu bisa langsung memakainya tanpa perlu membuka toko aplikasi untuk mendownload apa pun. Modul bawaan ini terhubung langsung ke mesin laptop lewat perantara internal (_C++ bindings_). Menambahkan awalan `node:` sama seperti memilih aplikasi resmi pabrik, memastikan laptop tidak membuka aplikasi tiruan dari internet yang namanya mirip.
 
 ```mermaid
 flowchart LR
-    JS["Kode JavaScript (ESM)"] --> BINDING["C++ Bindings (node:*)"]
-    BINDING --> V8["V8 Engine (Eksekusi JS)"]
-    BINDING --> LIBUV["Libuv (Operasi I/O & Thread Pool)"]
+    JS["Kode JavaScript (ESM)"] --> PROTOCOL["Awalan Protokol 'node:'"]
+    PROTOCOL --> BINDING["C++ Bindings (node:module)"]
+    BINDING --> V8["Mesin V8 (Menjalankan JS)"]
+    BINDING --> LIBUV["Libuv (Event Loop & Akses Sistem)"]
 ```
 
 ---
 
 ## Referensi
 
-| Item | Fungsi | Catatan |
-| :--- | :--- | :--- |
-| **`node:os`** | Membaca metadata sistem operasi dan perangkat keras host | Menyediakan data platform, arsitektur CPU, dan kapasitas memori |
-| **`node:path`** | Memanipulasi dan menormalisasi jalur sistem berkas | Menyesuaikan pemisah direktori secara otomatis untuk POSIX dan Windows |
-| **`node:fs/promises`** | Menjalankan operasi I/O berkas secara asinkron berbasis Promise | Menghindari penggunaan callback manual bergaya legacy |
-| **`node:crypto`** | Menyediakan algoritma kriptografi, hashing, dan pembuatan pengenal acak | Memiliki generator UUID v4 bawaan melalui `randomUUID()` |
-| **`node:util`** | Menyediakan fungsi bantuan diagnostik dan parsing argumen baris perintah | Memiliki `parseArgs` untuk parsing CLI tanpa pustaka tambahan |
-| **`node:url`** | Mengurai dan memanipulasi format URL sesuai standar WHATWG | Mempermudah ekstraksi query parameter dan konversi jalur berkas |
+| Item                                 | Fungsi                                                              | Catatan                                                                             |
+| :----------------------------------- | :------------------------------------------------------------------ | :---------------------------------------------------------------------------------- |
+| **`node:` Protocol**                 | Menandai bahwa modul yang diimpor adalah modul bawaan resmi Node.js | Menghemat waktu karena tidak mencari ke `node_modules` dan kebal dari nama tiruan   |
+| **`module.isBuiltin()`**             | Mengecek apakah suatu nama modul merupakan modul bawaan runtime     | Menghasilkan nilai `true` untuk modul bawaan dan `false` untuk paket luar           |
+| **`module.builtinModules`**          | Menampilkan daftar nama seluruh modul bawaan yang didukung runtime  | Berisi daftar string nama modul tanpa awalan `node:`                                |
+| **`module.createRequire()`**         | Membuat fungsi `require()` sendiri di dalam berkas ES Modules       | Berguna saat perlu memanggil modul bawaan dengan format CommonJS                    |
+| **`module.syncBuiltinESMExports()`** | Menyelaraskan ekspor modul bawaan antara gaya CommonJS dan ESM      | Menjaga konsistensi data jika ada nilai ekspor modul bawaan yang berubah di runtime |
 
-### `node:os`
+### `node:` Protocol
 
-Modul `node:os` digunakan untuk membaca informasi sistem operasi serta spesifikasi perangkat keras tempat runtime dijalankan. Modul ini umum dipakai dalam penentuan alokasi proses worker atau pengumpulan metrik server.
+Awalan `node:` memberi tahu runtime secara tegas bahwa modul yang dipanggil berasal dari modul internal Node.js. Dengan awalan ini, Node.js tidak perlu repot mencari ke folder `node_modules` di disk, sehingga aplikasi memuat modul lebih cepat dan aman.
 
 ```javascript
-import os from 'node:os';
+import module from "node:module";
 
-const platform = os.platform();
-const architecture = os.arch();
-
-console.log(platform);
-// Output: linux
-console.log(architecture);
-// Output: x64
+console.log(typeof module.isBuiltin);
+// Output: function
 ```
 
-Kasus lain: Menghitung kuota konkurensi CPU yang tersedia secara dinamis menggunakan `os.availableParallelism()`.
+Kasus lain: Jika kamu memanggil modul dengan awalan `node:` tetapi modul tersebut tidak ada di Node.js, runtime akan langsung memberikan error `ERR_UNKNOWN_BUILTIN_MODULE`.
 
 ```javascript
-import os from 'node:os';
+try {
+  await import("node:non_existent_core_module");
+} catch (error) {
+  console.log(error.code);
+  // Output: ERR_UNKNOWN_BUILTIN_MODULE
+}
+```
 
-const workerCount = os.availableParallelism();
-console.log(workerCount > 0);
+### `module.isBuiltin()`
+
+Fungsi `isBuiltin()` dari modul `node:module` berguna untuk memastikan apakah sebuah nama modul benar-benar modul bawaan resmi. Fungsi ini bisa membaca nama modul baik yang memakai awalan `node:` maupun yang tidak.
+
+```javascript
+import { isBuiltin } from "node:module";
+
+console.log(isBuiltin("node:module"));
+// Output: true
+console.log(isBuiltin("express"));
+// Output: false
+```
+
+Kasus lain: Jika kamu memasukkan string kosong atau nama paket yang tidak dikenal, fungsi ini akan mengembalikan nilai `false` dengan aman tanpa membuat program terhenti.
+
+```javascript
+import { isBuiltin } from "node:module";
+
+console.log(isBuiltin(""));
+// Output: false
+console.log(isBuiltin("unknown-library"));
+// Output: false
+```
+
+### `module.builtinModules`
+
+Properti `builtinModules` berisi daftar nama seluruh modul bawaan yang didukung oleh versi Node.js yang sedang kamu pakai.
+
+```javascript
+import { builtinModules } from "node:module";
+
+console.log(Array.isArray(builtinModules));
+// Output: true
+console.log(builtinModules.length > 50);
+// Output: true
+console.log(builtinModules.includes("module"));
 // Output: true
 ```
 
-### `node:path`
-
-Modul `node:path` digunakan untuk memanipulasi dan menyusun string jalur berkas agar kompatibel lintas platform. Modul ini membedakan separator slash POSIX (`/`) dan backslash Windows (`\`).
+Kasus lain: Modul bawaan internal Node.js biasanya diawali dengan garis bawah (`_`). Kamu bisa menyaringnya dengan mudah jika hanya ingin melihat daftar modul yang ditujukan untuk publik.
 
 ```javascript
-import path from 'node:path';
+import { builtinModules } from "node:module";
 
-const filePath = path.join('app', 'data', 'users.json');
-console.log(filePath);
-// Output: app/data/users.json
+const publicModules = builtinModules.filter((name) => !name.startsWith("_"));
+console.log(publicModules.includes("module"));
+// Output: true
 ```
 
-Kasus lain: Menormalkan jalur yang memuat karakter navigasi relatif (`..` atau `.`) agar terbebas dari redundansi.
+### `module.createRequire()`
+
+Saat menulis kode dengan format modern ES Modules (`import`), terkadang kamu tetap butuh fungsi lama `require()`. Fungsi `createRequire()` memungkinkan kamu membuat pemanggil `require` secara fleksibel di dalam berkas ESM.
 
 ```javascript
-import path from 'node:path';
+import { createRequire } from "node:module";
 
-const normalizedPath = path.normalize('/var/log/../log/audit.log');
-console.log(normalizedPath);
-// Output: /var/log/audit.log
+const require = createRequire(import.meta.url);
+const nativeModule = require("node:module");
+
+console.log(typeof nativeModule.isBuiltin);
+// Output: function
 ```
 
-### `node:fs/promises`
-
-Modul `node:fs/promises` menangani interaksi baca dan tulis pada sistem berkas secara non-blocking dengan mengembalikan Promise. Modul ini menjadi standar modern pengganti callback manual.
+Kasus lain: Jika modul yang dipanggil lewat `require` tidak ditemukan di sistem, Node.js akan melempar error `MODULE_NOT_FOUND`.
 
 ```javascript
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import os from 'node:os';
+import { createRequire } from "node:module";
 
-const targetFile = path.join(os.tmpdir(), 'standard-library-test.txt');
-await fs.writeFile(targetFile, 'Hello Standard Library', 'utf-8');
-const content = await fs.readFile(targetFile, 'utf-8');
-
-console.log(content);
-// Output: Hello Standard Library
-
-await fs.unlink(targetFile);
-```
-
-Kasus lain: Menangani galat saat membaca berkas yang tidak ditemukan di disk.
-
-```javascript
-import fs from 'node:fs/promises';
+const require = createRequire(import.meta.url);
 
 try {
-  await fs.readFile('/path/does/not/exist.txt', 'utf-8');
+  require("non-existent-package-xyz");
 } catch (error) {
   console.log(error.code);
-  // Output: ENOENT
+  // Output: MODULE_NOT_FOUND
 }
 ```
 
-### `node:crypto`
+### `module.syncBuiltinESMExports()`
 
-Modul `node:crypto` menyediakan fungsionalitas keamanan tingkat lanjut seperti pembuatan pengenal unik, digest hashing, dan enkripsi. Modul ini meniadakan kebutuhan library pihak ketiga untuk pembuatan ID unik.
+Node.js mendukung dua sistem modul: CommonJS dan ES Modules. Jika ada data pada modul bawaan CommonJS yang diperbarui di tengah jalan, fungsi `syncBuiltinESMExports()` memastikan perubahan tersebut ikut terlihat pada format ES Modules.
 
 ```javascript
-import { randomUUID, createHash } from 'node:crypto';
+import { syncBuiltinESMExports } from "node:module";
 
-const token = randomUUID();
-console.log(typeof token, token.length);
-// Output: string 36
-
-const digest = createHash('sha256').update('secret-key').digest('hex');
-console.log(digest.slice(0, 8));
-// Output: 85dbe15d
+syncBuiltinESMExports();
+console.log(typeof syncBuiltinESMExports === "function");
+// Output: true
 ```
 
-Kasus lain: Menghitung nilai hash dari payload kosong untuk validasi struktur data.
+Kasus lain: Fungsi ini aman dipanggil berulang kali kapan saja tanpa menimbulkan efek samping yang merusak proses aplikasi.
 
 ```javascript
-import { createHash } from 'node:crypto';
+import { syncBuiltinESMExports } from "node:module";
 
-const emptyHash = createHash('sha256').update('').digest('hex');
-console.log(emptyHash.slice(0, 8));
-// Output: e3b0c442
-```
-
-### `node:util`
-
-Modul `node:util` menyediakan berbagai perkakas pembantu logika runtime dan manipulasi format string. Salah satu fitur modernnya adalah `parseArgs` untuk mengurai opsi baris perintah terminal.
-
-```javascript
-import { parseArgs } from 'node:util';
-
-const result = parseArgs({
-  args: ['--port', '8080'],
-  options: {
-    port: { type: 'string' },
-  },
-});
-
-console.log(result.values.port);
-// Output: 8080
-```
-
-Kasus lain: Menangkap error ketika terminal memasukkan argumen yang tidak didaftarkan pada opsi skema.
-
-```javascript
-import { parseArgs } from 'node:util';
-
-try {
-  parseArgs({
-    args: ['--unknown-option'],
-    options: { port: { type: 'string' } },
-  });
-} catch (error) {
-  console.log(error.code);
-  // Output: ERR_PARSE_ARGS_UNKNOWN_OPTION
-}
-```
-
-### `node:url`
-
-Modul `node:url` digunakan untuk parsing, validasi, dan rekonstruksi format tautan sesuai spesifikasi standar WHATWG URL. Modul ini juga menyediakan utilitas konversi antara format string file URL dan jalur berkas sistem.
-
-```javascript
-import { fileURLToPath } from 'node:url';
-
-const targetUrl = new URL('https://api.example.com/v1/users?status=active');
-console.log(targetUrl.pathname);
-// Output: /v1/users
-console.log(targetUrl.searchParams.get('status'));
-// Output: active
-
-const localPath = fileURLToPath(new URL('file:///app/server.js'));
-console.log(localPath);
-// Output: /app/server.js
-```
-
-Kasus lain: Menangani URL dengan format string yang tidak valid sehingga memicu galat runtime.
-
-```javascript
-try {
-  new URL('not-a-valid-url');
-} catch (error) {
-  console.log(error.code);
-  // Output: ERR_INVALID_URL
-}
+syncBuiltinESMExports();
+syncBuiltinESMExports();
+console.log(true);
+// Output: true
 ```
 
 ### Perbandingan: Modul Bawaan vs Paket Pihak Ketiga (NPM)
 
-| Karakteristik | Modul Bawaan (`node:*`) | Paket NPM Pihak Ketiga |
-| :--- | :--- | :--- |
-| **Instalasi** | Tersedia langsung di runtime | Wajib melalui `npm install` |
-| **Waktu Mulai** | Instan tanpa pembacaan disk tambahan | Membutuhkan I/O untuk memuat file di `node_modules` |
-| **Keamanan** | Diuji dan diaudit langsung oleh tim Node.js | Rentan terhadap serangan rantai pasok dan perubahan repositori |
-| **Ukuran Distribusi** | Tidak menambah ukuran proyek | Menambah ukuran `node_modules` dan image container |
+| Karakteristik       | Modul Bawaan (`node:*`)                           | Paket NPM Pihak Ketiga                                             |
+| :------------------ | :------------------------------------------------ | :----------------------------------------------------------------- |
+| **Instalasi**       | Sudah tersedia langsung di Node.js                | Perlu diinstal via `npm install`                                   |
+| **Waktu Mulai**     | Instan tanpa membaca berkas dari disk             | Butuh waktu untuk membaca folder `node_modules`                    |
+| **Keamanan**        | Diawasi dan diuji langsung oleh tim resmi Node.js | Berisiko terhadap perubahan kode atau serangan dari pengelola luar |
+| **Ukuran Aplikasi** | Tidak menambah beban ukuran proyek                | Menambah ukuran folder `node_modules` dan container server         |
 
 ---
 
@@ -224,88 +180,115 @@ try {
 
 ### Mengimpor Modul Native Tanpa Prefiks `node:`
 
-Penggunaan nama modul tanpa prefiks `node:` memaksa runtime memeriksa direktori `node_modules` terlebih dahulu dan membuka celah keamanan _dependency confusion_.
+Memanggil modul bawaan tanpa awalan `node:` memaksa Node.js mengecek folder `node_modules` terlebih dahulu. Selain memperlambat proses, ini berbahaya jika ada paket tiruan dari luar dengan nama serupa.
 
 ```javascript
 // Salah
-import fs from 'fs/promises';
+import module from "module";
 ```
 
 ```javascript
 // Benar
-import fs from 'node:fs/promises';
+import module from "node:module";
 ```
 
 ### Memasang Modul Inti Melalui Perintah NPM
 
-Mengeksekusi perintah instalasi untuk nama modul inti Node.js dapat mengunduh paket berbahaya tiruan dari registri publik dan mengotori berkas `package.json`.
+Menjalankan perintah install untuk modul bawaan justru bisa mengunduh paket palsu dari internet dan membuat berkas `package.json` berantakan.
 
 ```bash
 # Salah
-npm install path os crypto
+npm install module
 ```
 
 ```bash
 # Benar
-# Modul langsung diimpor dari runtime tanpa proses instalasi
+# Modul bawaan langsung diimpor dari runtime tanpa proses instalasi
 ```
 
 ### Menambahkan Prefiks `node:` pada Dependensi Eksternal
 
-Menyematkan prefiks `node:` pada paket pihak ketiga yang diinstal dari NPM menyebabkan runtime melempar galat fatal `ERR_UNKNOWN_BUILTIN_MODULE`.
+Menempelkan awalan `node:` pada paket dari NPM akan membuat Node.js mengira paket tersebut adalah modul bawaan resmi, sehingga memicu error `ERR_UNKNOWN_BUILTIN_MODULE`.
 
 ```javascript
 // Salah
-import express from 'node:express';
+import express from "node:express";
 ```
 
 ```javascript
 // Benar
-import express from 'express';
+import express from "express";
 ```
 
 ---
 
 ## Studi Kasus
 
-Skenario: Membangun fungsi pencatat audit keamanan mandiri (_zero-dependency security audit log_) yang menghasilkan rekam jejak sistem, waktu presisi, identitas unik berbasis UUID v4, dan checksum integritas data SHA-256.
+Skenario: Membuat alat pemeriksa dependensi mandiri (_supply chain security auditor_). Alat ini menerima daftar modul yang dipakai proyek, memisahkan modul bawaan resmi dari paket luar menggunakan `node:module`, memberi peringatan jika ada modul bawaan yang belum memakai awalan `node:`, dan mendeteksi modul bawaan palsu.
 
 ```javascript
-import { randomUUID, createHash } from 'node:crypto';
-import os from 'node:os';
+import { isBuiltin, builtinModules } from "node:module";
 
-function createAuditLog(action, actor, payload) {
-  const logId = randomUUID();
-  const timestamp = new Date('2026-10-12T00:00:00.000Z').toISOString();
-  const systemFingerprint = `${os.platform()}-${os.arch()}`;
+class SupplyChainAuditor {
+  constructor() {
+    this.knownBuiltins = new Set(builtinModules);
+  }
 
-  const rawPayload = JSON.stringify(payload);
-  const integrityHash = createHash('sha256').update(rawPayload).digest('hex');
+  auditImports(importList) {
+    const report = {
+      compliant: [],
+      warnings: [],
+      external: [],
+      invalidBuiltins: [],
+    };
 
-  return {
-    logId,
-    action,
-    actor,
-    timestamp,
-    systemFingerprint,
-    integrityHash,
-  };
+    for (const specifier of importList) {
+      if (specifier.startsWith("node:")) {
+        const moduleName = specifier.slice(5).split("/")[0];
+        if (this.knownBuiltins.has(moduleName)) {
+          report.compliant.push(specifier);
+        } else {
+          report.invalidBuiltins.push(specifier);
+        }
+      } else if (isBuiltin(specifier)) {
+        report.warnings.push({
+          specifier,
+          recommended: `node:${specifier}`,
+          reason: "Missing node: protocol prefix",
+        });
+      } else {
+        report.external.push(specifier);
+      }
+    }
+
+    return report;
+  }
 }
 
-const audit = createAuditLog('LOGIN_SUCCESS', 'admin', { ip: '127.0.0.1' });
-console.log(audit.action);
-// Output: LOGIN_SUCCESS
-console.log(audit.actor);
-// Output: admin
-console.log(audit.timestamp);
-// Output: 2026-10-12T00:00:00.000Z
-console.log(audit.systemFingerprint);
-// Output: linux-x64
-console.log(audit.integrityHash.slice(0, 8));
-// Output: e48dfcf1
+const auditor = new SupplyChainAuditor();
+const testImports = [
+  "node:module",
+  "node:unknown_core",
+  "module",
+  "lodash",
+  "express",
+];
+
+const result = auditor.auditImports(testImports);
+
+console.log(result.compliant);
+// Output: [ 'node:module' ]
+console.log(result.warnings.length);
+// Output: 1
+console.log(result.warnings[0].recommended);
+// Output: node:module
+console.log(result.external);
+// Output: [ 'lodash', 'express' ]
+console.log(result.invalidBuiltins);
+// Output: [ 'node:unknown_core' ]
 ```
 
-Desain ini dipilih karena mengandalkan modul inti `node:crypto` dan `node:os` tanpa dependensi eksternal, sehingga inisialisasi fungsi berjalan instan dan kebal terhadap perubahan paket pihak ketiga.
+Pendekatan ini sepenuhnya memanfaatkan modul bawaan `node:module` untuk memeriksa keamanan daftar paket secara mandiri, tanpa membutuhkan library tambahan dari luar atau materi yang belum dipelajari.
 
 ---
 
@@ -313,94 +296,79 @@ Desain ini dipilih karena mengandalkan modul inti `node:crypto` dan `node:os` ta
 
 ### Soal 1 (Dasar)
 
-Buat fungsi `getSystemIdentity()` yang mengembalikan objek ringkas berisi nama platform (`platform`), arsitektur CPU (`arch`), dan jumlah konkurensi CPU yang tersedia (`parallelism`) menggunakan modul `node:os`.
+Buat fungsi `isNativeModule(moduleName)` yang menerima sebuah string nama modul. Fungsi harus mengembalikan nilai boolean `true` jika modul tersebut merupakan modul bawaan resmi Node.js, atau `false` jika bukan.
 
-Contoh masukan:
+Contoh input:
+
 ```javascript
-getSystemIdentity();
+isNativeModule("node:module");
 ```
 
-Contoh keluaran yang diharapkan:
+Contoh output yang diharapkan:
+
 ```javascript
-{
-  platform: 'linux',
-  arch: 'x64',
-  parallelism: 8
-}
+true;
 ```
 
-Batasan: Wajib menggunakan modul `node:os` dengan prefiks protokol `node:` dan tanpa pustaka tambahan.
+Batasan: Gunakan fungsi `isBuiltin()` dari `node:module` dengan awalan protokol resmi.
 
 ### Soal 2 (Menengah)
 
-Buat fungsi `createTicket(category, userMessage)` yang menghasilkan objek tiket. Objek tersebut memuat ID acak berformat UUID v4, kode hash SHA-256 sepanjang 12 karakter pertama dari gabungan string `category:userMessage`, serta jalur direktori arsip yang dinormalisasi dengan pola `archive/<category>/<id>.json` menggunakan `node:crypto` dan `node:path`.
+Buat fungsi `categorizeModules(moduleList)` yang menerima daftar nama modul berupa array string. Fungsi harus mengelompokkan modul menjadi dua kelompok: `builtins` (kumpulan modul bawaan) dan `thirdParty` (kumpulan paket luar). Untuk setiap modul di kelompok `builtins`, pastikan namanya selalu diawali dengan protokol `node:`.
 
-Contoh masukan:
+Contoh input:
+
 ```javascript
-createTicket('payment', 'auto debit failed');
+categorizeModules(["module", "node:module", "axios", "dotenv"]);
 ```
 
-Contoh keluaran yang diharapkan:
+Contoh output yang diharapkan:
+
 ```javascript
 {
-  id: 'd9b2b512-4f76-4d22-b5e2-26f6eb8b1c41',
-  hash: '9a6c721b0e3f',
-  archivePath: 'archive/payment/d9b2b512-4f76-4d22-b5e2-26f6eb8b1c41.json'
+  builtins: ['node:module', 'node:module'],
+  thirdParty: ['axios', 'dotenv']
 }
 ```
 
-Batasan: Gunakan modul bawaan `node:crypto` dan `node:path`. Nilai `id` harus berupa string UUID v4 valid.
+Batasan: Gunakan fungsi `isBuiltin` dari `node:module`. Objek input asli tidak boleh diubah secara langsung.
 
 ### Soal 3 (Menantang)
 
-Buat fungsi pemroses baris perintah mandiri `processArgsAndHash(argvList)`. Fungsi ini wajib mengurai opsi `--file` bertipe string dan opsi `--salt` bertipe string (nilai bawaan string kosong `''`) menggunakan `node:util.parseArgs`. Bersihkan jalur berkas dari karakter navigasi traversal menggunakan `node:path.normalize()`. Hitung hash HMAC-SHA256 dari jalur bersih tersebut menggunakan rahasia garam (_salt_) dengan modul `node:crypto.createHmac`.
+Buat fungsi pemeriksa keamanan impor `auditModuleRegistry(specifiers)` yang menerima daftar nama modul. Fungsi harus mengevaluasi setiap modul dengan aturan berikut:
 
-Ketentuan penanganan kasus tepi:
-- Jika opsi `--file` tidak diberikan atau hanya berisi spasi kosong, kembalikan objek `{ success: false, message: 'File argument is required' }`.
-- Jika masukan memuat opsi yang tidak terdaftar dalam skema, tangkap kode galat `ERR_PARSE_ARGS_UNKNOWN_OPTION` dan kembalikan objek `{ success: false, message: 'Invalid CLI option' }`.
-- Jalur berkas harus bersih dari karakter navigasi relatif (`..` atau `.`).
+1. Jika diawali `node:`, periksa apakah nama modul setelah awalan tersebut terdaftar di dalam `builtinModules`. Jika tidak terdaftar, masukkan ke kategori `invalidBuiltins`. Jika valid, masukkan ke kategori `securedBuiltins`.
+2. Jika tidak diawali `node:` tetapi `isBuiltin(specifier)` bernilai `true`, masukkan ke kategori `unprefixedBuiltins` dengan objek `{ specifier: string, fix: string }` di mana `fix` adalah nama modul yang sudah dilengkapi awalan `node:`.
+3. Jika bukan modul bawaan, masukkan ke kategori `externalPackages`.
+4. Kembalikan objek rekapitulasi yang berisi properti `securedBuiltins`, `unprefixedBuiltins`, `invalidBuiltins`, `externalPackages`, serta nilai kepatuhan `complianceScore` (persentase jumlah `securedBuiltins` terhadap total modul bawaan yang ditemukan).
 
-Contoh masukan 1:
+Contoh input:
+
 ```javascript
-processArgsAndHash(['--file', './data/../config/app.json', '--salt', 'key-123']);
+auditModuleRegistry([
+  "node:module",
+  "module",
+  "node:fake_system",
+  "express",
+  "react",
+]);
 ```
 
-Contoh keluaran 1:
+Contoh output yang diharapkan:
+
 ```javascript
 {
-  success: true,
-  path: 'config/app.json',
-  hash: '49fb09519958ae2c23a44e9ca12e9576135e76c7182bd8e374d3887f57c54cd3'
+  securedBuiltins: ['node:module'],
+  unprefixedBuiltins: [
+    { specifier: 'module', fix: 'node:module' }
+  ],
+  invalidBuiltins: ['node:fake_system'],
+  externalPackages: ['express', 'react'],
+  complianceScore: 50
 }
 ```
 
-Contoh masukan 2:
-```javascript
-processArgsAndHash(['--invalid-option', 'value']);
-```
-
-Contoh keluaran 2:
-```javascript
-{
-  success: false,
-  message: 'Invalid CLI option'
-}
-```
-
-Contoh masukan 3:
-```javascript
-processArgsAndHash([]);
-```
-
-Contoh keluaran 3:
-```javascript
-{
-  success: false,
-  message: 'File argument is required'
-}
-```
-
-Batasan: Dilarang menggunakan dependensi eksternal dari NPM. Wajib menangani potensi error secara terprogram tanpa membiarkan aplikasi terhenti paksa.
+Batasan: Dilarang menggunakan library eksternal. Gunakan `node:module` secara mandiri dan tangani kasus daftar input kosong dengan mengembalikan `complianceScore: 100`.
 
 ---
 

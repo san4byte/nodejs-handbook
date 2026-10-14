@@ -1,17 +1,18 @@
 # HTTP
 
 > Ringkasan
-> - Fungsi: Membangun server web HTTP native dan melakukan komunikasi permintaan klien berbasis standar protokol HTTP/1.1 serta Fetch API modern.
-> - Digunakan saat: Menyediakan antarmuka REST API, membangun gateway proksi jaringan, mengonsumsi data dari layanan web eksternal, atau mempelajari fondasi internal framework backend.
-> - Aturan praktis: Selalu panggil `res.end()` di sisi server untuk menutup aliran respons, dan pasang `AbortSignal.timeout()` serta periksa `response.ok` di sisi klien untuk mencegah permintaan menggantung.
+>
+> - Fungsi: Membangun server web HTTP native dan melakukan panggilan HTTP klien berbasis standar protokol HTTP/1.1 serta Fetch API modern.
+> - Digunakan saat: Menyediakan antarmuka REST API, membangun gateway proxy jaringan, mengonsumsi data dari layanan web eksternal, atau mempelajari fondasi internal framework backend.
+> - Aturan praktis: Selalu panggil `res.end()` di sisi server untuk menuntaskan respons, serta pasang `AbortSignal.timeout()` dan periksa `response.ok` di sisi klien agar permintaan tidak menggantung tanpa kepastian.
 
 ---
 
 ## Tujuan Belajar
 
-- Memahami siklus permintaan dan respons (*request-response cycle*) pada arsitektur protokol HTTP/1.1.
-- Membangun server web HTTP native menggunakan modul `node:http` tanpa ketergantungan framework pihak ketiga.
-- Mengelola aliran data masuk `req` sebagai *Readable Stream* dan aliran data keluar `res` sebagai *Writable Stream*.
+- Memahami siklus permintaan dan respons (_request-response cycle_) pada arsitektur protokol HTTP/1.1.
+- Membangun server web HTTP native menggunakan modul bawaan `node:http` tanpa ketergantungan framework luar.
+- Mengelola aliran data masuk `req` sebagai _Readable Stream_ dan aliran data keluar `res` sebagai _Writable Stream_.
 - Menggunakan fungsi global `fetch()` untuk melakukan panggilan HTTP modern dengan metode GET dan POST.
 - Menangani pembatalan permintaan dan batas waktu jaringan menggunakan antarmuka `AbortSignal.timeout()`.
 
@@ -19,7 +20,9 @@
 
 ## Konsep
 
-> Arsitektur HTTP dianalogikan seperti alur pemesanan makanan di sebuah restoran. Klien bertindak sebagai tamu yang memberikan buku catatan pesanan (`req` / *IncomingMessage*) berisi rute menu dan instruksi khusus kepada pelayan. Server bertindak sebagai tim dapur yang memproses pesanan dan menyajikan hasilnya di atas nampan hidangan (`res` / *ServerResponse*). Pesanan hanya selesai setelah pelayan resmi mengantarkan nampan dan menutup meja (`res.end()`). Di saat yang sama, tim dapur juga dapat bertindak sebagai klien (`fetch`) yang memesan bahan baku ke pemasok luar.
+Arsitektur HTTP bisa kita bayangkan seperti alur pemesanan makanan di sebuah restoran. Klien bertindak sebagai tamu yang memberikan secarik kertas pesanan (`req` / _IncomingMessage_) berisi pilihan menu dan instruksi tambahan kepada pelayan.
+
+Server bertindak sebagai tim dapur yang memproses hidangan dan menyiapkannya di atas nampan sajian (`res` / _ServerResponse_). Pesanan baru dianggap tuntas ketika pelayan resmi mengantarkan nampan hidangan ke meja tamu dan menutup siklus pelayanan (`res.end()`). Di saat yang sama, tim dapur juga bisa bertindak sebagai pembeli (`fetch`) yang memesan bahan baku ke pasar atau pemasok bahan makanan di luar.
 
 ```mermaid
 sequenceDiagram
@@ -38,26 +41,26 @@ sequenceDiagram
 
 ## Referensi
 
-| Item | Fungsi | Catatan |
-| :--- | :--- | :--- |
-| **`http.createServer()`** | Membuat instans server web HTTP baru | Menerima fungsi penangan dengan argumen `req` dan `res` |
-| **`server.listen()`** | Mengikat server pada port dan alamat host tertentu | Menjalankan server agar siap mendengarkan koneksi masuk |
-| **`req.method` & `req.url`** | Membaca metode HTTP dan jalur URI permintaan | Dasar penentuan percabangan logika perutean (*routing*) manual |
-| **`res.writeHead()`** | Menuliskan kode status HTTP dan header respons | Wajib dikirimkan sebelum penulisan tubuh respons (*body*) ke klien |
-| **`res.end()`** | Mengirimkan potongan akhir data dan menutup respons | Menuntaskan transaksi HTTP agar koneksi klien tidak menggantung |
-| **`fetch()`** | Melakukan permintaan HTTP klien standar WHATWG | Tersedia global di runtime Node.js berbasis Promise |
-| **`AbortSignal.timeout()`** | Membuat sinyal pembatalan otomatis berbasis batas waktu | Menghentikan permintaan klien saat server target lambat |
+| Item                         | Fungsi                                                        | Catatan                                                            |
+| :--------------------------- | :------------------------------------------------------------ | :----------------------------------------------------------------- |
+| **`http.createServer()`**    | Membuat server web HTTP baru                                  | Menerima fungsi penangan dengan parameter `req` dan `res`          |
+| **`server.listen()`**        | Mengikat server pada nomor port dan host tertentu             | Mengaktifkan server agar siap menerima permintaan masuk            |
+| **`req.method` & `req.url`** | Membaca metode HTTP dan jalur URI yang diminta klien          | Menjadi fondasi penentuan percabangan rute (_routing_) manual      |
+| **`res.writeHead()`**        | Mengirimkan kode status HTTP dan header respons               | Harus dipanggil sebelum menulis isi data respons (_body_) ke klien |
+| **`res.end()`**              | Mengirimkan data akhir dan menutup respons                    | Menuntaskan transaksi HTTP agar koneksi klien tidak menggantung    |
+| **`fetch()`**                | Melakukan permintaan HTTP klien standar WHATWG                | Tersedia secara global di Node.js berbasis Promise                 |
+| **`AbortSignal.timeout()`**  | Menyiapkan sinyal pembatalan otomatis berdasarkan batas waktu | Menghentikan panggilan klien saat server target lambat merespons   |
 
 ### `http.createServer()`
 
-Fungsi `http.createServer()` digunakan untuk membuat instans server HTTP baru. Setiap ada permintaan masuk, server akan memanggil fungsi callback dengan menyediakan objek permintaan `req` dan objek respons `res`.
+Fungsi `http.createServer()` digunakan untuk membuat server HTTP baru. Setiap kali ada permintaan yang masuk, server akan memanggil fungsi callback dengan memberikan objek permintaan `req` dan objek respons `res`.
 
 ```javascript
-import http from 'node:http';
+import http from "node:http";
 
 const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('Server active');
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("Server active");
 });
 
 server.listen(0, async () => {
@@ -69,14 +72,14 @@ server.listen(0, async () => {
 });
 ```
 
-Kasus lain: Mendaftarkan penangan permintaan menggunakan event listener `'request'` terpisah dari fungsi inisialisasi.
+Kasus lain: Mendaftarkan penangan permintaan lewat listener event `'request'` secara terpisah.
 
 ```javascript
-import http from 'node:http';
+import http from "node:http";
 
 const server = http.createServer();
-server.on('request', (req, res) => {
-  res.end('Manual handler');
+server.on("request", (req, res) => {
+  res.end("Manual handler");
 });
 
 server.listen(0, async () => {
@@ -90,13 +93,13 @@ server.listen(0, async () => {
 
 ### `server.listen()`
 
-Metode `server.listen()` digunakan untuk mengaktifkan server agar mulai mendengarkan koneksi pada alamat IP dan port yang ditentukan. Memberikan nilai port `0` memerintahkan sistem operasi mengalokasikan port bebas secara dinamis.
+Metode `server.listen()` bertugas mengaktifkan server agar mulai mendengarkan koneksi pada alamat IP dan port tertentu. Memberikan angka port `0` meminta sistem operasi memilihkan port acak yang sedang kosong.
 
 ```javascript
-import http from 'node:http';
+import http from "node:http";
 
-const server = http.createServer((req, res) => res.end('OK'));
-server.listen(0, '127.0.0.1', () => {
+const server = http.createServer((req, res) => res.end("OK"));
+server.listen(0, "127.0.0.1", () => {
   const info = server.address();
   console.log(info.address, typeof info.port);
   // Output: 127.0.0.1 number
@@ -104,15 +107,15 @@ server.listen(0, '127.0.0.1', () => {
 });
 ```
 
-Kasus lain: Memicu galat `EADDRINUSE` ketika mencoba mengikat server ke port yang telah digunakan oleh proses lain.
+Kasus lain: Menangkap error `EADDRINUSE` ketika mencoba mengikat server ke port yang sedang digunakan aplikasi lain.
 
 ```javascript
-import http from 'node:http';
+import http from "node:http";
 
 const s1 = http.createServer().listen(0, () => {
   const s2 = http.createServer();
   s2.listen(s1.address().port);
-  s2.on('error', (error) => {
+  s2.on("error", (error) => {
     console.log(error.code);
     // Output: EADDRINUSE
     s1.close();
@@ -122,15 +125,15 @@ const s1 = http.createServer().listen(0, () => {
 
 ### `req.method` & `req.url`
 
-Properti `req.method` menyimpan kata kerja HTTP (seperti `GET`, `POST`, `PUT`, `DELETE`), sedangkan `req.url` menyimpan jalur tautan beserta parameter query yang diminta oleh klien.
+Properti `req.method` menyimpan kata kerja HTTP (seperti `GET`, `POST`, `PUT`, `DELETE`), sedangkan `req.url` berisi jalur alamat beserta parameter query yang dikirimkan oleh klien.
 
 ```javascript
-import http from 'node:http';
+import http from "node:http";
 
 const server = http.createServer((req, res) => {
   console.log(req.method, req.url);
   // Output: GET /api/users?status=active
-  res.end('Received');
+  res.end("Received");
 });
 
 server.listen(0, async () => {
@@ -143,13 +146,13 @@ server.listen(0, async () => {
 Kasus lain: Mengurai komponen URL dan parameter query string menggunakan kelas standar `URL`.
 
 ```javascript
-import http from 'node:http';
+import http from "node:http";
 
 const server = http.createServer((req, res) => {
   const parsed = new URL(req.url, `http://${req.headers.host}`);
-  console.log(parsed.pathname, parsed.searchParams.get('role'));
+  console.log(parsed.pathname, parsed.searchParams.get("role"));
   // Output: /admin superuser
-  res.end('OK');
+  res.end("OK");
 });
 
 server.listen(0, async () => {
@@ -161,32 +164,32 @@ server.listen(0, async () => {
 
 ### `res.writeHead()`
 
-Metode `res.writeHead()` digunakan untuk mengirimkan kode status respons HTTP (seperti 200, 201, 404, 500) dan header respons ke soket klien sebelum badan respons dikirimkan.
+Metode `res.writeHead()` digunakan untuk mengirimkan kode status respons HTTP (seperti 200, 201, 404, atau 500) beserta informasi header ke klien sebelum badan respons (_body_) mulai dikirimkan.
 
 ```javascript
-import http from 'node:http';
+import http from "node:http";
 
 const server = http.createServer((req, res) => {
   res.writeHead(201, {
-    'Content-Type': 'application/json',
-    'X-App-Name': 'NodeJS-Core',
+    "Content-Type": "application/json",
+    "X-App-Name": "NodeJS-Core",
   });
-  res.end(JSON.stringify({ status: 'Created' }));
+  res.end(JSON.stringify({ status: "Created" }));
 });
 
 server.listen(0, async () => {
   const { port } = server.address();
   const response = await fetch(`http://127.0.0.1:${port}`);
-  console.log(response.status, response.headers.get('x-app-name'));
+  console.log(response.status, response.headers.get("x-app-name"));
   // Output: 201 NodeJS-Core
   server.close();
 });
 ```
 
-Kasus lain: Memanggil `res.writeHead()` saat header respons telah dikirimkan memicu galat runtime `ERR_HTTP_HEADERS_SENT`.
+Kasus lain: Memanggil `res.writeHead()` saat header respons sudah terlanjur terkirim akan memicu error runtime `ERR_HTTP_HEADERS_SENT`.
 
 ```javascript
-import http from 'node:http';
+import http from "node:http";
 
 const server = http.createServer((req, res) => {
   res.writeHead(200);
@@ -196,7 +199,7 @@ const server = http.createServer((req, res) => {
     console.log(error.code);
     // Output: ERR_HTTP_HEADERS_SENT
   }
-  res.end('OK');
+  res.end("OK");
 });
 
 server.listen(0, async () => {
@@ -208,14 +211,14 @@ server.listen(0, async () => {
 
 ### `res.end()`
 
-Metode `res.end()` digunakan untuk menyelesaikan siklus respons HTTP dan mengirimkan data penutup opsional. Memanggil metode ini wajib dilakukan agar koneksi klien mengetahui bahwa seluruh data respons telah selesai ditransmisikan.
+Metode `res.end()` digunakan untuk menutup siklus respons HTTP dan mengirimkan data potongan terakhir jika ada. Memanggil metode ini sangat penting agar browser atau klien tahu bahwa seluruh data respons telah selesai dikirim.
 
 ```javascript
-import http from 'node:http';
+import http from "node:http";
 
 const server = http.createServer((req, res) => {
-  res.write('Part 1 - ');
-  res.end('Part 2');
+  res.write("Part 1 - ");
+  res.end("Part 2");
 });
 
 server.listen(0, async () => {
@@ -227,15 +230,15 @@ server.listen(0, async () => {
 });
 ```
 
-Kasus lain: Menulis data menggunakan `res.write()` setelah `res.end()` dipanggil memicu galat `ERR_STREAM_WRITE_AFTER_END`.
+Kasus lain: Mencoba mengirim data menggunakan `res.write()` setelah `res.end()` dipanggil akan memicu error `ERR_STREAM_WRITE_AFTER_END`.
 
 ```javascript
-import http from 'node:http';
+import http from "node:http";
 
 const server = http.createServer((req, res) => {
-  res.end('Finished');
+  res.end("Finished");
   try {
-    res.write('Late');
+    res.write("Late");
   } catch (error) {
     console.log(error.code);
     // Output: ERR_STREAM_WRITE_AFTER_END
@@ -251,14 +254,14 @@ server.listen(0, async () => {
 
 ### `fetch()`
 
-Fungsi global `fetch()` adalah antarmuka standar untuk melakukan panggilan HTTP asinkron berbasis Promise. Fungsi ini mendukung berbagai opsi seperti metode pengiriman, header, dan pengiriman payload body string.
+Fungsi global `fetch()` adalah cara modern di Node.js untuk melakukan panggilan HTTP asinkron berbasis Promise tanpa modul tambahan, mendukung pengiriman metode, header kustom, maupun data body.
 
 ```javascript
-import http from 'node:http';
+import http from "node:http";
 
 const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ status: 'success', code: 101 }));
+  res.writeHead(200, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({ status: "success", code: 101 }));
 });
 
 server.listen(0, async () => {
@@ -273,14 +276,14 @@ server.listen(0, async () => {
 });
 ```
 
-Kasus lain: Panggilan ke endpoint yang menghasilkan status galat HTTP non-2xx tidak melempar penolakan Promise sehingga nilai `response.ok` bernilai `false`.
+Kasus lain: Panggilan ke alamat yang menghasilkan kode status non-2xx (seperti 404 atau 500) tidak akan melempar error Promise, melainkan ditandai dengan properti `response.ok` bernilai `false`.
 
 ```javascript
-import http from 'node:http';
+import http from "node:http";
 
 const server = http.createServer((req, res) => {
   res.writeHead(404);
-  res.end('Not Found');
+  res.end("Not Found");
 });
 
 server.listen(0, async () => {
@@ -294,13 +297,13 @@ server.listen(0, async () => {
 
 ### `AbortSignal.timeout()`
 
-Metode `AbortSignal.timeout()` digunakan untuk membuat sinyal pembatalan otomatis setelah melewati durasi waktu milidetik tertentu. Jika server target tidak merespons dalam jendela waktu tersebut, `fetch()` akan melempar galat `TimeoutError`.
+Metode `AbortSignal.timeout()` membuat sinyal pembatalan otomatis jika waktu tunggu melampaui batas milidetik tertentu. Jika server target terlambat membalas, `fetch()` akan membatalkan koneksi dan melempar error `TimeoutError`.
 
 ```javascript
-import http from 'node:http';
+import http from "node:http";
 
 const server = http.createServer((req, res) => {
-  setTimeout(() => res.end('Late'), 100);
+  setTimeout(() => res.end("Late"), 100);
 });
 
 server.listen(0, async () => {
@@ -317,7 +320,7 @@ server.listen(0, async () => {
 });
 ```
 
-Kasus lain: Memeriksa properti `signal.aborted` untuk memvalidasi apakah sinyal telah kedaluwarsa sebelum memulai proses.
+Kasus lain: Memeriksa nilai properti `signal.aborted` untuk mengetahui apakah sinyal pembatalan sudah aktif sebelum menjalankan proses.
 
 ```javascript
 const signal = AbortSignal.timeout(10);
@@ -328,35 +331,36 @@ console.log(signal.aborted);
 
 ### Perbandingan: Server Native (`node:http`) vs Framework (Express.js)
 
-| Karakteristik | Server Native (`node:http`) | Framework (Express / Fastify) |
-| :--- | :--- | :--- |
-| **Instalasi** | Bawaan Node.js tanpa dependensi | Wajib melalui instalasi paket NPM eksternal |
-| **Arsitektur Dasar** | Fondasi inti asli runtime | Lapisan pembungkus (*wrapper*) di atas `node:http` |
-| **Parsing Body JSON** | Manual via akumulasi potongan stream buffer | Otomatis melalui middleware terstruktur |
-| **Pengelolaan Rute** | Percabangan manual logika kondisi | Router deklaratif (`app.get`, `app.post`) |
+| Karakteristik            | Server Native (`node:http`)                       | Framework (Express / Fastify)                          |
+| :----------------------- | :------------------------------------------------ | :----------------------------------------------------- |
+| **Kebutuhan Instalasi**  | Bawaan Node.js tanpa perlu install apa pun        | Harus diinstal lewat paket NPM eksternal               |
+| **Arsitektur Dasar**     | Fondasi inti asli dari runtime Node.js            | Lapisan pembungkus (_wrapper_) di atas `node:http`     |
+| **Pengolahan Body JSON** | Manual dengan mengumpulkan potongan stream buffer | Otomatis melalui middleware bawaan framework           |
+| **Pengaturan Rute**      | Percabangan manual menggunakan `if` atau `switch` | Menggunakan fungsi router deklaratif (`app.get`, dll.) |
 
 ### Perbandingan: `fetch()` di Node.js vs Browser
 
-| Karakteristik | `fetch()` di Node.js (Server) | `fetch()` di Browser (Klien Web) |
-| :--- | :--- | :--- |
-| **Kebijakan CORS** | Bebas tanpa hambatan aturan Same-Origin | Dibatasi ketat oleh mekanisme keamanan peramban |
-| **Format Alamat URL** | Wajib URL absolut (`http://...`) | Mendukung URL relatif mengikuti origin aktif |
-| **Header Terlarang** | Bebas mengubah header apa pun secara penuh | Dilarang memodifikasi header sensitif peramban |
-| **Pengelolaan Cookie** | Manual via parsing header respons | Otomatis tersimpan dan terkelola via Cookie Jar |
+| Karakteristik          | `fetch()` di Node.js (Server)                | `fetch()` di Browser (Frontend)                            |
+| :--------------------- | :------------------------------------------- | :--------------------------------------------------------- |
+| **Kebijakan CORS**     | Bebas tanpa terhalang aturan Same-Origin     | Dibatasi ketat oleh kebijakan keamanan browser             |
+| **Format Alamat URL**  | Wajib menggunakan URL lengkap (`http://...`) | Bisa menggunakan path relatif mengikuti halaman aktif      |
+| **Header Terlarang**   | Bebas mengatur header apa pun tanpa batas    | Dilarang memodifikasi header tertentu yang dikunci browser |
+| **Pengelolaan Cookie** | Manual lewat pembacaan header respons        | Otomatis disimpan dan dikelola oleh browser                |
 
 ---
 
 ## Kesalahan Umum
 
-### Lupa Memanggil `res.end()` pada Cabang Penanganan Rute
+### Lupa Memanggil `res.end()` pada Salah Satu Cabang Rute
 
-Ketiadaan pemanggilan `res.end()` menyebabkan koneksi soket klien menggantung tanpa kepastian (*hanging request*) hingga menghabiskan batas waktu soket.
+Jika kita lupa menuliskan `res.end()`, koneksi klien akan terus menggantung tanpa akhir (_hanging request_) sampai browser atau klien mengalami timeout.
 
 ```javascript
 // Salah
 const server = http.createServer((req, res) => {
   res.writeHead(200);
-  res.write('Success');
+  res.write("Success");
+  // Lupa memanggil res.end() sehingga browser menunggu selamanya
 });
 ```
 
@@ -364,85 +368,87 @@ const server = http.createServer((req, res) => {
 // Benar
 const server = http.createServer((req, res) => {
   res.writeHead(200);
-  res.end('Success');
+  res.end("Success");
 });
 ```
 
-### Mengabaikan Validasi Properti `response.ok` pada Panggilan `fetch()`
+### Mengabaikan Pengecekan Properti `response.ok` pada `fetch()`
 
-Fungsi `fetch()` tidak melempar galat ketika server mengembalikan status 404 atau 500 karena status tersebut tetap merupakan respons HTTP yang sah dari sudut pandang protokol.
+Fungsi `fetch()` tidak otomatis melempar error ketika server mengembalikan status error seperti 404 (Not Found) atau 500 (Internal Server Error) karena status tersebut tetap dianggap sebagai balasan HTTP yang sah.
 
 ```javascript
 // Salah
-const response = await fetch('http://127.0.0.1:3000/wrong-route');
-const data = await response.json();
+const response = await fetch("http://127.0.0.1:3000/wrong-route");
+const data = await response.json(); // Berpotensi crash jika isi respons bukan format JSON
 ```
 
 ```javascript
 // Benar
-const response = await fetch('http://127.0.0.1:3000/wrong-route');
+const response = await fetch("http://127.0.0.1:3000/wrong-route");
 if (!response.ok) {
   throw new Error(`HTTP Error: ${response.status}`);
 }
 const data = await response.json();
 ```
 
-### Menggunakan URL Relatif pada Pemanggilan `fetch()` di Lingkungan Node.js
+### Memakai URL Relatif pada `fetch()` di Lingkungan Node.js
 
-Node.js tidak memiliki konteks dokumen peramban sehingga pemanggilan jalur relatif seperti `fetch('/api/data')` langsung menghasilkan galat `TypeError: Failed to parse URL`.
+Node.js di sisi server tidak memiliki konteks halaman web seperti di browser. Oleh karena itu, memanggil alamat relatif seperti `fetch('/api/data')` akan langsung memicu error `TypeError: Failed to parse URL`.
 
 ```javascript
 // Salah
-const res = await fetch('/api/data');
+const res = await fetch("/api/data");
 ```
 
 ```javascript
 // Benar
-const res = await fetch('http://127.0.0.1:3000/api/data');
+const res = await fetch("http://127.0.0.1:3000/api/data");
 ```
 
 ---
 
 ## Studi Kasus
 
-Skenario: Membangun server REST API native mandiri untuk manajemen data inventaris buku yang menangani rute metode `GET` dan `POST`, parsing body JSON berbasis akumulasi aliran chunk, penanganan rute tidak terdaftar (404), serta verifikasi pengujian menggunakan klien `fetch()` global.
+Skenario: Membangun server REST API native mandiri untuk pengelolaan katalog buku yang menangani rute metode `GET` dan `POST`, mengumpulkan body JSON dari aliran chunk, menangani rute yang tidak terdaftar (404), serta diverifikasi menggunakan klien `fetch()` bawaan.
 
 ```javascript
-import http from 'node:http';
+import http from "node:http";
 
 function createServerApp() {
-  const books = [{ id: 1, title: 'Learning Node.js' }];
+  const books = [{ id: 1, title: "Learning Node.js" }];
 
   const server = http.createServer((req, res) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
 
-    if (req.method === 'GET' && url.pathname === '/api/books') {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
+    if (req.method === "GET" && url.pathname === "/api/books") {
+      res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ success: true, data: books }));
       return;
     }
 
-    if (req.method === 'POST' && url.pathname === '/api/books') {
+    if (req.method === "POST" && url.pathname === "/api/books") {
       const chunks = [];
-      req.on('data', (chunk) => chunks.push(chunk));
-      req.on('end', () => {
+      req.on("data", (chunk) => chunks.push(chunk));
+      req.on("end", () => {
         try {
           const body = JSON.parse(Buffer.concat(chunks).toString());
           const newBook = { id: books.length + 1, title: body.title };
           books.push(newBook);
 
-          res.writeHead(201, { 'Content-Type': 'application/json' });
+          res.writeHead(201, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ success: true, data: newBook }));
         } catch {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, message: 'Invalid JSON format' }));
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({ success: false, message: "Invalid JSON format" }),
+          );
         }
       });
       return;
     }
 
-    res.writeHead(404, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ success: false, message: 'Endpoint not found' }));
+    res.writeHead(404, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ success: false, message: "Endpoint not found" }));
   });
 
   return server;
@@ -453,20 +459,20 @@ server.listen(0, async () => {
   const { port } = server.address();
   const baseUrl = `http://127.0.0.1:${port}`;
 
-  // 1. Eksekusi pengujian penambahan data via POST
+  // 1. Uji coba menambahkan data baru lewat metode POST
   const postRes = await fetch(`${baseUrl}/api/books`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title: 'Backend Architecture' }),
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title: "Backend Architecture" }),
   });
   const postData = await postRes.json();
-  console.log('POST status:', postRes.status);
-  console.log('New book:', postData.data.title);
+  console.log("POST status:", postRes.status);
+  console.log("New book:", postData.data.title);
 
-  // 2. Eksekusi pengujian pembacaan data via GET
+  // 2. Uji coba mengambil daftar buku lewat metode GET
   const getRes = await fetch(`${baseUrl}/api/books`);
   const getData = await getRes.json();
-  console.log('Total books:', getData.data.length);
+  console.log("Total books:", getData.data.length);
 
   server.close();
 });
@@ -477,7 +483,7 @@ server.listen(0, async () => {
 // Total books: 2
 ```
 
-Desain ini dipilih karena mengalirkan pembacaan data body secara non-blocking melalui event `'data'` dan `'end'`, membungkus parsing payload dengan blok proteksi galat untuk mencegah matinya server saat format data keliru, serta menggunakan kelas `URL` standar WHATWG untuk parsing rute yang kebal terhadap manipulasi karakter query parameter.
+Pendekatan ini membaca data kiriman body secara bertahap lewat event `'data'` dan `'end'`, membungkus parsing data dengan proteksi error agar server tidak mati saat menerima format yang salah, serta mengandalkan kelas standar `URL` WHATWG agar pemrosesan query string selalu akurat.
 
 ---
 
@@ -485,63 +491,65 @@ Desain ini dipilih karena mengalirkan pembacaan data body secara non-blocking me
 
 ### Soal 1 (Dasar)
 
-Buat fungsi klien `fetchWithTimeout(url, timeoutMs)` menggunakan `fetch()` global dan `AbortSignal.timeout()`. Fungsi mengembalikan objek `{ success: true, status: number, data: any }` jika server mengembalikan respons sukses (status HTTP 200–299). Jika respons non-2xx atau terjadi pembatalan akibat batas waktu, kembalikan objek `{ success: false, reason: string }`.
+Buat fungsi pembantu `fetchWithTimeout(url, timeoutMs)` menggunakan fungsi global `fetch()` dan `AbortSignal.timeout()`. Fungsi harus mengembalikan objek `{ success: true, status: number, data: any }` jika server memberikan respons sukses (status HTTP 200–299). Jika status di luar rentang itu atau terjadi pembatalan akibat batas waktu, kembalikan objek `{ success: false, reason: string }`.
 
-Contoh masukan:
+Contoh input:
 
 ```javascript
-await fetchWithTimeout('http://127.0.0.1:9999/data', 100);
+await fetchWithTimeout("http://127.0.0.1:9999/data", 100);
 ```
 
-Contoh keluaran yang diharapkan:
+Contoh output yang diharapkan:
 
 ```javascript
 { success: false, reason: 'CONNECTION_FAILED' }
 ```
 
-Batasan: Gunakan fungsi bawaan `fetch()` dan `AbortSignal.timeout()` tanpa pustaka HTTP pihak ketiga.
+Batasan: Gunakan fungsi bawaan `fetch()` dan `AbortSignal.timeout()` tanpa dependensi luar.
 
 ### Soal 2 (Menengah)
 
-Buat fungsi pengurai muatan stream `parseJsonBody(req, maxByteSize)` yang menerima objek permintaan `req` (Readable Stream) dan batasan ukuran byte maksimal. Fungsi harus mengembalikan Promise yang menyelesaikan objek hasil parsing JSON.
+Buat fungsi pengurai aliran data `parseJsonBody(req, maxByteSize)` yang menerima objek permintaan `req` (Readable Stream) dan batas maksimal ukuran byte. Fungsi harus mengembalikan Promise yang menghasilkan objek hasil parsing JSON.
 
-Ketentuan penanganan kasus tepi:
-- Jika akumulasi ukuran potongan stream yang diterima melebihi `maxByteSize`, segera batalkan pembacaan dan tolak Promise dengan objek galat berpesan `'PAYLOAD_TOO_LARGE'`.
-- Jika potongan stream selesai dibaca tetapi format string bukan JSON yang valid, tolak Promise dengan objek galat berpesan `'INVALID_JSON'`.
+Ketentuan penanganan kasus khusus:
 
-Contoh masukan:
+- Jika ukuran data chunk yang masuk melebihi `maxByteSize`, segera hentikan pembacaan dan tolak Promise dengan objek error berpesan `'PAYLOAD_TOO_LARGE'`.
+- Jika data selesai dibaca tetapi formatnya bukan JSON yang sah, tolak Promise dengan objek error berpesan `'INVALID_JSON'`.
+
+Contoh input:
 
 ```javascript
-// Simulasi pembacaan stream request dengan payload valid di bawah 1024 byte
+// Simulasi membaca stream permintaan dengan payload sah di bawah 1024 byte
 await parseJsonBody(req, 1024);
 ```
 
-Contoh keluaran yang diharapkan:
+Contoh output yang diharapkan:
 
 ```javascript
 { name: 'Laptop', price: 15000000 }
 ```
 
-Batasan: Murni menggunakan buffer dan penanganan event `'data'` dan `'end'` pada aliran stream `req`.
+Batasan: Gunakan modul buffer dan penanganan event `'data'` serta `'end'` langsung pada aliran stream `req`.
 
 ### Soal 3 (Menantang)
 
-Buat fungsi server perantara `createGatewayServer(routeMap)` yang bertindak sebagai API Gateway penerus (*reverse proxy*). Server menerima permintaan HTTP masuk dan meneruskannya ke server upstream target berdasarkan prefiks jalur URL.
+Buat fungsi server perantara `createGatewayServer(routeMap)` yang bertindak sebagai API Gateway (_reverse proxy_). Server menerima permintaan HTTP masuk lalu meneruskannya ke server tujuan (_upstream_) berdasarkan awalan jalur URL.
 
 Ketentuan fungsional:
-1. Argumen `routeMap` berupa objek pemetaan prefiks rute, misalnya `{ '/auth': 'http://127.0.0.1:4001', '/products': 'http://127.0.0.1:4002' }`.
-2. Jika ada permintaan masuk dengan URL `/auth/login`, teruskan metode HTTP, header esensial, dan muatan body ke `http://127.0.0.1:4001/login` menggunakan `fetch()`.
-3. Kembalikan status HTTP, header, dan isi respons dari server upstream ke klien pemanggil asli.
-4. Ketentuan penanganan kasus tepi:
-   - Jika jalur URL tidak cocok dengan salah satu entri pemetaan, kembalikan HTTP 404 dengan body JSON `{ "error": "Gateway route not found" }`.
-   - Pasang batas waktu pembatalan selama 1500 milidetik saat meneruskan ke upstream dengan `AbortSignal.timeout(1500)`. Jika batas waktu tercapai, kembalikan HTTP 504 dengan body JSON `{ "error": "Gateway Timeout" }`.
-   - Jika server upstream tujuan mati atau menolak koneksi jaringan, tangkap galat tersebut dan kembalikan HTTP 502 dengan body JSON `{ "error": "Bad Gateway" }`.
 
-Contoh masukan konfigurasi:
+1. Parameter `routeMap` berupa objek konfigurasi awalan rute, misalnya `{ '/auth': 'http://127.0.0.1:4001', '/products': 'http://127.0.0.1:4002' }`.
+2. Jika ada permintaan masuk ke `/auth/login`, teruskan metode HTTP, header penting, dan data body ke `http://127.0.0.1:4001/login` menggunakan `fetch()`.
+3. Kembalikan status HTTP, header, dan isi balasan dari server upstream ke klien pemanggil asli.
+4. Penanganan kasus khusus:
+   - Jika jalur URL tidak cocok dengan entri yang ada di peta rute, kembalikan HTTP 404 dengan body JSON `{ "error": "Gateway route not found" }`.
+   - Batasi waktu tunggu ke upstream maksimal 1500 milidetik menggunakan `AbortSignal.timeout(1500)`. Jika batas waktu terlampaui, kembalikan HTTP 504 dengan body JSON `{ "error": "Gateway Timeout" }`.
+   - Jika server upstream tujuan sedang mati atau menolak sambungan, tangkap galatnya dan kembalikan HTTP 502 dengan body JSON `{ "error": "Bad Gateway" }`.
+
+Contoh konfigurasi:
 
 ```javascript
 const gateway = createGatewayServer({
-  '/api': 'http://127.0.0.1:5000',
+  "/api": "http://127.0.0.1:5000",
 });
 ```
 
@@ -552,7 +560,7 @@ Contoh respons klien saat upstream mati:
 // Body: { "error": "Bad Gateway" }
 ```
 
-Batasan: Dilarang menggunakan pustaka pembungkus proksi eksternal. Wajib mengimplementasikan arsitektur murni menggunakan `node:http` dan `fetch()`.
+Batasan: Dilarang menggunakan library proxy pihak ketiga. Bangun arsitektur murni menggunakan modul bawaan `node:http` dan fungsi `fetch()`.
 
 ---
 

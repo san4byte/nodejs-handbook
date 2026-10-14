@@ -1,82 +1,83 @@
 # Globals
 
 > Ringkasan
-> - Fungsi: Menyediakan objek, fungsi utilitas, dan antarmuka Web API standar yang dapat diakses di seluruh cakupan kode tanpa deklarasi impor.
-> - Digunakan saat: Mengelola antrean tugas mikro asinkron, mengkloning data berstruktur dalam, mengukur latensi eksekusi presisi tinggi, dan mengonversi format teks biner.
-> - Aturan praktis: Hindari menambahkan properti baru ke `globalThis` untuk mencegah tabrakan nama dan kebocoran memori; gunakan `queueMicrotask()` untuk penjadwalan fungsi mendesak sebelum siklus macrotask.
+>
+> - Fungsi: Menyediakan objek, fungsi bantuan, dan standar Web API yang bisa langsung kamu gunakan di mana saja tanpa perlu deklarasi impor.
+> - Digunakan saat: Mengatur antrean tugas mikro asinkron, menggandakan data bersarang, mengukur durasi kode dengan presisi tinggi, dan mengonversi format teks ke data biner.
+> - Aturan praktis: Hindari menyimpan data baru di dalam `globalThis` agar tidak terjadi tabrakan nama variabel; gunakan `queueMicrotask()` untuk menjalankan tugas mendesak sebelum giliran macrotask (seperti timer).
 
 ---
 
 ## Tujuan Belajar
 
-- Mengidentifikasi objek global bawaan Node.js dan standar Web API universal.
-- Membedakan cakupan global (`globalThis`) dengan cakupan berkas terisolasi pada modul ES.
-- Menerapkan fungsi `structuredClone()` untuk menduplikasi struktur data kompleks secara mandiri.
-- Mengukur durasi performa komputasi berpresisi tinggi menggunakan `performance.now()`.
-- Mengonversi representasi string teks menjadi byte array menggunakan `TextEncoder` dan `TextDecoder`.
-- Mengendalikan prioritas eksekusi kode asinkron dengan `queueMicrotask()` dan pembatalan operasi melalui `AbortController`.
+- Mengenal objek global bawaan Node.js dan standar Web API universal.
+- Membedakan cakupan global (`globalThis`) dengan cakupan lokal di dalam file modul ES.
+- Menggandakan data kompleks secara mendalam tanpa merusak data asli menggunakan `structuredClone()`.
+- Mengukur durasi eksekusi kode berpresisi tinggi menggunakan `performance.now()`.
+- Mengubah teks menjadi data biner dan sebaliknya lewat `TextEncoder` dan `TextDecoder`.
+- Mengatur prioritas tugas asinkron dengan `queueMicrotask()` dan membatalkan proses via `AbortController`.
 
 ---
 
 ## Konsep
 
-> Runtime Node.js dapat dianalogikan sebagai gedung kantor bersama (_co-working space_). Cakupan `globalThis` adalah lobi umum beserta fasilitas publiknya (jam dinding, dispenser, dan meja informasi) yang bebas digunakan seluruh penghuni gedung tanpa kunci akses khusus. Setiap berkas kode adalah meja kerja pribadi dengan laci terkunci (_module scope_). Menyimpan dokumen rahasia di atas meja lobi publik berisiko menimbulkan tertukarnya dokumen antar-divisi dan kebocoran informasi.
+> Bayangkan Node.js seperti gedung kantor bersama (_co-working space_). Objek `globalThis` adalah lobi utama gedung beserta fasilitas umumnya—seperti jam dinding, dispenser air, dan papan informasi yang bebas diakses siapa saja tanpa kunci khusus. Sementara itu, setiap file kode adalah meja kerja pribadi dengan laci terkunci (_module scope_). Menaruh berkas rahasia di atas meja lobi publik tentu berisiko membuat dokumen tertukar atau bocor ke divisi lain.
 
 ```mermaid
 flowchart TD
-    GT["globalThis (Cakupan Publik)"] --> CORE["Node.js Core (Buffer, process, console)"]
+    GT["globalThis (Lobi Umum / Fasilitas Publik)"] --> CORE["Node.js Core (Buffer, process, console)"]
     GT --> WEB["Standar Web (fetch, TextEncoder, URL, structuredClone)"]
-    GT --> TIMERS["Penjadwalan Waktu (setTimeout, setImmediate, queueMicrotask)"]
-    GT --> ES["Tipe ECMAScript (Promise, Map, Set, JSON, Error)"]
+    GT --> TIMERS["Pengatur Waktu (setTimeout, setImmediate, queueMicrotask)"]
+    GT --> ES["Tipe JavaScript Bawaan (Promise, Map, Set, JSON, Error)"]
 ```
 
 ---
 
 ## Referensi
 
-| Item | Fungsi | Catatan |
-| :--- | :--- | :--- |
-| **`globalThis`** | Mengakses objek akar cakupan global lintas platform secara konsisten | Menggantikan referensi `global` pada Node.js dan `window` pada peramban |
-| **`structuredClone()`** | Membuat salinan mendalam (_deep clone_) dari suatu nilai JavaScript | Mendukung tipe bawaan seperti Date, Map, Set, dan referensi melingkar |
-| **`performance.now()`** | Menghasilkan stempel waktu resolusi tinggi dalam satuan milidetik | Bersifat monotonik sehingga kebal terhadap koreksi jam sistem operasi |
-| **`TextEncoder`** | Mengodekan string karakter menjadi deretan biner `Uint8Array` berbasis UTF-8 | Standar universal untuk manipulasi payload biner dan kriptografi |
-| **`TextDecoder`** | Menerjemahkan deretan byte `Uint8Array` kembali menjadi string teks UTF-8 | Menangani karakter multibyte dan emoji secara akurat |
-| **`queueMicrotask()`** | Memasukkan fungsi panggilan balik ke antrean tugas mikro (_microtask queue_) | Dieksekusi sebelum macrotask berikutnya tanpa beban alokasi Promise |
-| **`AbortController`** | Mengirimkan sinyal pembatalan ke operasi asinkron atau pendengar peristiwa | Memiliki properti `signal` untuk memeriksa status pembatalan |
+| Item                    | Fungsi                                                                   | Catatan                                                                |
+| :---------------------- | :----------------------------------------------------------------------- | :--------------------------------------------------------------------- |
+| **`globalThis`**        | Mengakses objek global tertinggi secara seragam di platform apa pun      | Menggantikan `global` di Node.js dan `window` di browser               |
+| **`structuredClone()`** | Membuat salinan data mendalam (_deep clone_) dari suatu nilai JavaScript | Mendukung tipe Date, Map, Set, serta referensi melingkar               |
+| **`performance.now()`** | Mengembalikan catatan waktu berpresisi tinggi dalam satuan milidetik     | Waktunya terus bertambah maju dan tidak terpengaruh jam sistem operasi |
+| **`TextEncoder`**       | Mengubah string teks menjadi deretan byte biner `Uint8Array` (UTF-8)     | Standar universal untuk mengolah data biner dan pengiriman jaringan    |
+| **`TextDecoder`**       | Menerjemahkan kembali deretan byte biner menjadi string teks biasa       | Membaca karakter multibyte dan emoji secara tepat                      |
+| **`queueMicrotask()`**  | Memasukkan fungsi ke dalam antrean tugas mikro (_microtask queue_)       | Dijalankan tepat setelah kode sinkron selesai, sebelum macrotask       |
+| **`AbortController`**   | Mengirimkan sinyal pembatalan ke operasi asinkron yang sedang berjalan   | Memiliki properti `signal` untuk memantau status pembatalan            |
 
 ### `globalThis`
 
-`globalThis` adalah objek universal standar ECMAScript yang merujuk pada cakupan terluar runtime. Di Node.js, `globalThis` setara dengan pengenal lama `global`.
+`globalThis` adalah objek universal standar JavaScript untuk merujuk ke cakupan terluar runtime. Di Node.js, `globalThis` menunjuk ke objek yang sama dengan pengenal lama `global`.
 
 ```javascript
 console.log(globalThis === global);
 // Output: true
 
-globalThis.appRegion = 'ID-JKT';
+globalThis.appRegion = "ID-JKT";
 console.log(global.appRegion);
 // Output: ID-JKT
 ```
 
-Kasus lain: Di dalam ES Modules, deklarasi variabel `var` atau `const` tingkat atas tidak secara otomatis terikat pada properti `globalThis`.
+Kasus lain: Di dalam ES Modules, deklarasi variabel biasa seperti `const` atau `let` tidak akan menempel ke properti `globalThis`.
 
 ```javascript
-const localIdentifier = 'secret';
+const localIdentifier = "secret";
 console.log(globalThis.localIdentifier);
 // Output: undefined
 ```
 
 ### `structuredClone()`
 
-Fungsi `structuredClone()` digunakan untuk menduplikasi objek secara mendalam tanpa mempertahankan referensi memori pada properti bersarang. Fungsi ini meniadakan kebutuhan pustaka eksternal untuk kloning data.
+Fungsi `structuredClone()` dipakai untuk menyalin objek secara menyeluruh hingga ke lapisan terdalam (_deep clone_). Cara ini memutus kaitan memori antara objek asli dan objek salinan.
 
 ```javascript
 const originalProfile = {
-  name: 'Sarah',
-  settings: { theme: 'dark', notifications: true },
+  name: "Sarah",
+  settings: { theme: "dark", notifications: true },
 };
 
 const clonedProfile = structuredClone(originalProfile);
-clonedProfile.settings.theme = 'light';
+clonedProfile.settings.theme = "light";
 
 console.log(originalProfile.settings.theme);
 // Output: dark
@@ -84,7 +85,7 @@ console.log(clonedProfile.settings.theme);
 // Output: light
 ```
 
-Kasus lain: Melempar pengecualian `DataCloneError` saat mencoba menyalin fungsi, simbol, atau objek yang tidak dapat diserialisasi.
+Kasus lain: Node.js akan melempar error `DataCloneError` jika kamu mencoba menggandakan fungsi, simbol, atau objek yang tidak bisa diserialisasi.
 
 ```javascript
 try {
@@ -97,7 +98,7 @@ try {
 
 ### `performance.now()`
 
-Metode `performance.now()` mengembalikan stempel waktu presisi tinggi dengan fraksi sub-milidetik. Nilainya dihitung relatif terhadap awal inisialisasi runtime sehingga tidak terpengaruh pergeseran waktu jam kalender.
+Metode `performance.now()` menghasilkan waktu presisi tinggi dalam satuan milidetik hingga pecahan desimal terkecil. Waktu ini dihitung sejak proses Node.js mulai berjalan, sehingga tidak terpengaruh oleh jam kalender komputer yang diubah.
 
 ```javascript
 const startTime = performance.now();
@@ -116,7 +117,7 @@ console.log(duration >= 0);
 // Output: true
 ```
 
-Kasus lain: Menghitung selisih waktu antara dua pengukuran yang terjadi secara berurutan menghasilkan angka positif atau nol yang konsisten.
+Kasus lain: Dua pengukuran waktu berturut-turut akan selalu menghasilkan angka yang konsisten bertambah maju.
 
 ```javascript
 const timeA = performance.now();
@@ -127,11 +128,11 @@ console.log(timeB >= timeA);
 
 ### `TextEncoder`
 
-Kelas `TextEncoder` mengonversi representasi string teks menjadi aliran byte biner dalam format `Uint8Array` dengan penyandian baku UTF-8. Objek ini sangat umum digunakan untuk memproses data sebelum dikirim melalui soket jaringan atau algoritma hashing.
+Kelas `TextEncoder` mengubah string teks menjadi deretan byte data biner (`Uint8Array`) berformat UTF-8. Objek ini sangat umum digunakan untuk menyiapkan payload sebelum dikirim lewat jaringan.
 
 ```javascript
 const encoder = new TextEncoder();
-const encodedBytes = encoder.encode('Node.js');
+const encodedBytes = encoder.encode("Node.js");
 
 console.log(encodedBytes instanceof Uint8Array);
 // Output: true
@@ -139,21 +140,21 @@ console.log(encodedBytes.length);
 // Output: 7
 ```
 
-Kasus lain: Mengodekan karakter simbol multi-byte menghasilkan beberapa byte sekaligus sesuai standar UTF-8.
+Kasus lain: Karakter khusus atau simbol mata uang akan otomatis dipecah menjadi beberapa byte sesuai aturan UTF-8.
 
 ```javascript
 const encoder = new TextEncoder();
-const symbolBytes = encoder.encode('€');
+const symbolBytes = encoder.encode("€");
 console.log(symbolBytes.length);
 // Output: 3
 ```
 
 ### `TextDecoder`
 
-Kelas `TextDecoder` membaca deretan byte biner seperti `Uint8Array` atau `Buffer` dan merekonstruksinya kembali menjadi string teks manusia. Objek ini melengkapi operasi `TextEncoder` untuk komunikasi dua arah.
+Kelas `TextDecoder` membaca deretan byte biner dan mengubahnya kembali menjadi teks yang bisa dibaca manusia. Objek ini melengkapi tugas `TextEncoder` untuk komunikasi bolak-balik.
 
 ```javascript
-const decoder = new TextDecoder('utf-8');
+const decoder = new TextDecoder("utf-8");
 const binaryInput = new Uint8Array([72, 101, 108, 108, 111]);
 const decodedText = decoder.decode(binaryInput);
 
@@ -161,43 +162,43 @@ console.log(decodedText);
 // Output: Hello
 ```
 
-Kasus lain: Membaca array byte kosong mengembalikan string kosong tanpa melempar galat.
+Kasus lain: Memasukkan array byte kosong akan menghasilkan string kosong tanpa menimbulkan error.
 
 ```javascript
 const decoder = new TextDecoder();
 const emptyResult = decoder.decode(new Uint8Array([]));
-console.log(emptyResult === '');
+console.log(emptyResult === "");
 // Output: true
 ```
 
 ### `queueMicrotask()`
 
-Fungsi `queueMicrotask()` menjadwalkan eksekusi panggilan balik ke dalam antrean tugas mikro (_microtask queue_). Tugas mikro dieksekusi tepat setelah bingkai eksekusi sinkron saat ini kosong dan sebelum perputaran Event Loop berpindah ke macrotask seperti timer.
+Fungsi `queueMicrotask()` menjadwalkan tugas ke antrean prioritas mikro (_microtask queue_). Tugas ini akan dieksekusi segera setelah kode sinkron saat ini selesai, sebelum Event Loop berpindah ke antrean timer.
 
 ```javascript
 const executionOrder = [];
 
 setTimeout(() => {
-  executionOrder.push('timer-macrotask');
+  executionOrder.push("timer-macrotask");
 }, 0);
 
 queueMicrotask(() => {
-  executionOrder.push('microtask');
+  executionOrder.push("microtask");
 });
 
-executionOrder.push('sync');
+executionOrder.push("sync");
 
 setTimeout(() => {
-  console.log(executionOrder.join(' -> '));
+  console.log(executionOrder.join(" -> "));
   // Output: sync -> microtask -> timer-macrotask
 }, 10);
 ```
 
-Kasus lain: Melempar `TypeError` jika argumen yang diberikan bukan berupa fungsi yang dapat dieksekusi.
+Kasus lain: Node.js akan melempar `TypeError` jika argumen yang diberikan bukan berupa fungsi yang bisa dipanggil.
 
 ```javascript
 try {
-  queueMicrotask('not-a-function');
+  queueMicrotask("not-a-function");
 } catch (error) {
   console.log(error.name);
   // Output: TypeError
@@ -206,7 +207,7 @@ try {
 
 ### `AbortController`
 
-Kelas `AbortController` menyediakan mekanisme standar untuk mengirimkan sinyal pembatalan ke operasi asinkron. Objek pendengar dapat memantau status `signal.aborted` atau mendengarkan peristiwa `abort`.
+Kelas `AbortController` menyediakan cara standar untuk membatalkan proses asinkron kapan saja. Komponen lain bisa memantau status `signal.aborted` atau mendengarkan event pembatalan.
 
 ```javascript
 const controller = new AbortController();
@@ -215,7 +216,7 @@ const signal = controller.signal;
 console.log(signal.aborted);
 // Output: false
 
-controller.abort('Operation timed out');
+controller.abort("Operation timed out");
 
 console.log(signal.aborted);
 // Output: true
@@ -223,46 +224,46 @@ console.log(signal.reason);
 // Output: Operation timed out
 ```
 
-Kasus lain: Memanggil `.abort()` berulang kali tidak mengubah alasan asli yang sudah didaftarkan pertama kali.
+Kasus lain: Memanggil `.abort()` berkali-kali tidak akan mengubah alasan pembatalan pertama yang sudah tercatat.
 
 ```javascript
 const controller = new AbortController();
-controller.abort('First reason');
-controller.abort('Second reason');
+controller.abort("First reason");
+controller.abort("Second reason");
 console.log(controller.signal.reason);
 // Output: First reason
 ```
 
 ### Perbandingan: Penjadwalan Asinkron
 
-| Fitur | Jenis Antrean | Prioritas Relatif | Kebutuhan Alokasi |
-| :--- | :--- | :--- | :--- |
-| **`queueMicrotask()`** | Microtask Queue | Setelah blok sinkron, sebelum Macrotask | Ringan (tanpa objek Promise baru) |
-| **`setTimeout(fn, 0)`** | Macrotask Queue (Timer) | Setelah seluruh Microtask rampung | Memerlukan registrasi slot timer di Libuv |
-| **`Promise.resolve().then(fn)`** | Microtask Queue | Setara dengan `queueMicrotask()` | Membentuk instance Promise tambahan di memori |
+| Fitur                            | Jenis Antrean           | Prioritas Eksekusi                            | Beban Memori                                     |
+| :------------------------------- | :---------------------- | :-------------------------------------------- | :----------------------------------------------- |
+| **`queueMicrotask()`**           | Microtask Queue         | Tepat setelah blok sinkron, sebelum Macrotask | Paling ringan (tanpa membuat objek Promise baru) |
+| **`setTimeout(fn, 0)`**          | Macrotask Queue (Timer) | Setelah seluruh antrean Microtask beres       | Memerlukan registrasi slot timer di Libuv        |
+| **`Promise.resolve().then(fn)`** | Microtask Queue         | Setara dengan `queueMicrotask()`              | Membentuk instance objek Promise di memori       |
 
 ---
 
 ## Kesalahan Umum
 
-### Mengotori `globalThis` untuk Menyimpan State Aplikasi
+### Menyimpan Data Aplikasi di `globalThis`
 
-Menyimpan state atau variabel konfigurasi pada `globalThis` membuat dependensi tersembunyi, mempersulit pengujian unit, dan rentan terhadap tabrakan nama antar-pustaka.
+Menaruh variabel konfigurasi atau data aplikasi langsung di `globalThis` membuat alur data sulit dilacak dan berisiko tabrakan nama jika ada library luar yang memakai nama serupa.
 
 ```javascript
 // Salah
-globalThis.currentUser = { id: 101, name: 'Alice' };
+globalThis.currentUser = { id: 101, name: "Alice" };
 ```
 
 ```javascript
 // Benar
-// Simpan di dalam modul tersendiri lalu ekspor secara eksplisit
-export const currentUser = { id: 101, name: 'Alice' };
+// Simpan di dalam modul tersendiri lalu ekspor secara terang-terangan
+export const currentUser = { id: 101, name: "Alice" };
 ```
 
 ### Menggunakan `JSON.parse(JSON.stringify())` untuk Deep Clone
 
-Metode serialisasi JSON menghilangkan properti bertipe `undefined`, simbol, serta mengubah objek `Date` menjadi string biasa tanpa mempertahankan tipe aslinya.
+Menggandakan data lewat serialisasi JSON akan menghilangkan properti bernilai `undefined`, simbol, serta mengubah objek `Date` menjadi string biasa sehingga tipe aslinya hilang.
 
 ```javascript
 // Salah
@@ -270,19 +271,22 @@ const copiedData = JSON.parse(
   JSON.stringify({ timestamp: new Date(), payload: undefined }),
 );
 console.log(typeof copiedData.timestamp); // string (kehilangan objek Date)
-console.log('payload' in copiedData); // false (properti lenyap)
+console.log("payload" in copiedData); // false (properti lenyap)
 ```
 
 ```javascript
 // Benar
-const copiedData = structuredClone({ timestamp: new Date(), payload: undefined });
+const copiedData = structuredClone({
+  timestamp: new Date(),
+  payload: undefined,
+});
 console.log(copiedData.timestamp instanceof Date); // true
-console.log('payload' in copiedData); // true
+console.log("payload" in copiedData); // true
 ```
 
-### Mengakses Variabel Pseudo-Global CommonJS pada ES Modules
+### Mengakses Variabel CommonJS pada ES Modules
 
-Memanggil variabel lingkungan CommonJS seperti `__dirname` atau `__filename` di dalam berkas modul standar ES memicu pengecualian fatal karena variabel tersebut tidak didaftarkan di lingkungan ESM.
+Memanggil variabel khas CommonJS seperti `__dirname` atau `__filename` di dalam file ES Modules akan memicu error karena variabel tersebut tidak tersedia di ESM.
 
 ```javascript
 // Salah
@@ -291,15 +295,15 @@ const currentDirectory = __dirname;
 
 ```javascript
 // Benar
-import { fileURLToPath } from 'node:url';
-const currentDirectory = fileURLToPath(new URL('.', import.meta.url));
+// Di lingkungan ES Modules modern, gunakan properti bawaan import.meta.dirname
+const currentDirectory = import.meta.dirname;
 ```
 
 ---
 
 ## Studi Kasus
 
-Skenario: Membangun dispatcher tugas terenkapsulasi yang mengukur latensi pemrosesan data, mengonversi payload string menjadi biner, memvalidasi pembatalan tugas via `AbortController`, dan memastikan isolasi salinan data menggunakan `structuredClone`.
+Skenario: Membangun pengelola tugas terisolasi yang mengukur durasi pengerjaan, mengubah data teks menjadi biner, memvalidasi pembatalan tugas via `AbortController`, dan memastikan data asli aman dari mutasi menggunakan `structuredClone`.
 
 ```javascript
 class TaskDispatcher {
@@ -315,7 +319,7 @@ class TaskDispatcher {
     }
 
     const isolatedData = structuredClone(inputData);
-    isolatedData.status = 'PROCESSED';
+    isolatedData.status = "PROCESSED";
 
     const encoder = new TextEncoder();
     const serializedPayload = JSON.stringify(isolatedData);
@@ -336,7 +340,7 @@ const dispatcher = new TaskDispatcher();
 const controller = new AbortController();
 
 const normalResult = dispatcher.process(
-  { id: 1, item: 'Book' },
+  { id: 1, item: "Book" },
   { signal: controller.signal },
 );
 console.log(normalResult.success);
@@ -346,9 +350,9 @@ console.log(normalResult.data.status);
 console.log(normalResult.byteLength > 0);
 // Output: true
 
-controller.abort('Operation cancelled by system');
+controller.abort("Operation cancelled by system");
 const abortedResult = dispatcher.process(
-  { id: 2, item: 'Pen' },
+  { id: 2, item: "Pen" },
   { signal: controller.signal },
 );
 console.log(abortedResult.success);
@@ -357,7 +361,7 @@ console.log(abortedResult.reason);
 // Output: Operation cancelled by system
 ```
 
-Desain ini memanfaatkan fitur global murni (`structuredClone`, `performance.now`, `TextEncoder`, `AbortController`) untuk menjamin keamanan mutasi data dan memberikan observabilitas eksekusi tanpa memerlukan dependensi pihak ketiga.
+Desain ini memanfaatkan fitur global bawaan (`structuredClone`, `performance.now`, `TextEncoder`, `AbortController`) untuk menjaga keamanan data dan mencatat durasi proses secara mandiri tanpa library tambahan.
 
 ---
 
@@ -365,57 +369,63 @@ Desain ini memanfaatkan fitur global murni (`structuredClone`, `performance.now`
 
 ### Soal 1 (Dasar)
 
-Buat fungsi `getUtf8ByteLength(text)` yang menerima sebuah string teks dan mengembalikan jumlah byte biner yang dihasilkan setelah dikodekan menggunakan `TextEncoder`.
+Buat fungsi `getUtf8ByteLength(text)` yang menerima sebuah string teks dan mengembalikan total ukuran byte biner yang dihasilkan setelah diubah menggunakan `TextEncoder`.
 
-Contoh masukan:
+Contoh input:
+
 ```javascript
-getUtf8ByteLength('Hello Node.js');
+getUtf8ByteLength("Hello Node.js");
 ```
 
-Contoh keluaran yang diharapkan:
+Contoh output yang diharapkan:
+
 ```javascript
-13
+13;
 ```
 
 Batasan: Gunakan kelas `TextEncoder` bawaan global tanpa menghitung panjang karakter string secara manual dengan `.length`.
 
 ### Soal 2 (Menengah)
 
-Buat fungsi `cloneAndMeasure(targetObject)` yang menerima sebuah objek bertingkat. Fungsi ini wajib membuat salinan mendalam dari objek target menggunakan `structuredClone()`, menambahkan properti baru `clonedAt` bertipe objek `Date`, serta menyisipkan properti `durationMs` yang menghitung waktu proses kloning dalam satuan milidetik menggunakan `performance.now()`.
+Buat fungsi `cloneAndMeasure(targetObject)` yang menerima sebuah objek bertingkat. Fungsi ini harus membuat salinan mendalam dari objek target menggunakan `structuredClone()`, menambahkan properti baru `clonedAt` bertipe objek `Date`, serta menyisipkan properti `durationMs` yang mencatat durasi waktu proses kloning dalam satuan milidetik menggunakan `performance.now()`.
 
-Contoh masukan:
+Contoh input:
+
 ```javascript
-cloneAndMeasure({ module: 'Globals', version: 1 });
+cloneAndMeasure({ module: "Globals", version: 1 });
 ```
 
-Contoh keluaran yang diharapkan:
+Contoh output yang diharapkan:
+
 ```javascript
 {
   module: 'Globals',
   version: 1,
-  clonedAt: 2026-10-12T00:00:00.000Z, // Instance objek Date
+  clonedAt: 2026-10-12T00:00:00.000Z, // Objek Date asli
   durationMs: 0.045 // Bilangan positif
 }
 ```
 
-Batasan: Objek asli tidak boleh mengalami mutasi. Wajib menggunakan `structuredClone()` dan `performance.now()`.
+Batasan: Objek asli tidak boleh mengalami perubahan nilai. Wajib menggunakan `structuredClone()` dan `performance.now()`.
 
 ### Soal 3 (Menantang)
 
-Buat fungsi penjadwal antrean batch `scheduleMicroBatch(payloads, byteLimit, signal)` yang memproses serangkaian payload teks. Fungsi harus mematuhi aturan berikut:
+Buat fungsi penjadwal antrean tugas `scheduleMicroBatch(payloads, byteLimit, signal)` yang memproses serangkaian teks input dengan aturan berikut:
 
-1. Setiap payload diubah menjadi biner `Uint8Array` menggunakan `TextEncoder`.
-2. Jika akumulasi ukuran byte biner pada batch yang sedang diproses melebihi nilai `byteLimit`, proses harus dihentikan dan kembalikan galat operasional `{ success: false, reason: 'Byte quota exceeded' }`.
-3. Sebelum memproses tiap item, periksa apakah `signal.aborted` bernilai `true`. Jika dibatalkan, hentikan iterasi dan kembalikan `{ success: false, reason: signal.reason }`.
-4. Jika seluruh payload valid, kembalikan objek `{ success: true, totalBytes: number, binaries: Uint8Array[] }`. Seluruh komputasi harus dijalankan di dalam pembungkus fungsi mikro berbasis `queueMicrotask()` yang mengembalikan Promise hasil akhir.
+1. Setiap teks input diubah menjadi deretan byte `Uint8Array` menggunakan `TextEncoder`.
+2. Jika total ukuran byte yang sedang diproses melebihi nilai `byteLimit`, proses harus dihentikan dan kembalikan error operasional `{ success: false, reason: 'Byte quota exceeded' }`.
+3. Sebelum memproses tiap item, periksa apakah `signal.aborted` bernilai `true`. Jika dibatalkan, hentikan proses dan kembalikan `{ success: false, reason: signal.reason }`.
+4. Jika seluruh data valid, kembalikan objek `{ success: true, totalBytes: number, binaries: Uint8Array[] }`. Seluruh perhitungan harus dijalankan di dalam fungsi mikro berbasis `queueMicrotask()` yang mengembalikan Promise hasil akhir.
 
-Contoh masukan 1:
+Contoh input 1:
+
 ```javascript
 const controller = new AbortController();
-await scheduleMicroBatch(['alpha', 'beta'], 50, controller.signal);
+await scheduleMicroBatch(["alpha", "beta"], 50, controller.signal);
 ```
 
-Contoh keluaran 1:
+Contoh output 1:
+
 ```javascript
 {
   success: true,
@@ -427,17 +437,19 @@ Contoh keluaran 1:
 }
 ```
 
-Contoh masukan 2:
+Contoh input 2:
+
 ```javascript
 const controller = new AbortController();
 await scheduleMicroBatch(
-  ['very long payload exceeding byte quota limit'],
+  ["very long payload exceeding byte quota limit"],
   10,
   controller.signal,
 );
 ```
 
-Contoh keluaran 2:
+Contoh output 2:
+
 ```javascript
 {
   success: false,
@@ -445,14 +457,16 @@ Contoh keluaran 2:
 }
 ```
 
-Contoh masukan 3:
+Contoh input 3:
+
 ```javascript
 const controller = new AbortController();
-controller.abort('Cancelled by user');
-await scheduleMicroBatch(['data'], 100, controller.signal);
+controller.abort("Cancelled by user");
+await scheduleMicroBatch(["data"], 100, controller.signal);
 ```
 
-Contoh keluaran 3:
+Contoh output 3:
+
 ```javascript
 {
   success: false,
@@ -460,7 +474,7 @@ Contoh keluaran 3:
 }
 ```
 
-Batasan: Dilarang menggunakan pustaka eksternal. Wajib mengombinasikan `queueMicrotask`, `TextEncoder`, dan `AbortSignal` dengan penanganan kasus pembatalan dan batasan kuota.
+Batasan: Dilarang menggunakan library eksternal. Wajib mengombinasikan `queueMicrotask`, `TextEncoder`, dan `AbortSignal` dengan penanganan pembatalan dan batasan ukuran data.
 
 ---
 
