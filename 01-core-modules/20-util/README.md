@@ -508,9 +508,9 @@ Ketentuan pemrosesan:
 - Gunakan `util.isDeepStrictEqual` untuk memeriksa apakah kedua status benar-benar identik. Jika ya, kembalikan objek `{ hasChanged: false, summary: 'States are identical' }`.
 - Jika mengalami perubahan, periksa kunci-kunci pada level pertama:
   - Bandingkan kesamaan nilai pada masing-masing kunci menggunakan `util.isDeepStrictEqual`.
-  - Jika nilainya berupa objek khusus V8 (seperti `Date`, `Map`, atau `Promise`), gunakan `util.types` untuk mencatat tipe spesifiknya ke dalam metadata laporan.
+  - Jika nilainya berupa objek khusus V8 (seperti `Date`, `Map`, `RegExp`, atau `Promise`), gunakan `util.types` untuk mencatat tipe spesifiknya ke dalam objek `specialTypes: Record<string, string>`.
   - Jika objek memuat referensi melingkar (_circular reference_), gunakan `util.inspect` dengan batasan kedalaman `depth: 2` untuk menghasilkan representasi string ringkas tanpa memicu error runtime.
-- Kembalikan objek `{ hasChanged: true, changedKeys: [...], inspectedSummary: '<string>' }`.
+- Kembalikan objek `{ hasChanged: true, changedKeys: string[], specialTypes: Record<string, string>, inspectedSummary: string }`.
 
 Contoh input 1 (kasus identik):
 
@@ -544,6 +544,7 @@ Contoh output 2:
 {
   hasChanged: true,
   changedKeys: [ 'role', 'timestamp', 'self' ],
+  specialTypes: { timestamp: 'Date' },
   inspectedSummary: "<ref *1> { role: 'admin', timestamp: 2026-10-12T00:00:00.000Z, self: [Circular *1] }"
 }
 ```

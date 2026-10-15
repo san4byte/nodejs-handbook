@@ -433,7 +433,7 @@ Batasan: Gunakan pernyataan `debugger;` bawaan di dalam fungsi.
 
 ### Soal 2 (Menengah)
 
-Buat fungsi `runWithScopedInspection(operationFn, customPort)` yang membungkus pemanggilan `operationFn()`. Fungsi harus membuka listener V8 Inspector pada alamat lokal `'127.0.0.1'` dan port `customPort` via `inspector.open()`, mengeksekusi `operationFn()`, mencatat URL WebSocket yang aktif via `inspector.url()`, serta menjamin penutupan listener via `inspector.close()` di dalam blok `finally`.
+Buat fungsi `runWithScopedInspection(operationFn, customPort)` yang membungkus pemanggilan `operationFn()`. Fungsi harus membuka listener V8 Inspector pada alamat lokal `'127.0.0.1'` dan port `customPort` via `inspector.open()`, mengeksekusi `operationFn()`, memvalidasi status keaktifan sesi via `inspector.url()` (disimpan sebagai boolean `wasActive: true` jika URL string aktif tersedia), serta menjamin penutupan listener via `inspector.close()` di dalam blok `finally`.
 
 Contoh input:
 

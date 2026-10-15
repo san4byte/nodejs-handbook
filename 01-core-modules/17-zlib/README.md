@@ -549,7 +549,7 @@ Buat utilitas pengurai data terkompresi yang tahan terhadap serangan bom dekompr
 Ketentuan penanganan kasus khusus:
 
 - Jika selama proses dekompresi total byte output melebihi `maxByteLimit`, segera hentikan dan hancurkan (_destroy_) stream yang terlibat lalu kembalikan objek `{ status: 'failure', reason: 'MAX_SIZE_EXCEEDED' }`.
-- Jika data input rusak atau format biner tidak sesuai dengan parameter `format`, tangkap galatnya dan kembalikan objek `{ status: 'failure', reason: 'INVALID_FORMAT' }`.
+- Jika data input rusak atau format biner tidak sesuai dengan parameter `format`, tangkap error-nya dan kembalikan objek `{ status: 'failure', reason: 'INVALID_FORMAT' }`.
 - Jika proses berhasil dan ukurannya aman dalam batas wajar, kembalikan objek `{ status: 'success', text: '<content>', totalBytes: <count> }`.
 
 Contoh input 1 (kasus sukses):

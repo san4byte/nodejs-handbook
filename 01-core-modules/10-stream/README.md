@@ -559,6 +559,7 @@ Ketentuan fungsional:
 - Berikan jeda waktu `delayMs` milidetik di antara pengiriman setiap chunk untuk meratakan beban kerja I/O.
 - Panggil `writable.end()` setelah seluruh data `readable` selesai dialirkan, dan tunggu konfirmasi selesai melalui fungsi utilitas `finished` dari `node:stream/promises`.
 - Jika terjadi error pada `readable` maupun `writable`, hancurkan kedua stream lewat `.destroy(error)` dan teruskan error tersebut ke pemanggil fungsi.
+- Jika seluruh proses streaming berhasil tanpa kendala, kembalikan objek statistik `{ success: true, totalChunks: number }`.
 
 Contoh input:
 

@@ -543,7 +543,7 @@ Ketentuan fungsional:
 4. Penanganan kasus khusus:
    - Jika jalur URL tidak cocok dengan entri yang ada di peta rute, kembalikan HTTP 404 dengan body JSON `{ "error": "Gateway route not found" }`.
    - Batasi waktu tunggu ke upstream maksimal 1500 milidetik menggunakan `AbortSignal.timeout(1500)`. Jika batas waktu terlampaui, kembalikan HTTP 504 dengan body JSON `{ "error": "Gateway Timeout" }`.
-   - Jika server upstream tujuan sedang mati atau menolak sambungan, tangkap galatnya dan kembalikan HTTP 502 dengan body JSON `{ "error": "Bad Gateway" }`.
+   - Jika server upstream tujuan sedang mati atau menolak sambungan, tangkap error-nya dan kembalikan HTTP 502 dengan body JSON `{ "error": "Bad Gateway" }`.
 
 Contoh konfigurasi:
 

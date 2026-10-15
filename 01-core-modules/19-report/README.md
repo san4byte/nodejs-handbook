@@ -476,6 +476,8 @@ Ketentuan pemrosesan:
 - Ambil 2 baris teratas dari `javascriptStack.stack` yang memicu error ke dalam array `stackSnippet`.
 - Hitung persentase pemakaian heap terhadap batas maksimal heap (`javascriptHeap.memoryLimit`) dalam format dua angka di belakang koma dengan simbol `%`.
 - Jika rasio heap di atas 80% ATAU insiden terjadi di bawah batas uptime (`startupCrash: true`), beri tanda tingkat keparahan sebagai `'HIGH'`. Jika tidak, beri tanda sebagai `'MEDIUM'`.
+- Ambil pesan error dari `errorObject.message` ke dalam properti `errorMessage`.
+- Ambil metadata proses dari laporan berupa `header.platform` dan `header.processId` ke dalam objek `systemMetadata: { platform: string, pid: number }`.
 - Kembalikan objek kesimpulan insiden tanpa menulis berkas fisik ke disk.
 
 Contoh input:

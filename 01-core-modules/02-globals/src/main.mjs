@@ -1,76 +1,69 @@
-globalThis.appRegion = 'ID-id';
-console.log(global.appRegion); // ID-id
-
-const localIdentifier = 'secret';
-console.log(globalThis.localIdentifier); // undefined
-
-// structuredClone()
-const originalProfile = {
-  name: 'Sarah',
-  settings: { theme: 'dark', notifications: true },
-};
-
-const clonedProfile = structuredClone(originalProfile);
-clonedProfile.settings.theme = 'light';
-
-console.log(originalProfile.settings.theme);
-// Output: dark
-console.log(clonedProfile.settings.theme);
-// Output: light
-
-try {
-  structuredClone({ calculate: () => 42 });
-} catch (error) {
-  console.log(error.name);
-  // Output: DataCloneError
-}
-
-// performance.now()
-const startTime = performance.now();
-
-let total = 0;
-for (let i = 0; i < 100_000; i++) {
-  total += i;
-}
-
-const endTime = performance.now();
-const duration = endTime - startTime;
-
-console.log(typeof duration); // number
-console.log(duration >= 0); // true
-
-// TextEncoder & TextDecoder
-const encoder = new TextEncoder();
-const decoder = new TextDecoder();
-const encodedBytes = encoder.encode('Node.js');
-const decodedBytes = decoder.decode(encodedBytes);
-
-console.log(encodedBytes instanceof Uint8Array); // true
-console.log(encodedBytes); // [78, 111, 100, 101,  46, 106, 115]
-console.log(encodedBytes.length); // 7
-console.log(decodedBytes); // Node.js
-
-// queueMicrotask()
-const executionOrder = [];
-
-setTimeout(() => {
-  executionOrder.push('03 timer-macrotask');
-}, 0);
-
-queueMicrotask(() => {
-  executionOrder.push('02 microtask');
+// 1. Cakupan globalThis
+console.log('--- 1. Cakupan globalThis ---');
+globalThis.appName = 'NodeHandbook';
+const localName = 'SecretVar';
+console.log({
+  isEqualGlobal: globalThis === global,
+  globalAppName: global.appName,
+  localInGlobal: globalThis.localName,
 });
 
-executionOrder.push('01 sync');
+// 2. Deep Clone (structuredClone)
+console.log('\n--- 2. structuredClone ---');
+const original = { user: 'Alice', prefs: { darkMode: true } };
+const clone = structuredClone(original);
+clone.prefs.darkMode = false;
 
-setTimeout(() => {
-  console.log(executionOrder.join(' -> '));
-  // Output: sync -> microtask -> timer-macrotask
-}, 10);
+let cloneError = null;
+try {
+  structuredClone({ fn: () => {} });
+} catch (err) {
+  cloneError = err.name;
+}
 
-const binaries = [
-  [97, 108, 112, 104, 97],
-  [98, 101, 116, 97],
-];
+console.log({
+  originalDarkMode: original.prefs.darkMode,
+  cloneDarkMode: clone.prefs.darkMode,
+  uncloneableError: cloneError,
+});
 
-console.log(binaries.reduce((t, e) => t + e.length, 0));
+// 3. Durasi Presisi Tinggi (performance.now)
+console.log('\n--- 3. performance.now ---');
+const start = performance.now();
+for (let i = 0; i < 50_000; i++) {}
+console.log({
+  elapsedMs: Number((performance.now() - start).toFixed(3)),
+});
+
+// 4. Konversi Biner Teks (TextEncoder & TextDecoder)
+console.log('\n--- 4. TextEncoder & TextDecoder ---');
+const encoder = new TextEncoder();
+const decoder = new TextDecoder();
+const bytes = encoder.encode('Halo Node.js');
+console.log({
+  byteLength: bytes.byteLength,
+  sampleBytes: Array.from(bytes.slice(0, 4)),
+  decoded: decoder.decode(bytes),
+});
+
+// 5. Antrean Tugas Mikro (queueMicrotask)
+console.log('\n--- 5. queueMicrotask vs Timer ---');
+const executionOrder = [];
+setTimeout(() => executionOrder.push('3. timer (macrotask)'), 10);
+queueMicrotask(() => executionOrder.push('2. microtask'));
+executionOrder.push('1. synchronous');
+
+await new Promise((resolve) => setTimeout(resolve, 20));
+console.log({ executionOrder });
+
+// 6. Sinyal Pembatalan (AbortController)
+console.log('\n--- 6. AbortController ---');
+const controller = new AbortController();
+const { signal } = controller;
+const initialAborted = signal.aborted;
+controller.abort('Operation cancelled by user');
+console.log({
+  initialAborted,
+  afterAbort: signal.aborted,
+  reason: signal.reason,
+});

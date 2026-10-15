@@ -375,7 +375,7 @@ Desain ini menangani kemungkinan error `ENODATA` pada setiap tipe kueri secara t
 
 ### Soal 1 (Dasar)
 
-Buat fungsi `resolveLocalIp(hostname)` yang menyelesaikan nama komputer lokal menggunakan `dns.lookup()`. Fungsi harus mengembalikan objek berisi alamat IP (`ip`) dan versi keluarga alamat (`family`). Jika pencarian gagal, tangkap galatnya dan kembalikan nilai `null`.
+Buat fungsi `resolveLocalIp(hostname)` yang menyelesaikan nama komputer lokal menggunakan `dns.lookup()`. Fungsi harus mengembalikan objek berisi alamat IP (`ip`) dan versi keluarga alamat (`family`). Jika pencarian gagal, tangkap error-nya dan kembalikan nilai `null`.
 
 Contoh input:
 

@@ -27,7 +27,7 @@ flowchart TD
     OS["node:os (Informasi Komputer Host)"] --> CPU["Komputasi: os.cpus(), os.availableParallelism()"]
     OS --> MEM["Memori RAM: os.totalmem(), os.freemem()"]
     OS --> NET["Jaringan: os.networkInterfaces()"]
-    OS --> FS["Sistem File: os.tmpdir(), os.homedir()"]
+    OS --> FS["Sistem File & User: os.tmpdir(), os.homedir(), os.userInfo()"]
     OS --> METRIC["Status Host: os.loadavg(), os.uptime(), os.platform()"]
 ```
 
@@ -48,6 +48,7 @@ flowchart TD
 | **`os.tmpdir()`**               | Mengembalikan jalur folder sementara yang sah di sistem operasi      | Mengembalikan `/tmp` di Linux dan folder Temp AppData di Windows       |
 | **`os.homedir()`**              | Mengembalikan jalur folder beranda pengguna yang sedang aktif        | Membaca variabel lingkungan `HOME` atau `USERPROFILE`                  |
 | **`os.uptime()`**               | Mengembalikan berapa lama komputer atau server sudah menyala (detik) | Berbeda dari `process.uptime()` yang hanya menghitung aplikasi Node.js |
+| **`os.userInfo()`**             | Mengembalikan informasi profil pengguna OS yang mengeksekusi proses  | Memuat username, homedir, shell, uid, dan gid sistem operasi           |
 
 ### `os.platform()`
 
@@ -327,6 +328,40 @@ console.log(uptimeHours >= 0);
 // Output: true
 ```
 
+### `os.userInfo()`
+
+Metode `os.userInfo()` mengembalikan data profil pengguna sistem operasi yang sedang mengeksekusi proses Node.js. Informasi ini meliputi `username`, `homedir`, `shell`, `uid` (User ID), dan `gid` (Group ID).
+
+```javascript
+import os from "node:os";
+
+const user = os.userInfo();
+console.log(typeof user.username);
+// Output: string
+console.log(typeof user.homedir);
+// Output: string
+console.log(typeof user.uid);
+// Output: number
+```
+
+Kasus lain: Menangani potensi error saat program berjalan di lingkungan container Linux minimal (seperti Docker distroless tanpa entri `/etc/passwd`).
+
+```javascript
+import os from "node:os";
+
+function getExecutingUser() {
+  try {
+    return os.userInfo().username;
+  } catch {
+    // Fallback jika database user OS tidak tersedia di container
+    return process.env.USER || process.env.USERNAME || "unknown";
+  }
+}
+
+console.log(typeof getExecutingUser());
+// Output: string
+```
+
 ### Perbandingan: Penentuan Jumlah Inti CPU
 
 | Aspek                        | `os.availableParallelism()`                        | `os.cpus().length`                                    |
@@ -511,13 +546,13 @@ Batasan: Wajib memfilter hanya alamat dengan `family === 'IPv4'` dan `internal =
 Buat fungsi penilai kelayakan beban server `evaluateServerLoad(loadThresholdPercentage)` yang memeriksa kesiapan komputer host sebelum menerima tugas komputasi berat dengan aturan berikut:
 
 1. Ambil jumlah kuota CPU yang tersedia menggunakan `os.availableParallelism()`.
-2. Periksa platform menggunakan `os.platform()`. Jika platform adalah `'win32'`, tetapkan status beban CPU sebagai `'UNAVAILABLE'` dan persentase beban sebagai `null`.
+2. Periksa platform menggunakan `os.platform()`. Jika platform adalah `'win32'`, tetapkan status beban CPU (`cpuStatus`) sebagai `'UNAVAILABLE'` dan persentase beban sebagai `null`. Jika selain Windows, tetapkan `cpuStatus` sebagai `'AVAILABLE'`.
 3. Jika platform bukan Windows, ambil metrik `os.loadavg()[0]` (1 menit terakhir), lalu hitung persentase pemakaian CPU terhadap kuota inti dengan rumus: `(load1m / coreQuota) * 100`.
 4. Hitung sisa memori RAM bebas dalam persentase terhadap total kapasitas RAM fisik.
 5. Tentukan status penerimaan tugas:
    - Jika sisa RAM bebas kurang dari 10%, kembalikan `{ acceptTask: false, reason: 'Critical RAM capacity' }`.
    - Pada platform non-Windows, jika utilisasi CPU melebihi `loadThresholdPercentage`, kembalikan `{ acceptTask: false, reason: 'CPU overloaded' }`.
-   - Jika semua batas aman terpenuhi, kembalikan `{ acceptTask: true, cpuUsagePercentage: number, freeRamPercentage: number }`.
+   - Jika semua batas aman terpenuhi, kembalikan `{ acceptTask: true, cpuStatus: string, cpuUsagePercentage: number | null, freeRamPercentage: number }`.
 
 Contoh input 1 (Linux/macOS dengan beban aman):
 
@@ -530,6 +565,7 @@ Contoh output 1:
 ```javascript
 {
   acceptTask: true,
+  cpuStatus: "AVAILABLE",
   cpuUsagePercentage: 25.5,
   freeRamPercentage: 65.2
 }
@@ -547,6 +583,23 @@ Contoh output 2:
 {
   acceptTask: false,
   reason: 'Critical RAM capacity'
+}
+```
+
+Contoh input 3 (Platform Windows dengan RAM aman):
+
+```javascript
+evaluateServerLoad(80);
+```
+
+Contoh output 3:
+
+```javascript
+{
+  acceptTask: true,
+  cpuStatus: "UNAVAILABLE",
+  cpuUsagePercentage: null,
+  freeRamPercentage: 70.4
 }
 ```
 

@@ -1,18 +1,28 @@
 import { isBuiltin, builtinModules } from 'node:module';
 
-console.log(typeof isBuiltin); // function
+// 1. Validasi Modul Bawaan (isBuiltin)
+console.log('--- 1. Validasi Modul Bawaan ---');
+console.log({
+  'node:fs': isBuiltin('node:fs'),
+  fs: isBuiltin('fs'),
+  express: isBuiltin('express'),
+});
 
-try {
-  await import('node:non_existent_core_module');
-} catch (error) {
-  console.log(error.code);
-}
-
-console.log(isBuiltin('node:module')); // true
-console.log(isBuiltin('node:url')); // true
-console.log(isBuiltin('fs')); // true
-console.log(isBuiltin('express')); // false
-
-console.table(builtinModules); // [...]
+// 2. Statistik Modul Bawaan
+console.log('\n--- 2. Statistik Modul Bawaan ---');
 const publicModules = builtinModules.filter((name) => !name.startsWith('_'));
-console.table(publicModules);
+console.log({
+  totalBuiltins: builtinModules.length,
+  publicBuiltins: publicModules.length,
+  sampleModules: publicModules.slice(0, 5),
+});
+
+// 3. Skema Awalan node:
+console.log('\n--- 3. Skema Awalan node: ---');
+try {
+  await import('node:non_existent_module');
+} catch (error) {
+  console.log({
+    catchErrorCode: error.code,
+  });
+}
