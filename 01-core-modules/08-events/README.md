@@ -447,7 +447,7 @@ console.log(auditLogs);
 // Output: [ 'Order ORD-99 with total 150000' ]
 ```
 
-Arsitektur ini memisahkan logika utama validasi transaksi dari aksi tambahan seperti pengiriman email dan pencatatan audit. Melalui pola event ini, kita bisa menambahkan aksi-aksi baru di masa depan secara leluasa tanpa perlu mengubah logika inti di dalam kelas `OrderProcessor`.
+Arsitektur ini memisahkan logika utama validasi transaksi dari aksi tambahan seperti pengiriman email dan pencatatan audit. Melalui pola event ini, kita bisa menambahkan aksi-aksi baru di masa depan secara leluasa tanpa perlu mengubah logika inti di dalam class `OrderProcessor`.
 
 ---
 
@@ -455,27 +455,27 @@ Arsitektur ini memisahkan logika utama validasi transaksi dari aksi tambahan sep
 
 ### Soal 1 (Dasar)
 
-Buat kelas `AlarmSystem` yang mewarisi `EventEmitter`. Kelas ini memiliki metode `trigger(location)` yang memancarkan event `'alarm'` dengan payload berupa objek `{ location, timestamp: '2026-10-12T00:00:00.000Z' }`.
+Buat class `AlarmSystem` yang mewarisi `EventEmitter`. Class ini memiliki metode `trigger(location)` yang memancarkan event `'alarm'` dengan payload berupa objek `{ location, timestamp: '2026-10-12T00:00:00.000Z' }`.
 
 Contoh input:
 
 ```javascript
 const alarm = new AlarmSystem();
-alarm.on("alarm", (info) => console.log(info.location));
+alarm.on("alarm", (info) => console.log(info));
 alarm.trigger("Warehouse B");
 ```
 
 Contoh output yang diharapkan:
 
 ```javascript
-// Warehouse B
+// { location: 'Warehouse B', timestamp: '2026-10-12T00:00:00.000Z' }
 ```
 
-Batasan: Gunakan sintaks pewarisan kelas `extends EventEmitter` dari modul `node:events`.
+Batasan: Gunakan sintaks pewarisan class `extends EventEmitter` dari modul `node:events`.
 
 ### Soal 2 (Menengah)
 
-Buat kelas `DownloadQueue` yang mewarisi `EventEmitter`. Kelas ini memiliki metode `addTask(filename)` dan `execute()`. Saat `execute()` dipanggil, kelas harus memancarkan event `'progress'` untuk setiap berkas yang sedang diproses, serta memancarkan event `'complete'` di akhir dengan menyertakan array berisi daftar seluruh berkas yang berhasil dituntaskan.
+Buat class `DownloadQueue` yang mewarisi `EventEmitter`. Class ini memiliki metode `addTask(filename)` dan `execute()`. Saat `execute()` dipanggil, class harus memancarkan event `'progress'` untuk setiap file yang sedang diproses, serta memancarkan event `'complete'` di akhir dengan menyertakan array berisi daftar seluruh file yang berhasil dituntaskan.
 
 Contoh input:
 
@@ -502,14 +502,14 @@ Batasan: Gunakan `EventEmitter` dan hindari mengubah struktur array data input d
 
 ### Soal 3 (Menantang)
 
-Buat kelas `ReliableTaskEmitter` yang mengelola eksekusi tugas bertahap dengan mekanisme percobaan ulang (_retry_) otomatis saat terjadi kegagalan.
+Buat class `ReliableTaskEmitter` yang mengelola eksekusi tugas bertahap dengan mekanisme percobaan ulang (_retry_) otomatis saat terjadi kegagalan.
 
 Ketentuan metode `runTask(taskName, taskFn, maxRetries = 3)`:
 
-- Memancarkan event `'retry'` setiap kali percobaan dijalankan ulang beserta nomor putarannya.
+- Memancarkan event `'retry'` setiap kali terjadi kegagalan dan tugas dicoba ulang, dengan payload objek `{ taskName, attempt }` (di mana `attempt` adalah nomor urut percobaan ulang yang sedang dilakukan, mulai dari 1).
 - Jika fungsi tugas melempar error, tangkap error tersebut secara internal dan coba kembali sampai mencapai batas `maxRetries`.
 - Jika percobaan berhasil sebelum batas terlewati, pancarkan event `'success'` bersama nilai hasil eksekusi dan segera hentikan perulangan.
-- Jika seluruh kuota percobaan habis dan tugas masih gagal, pancarkan event `'error'` dengan menyertakan pesan error akhir (pastikan listener `'error'` terdaftar agar aplikasi tidak crash).
+- Jika seluruh kuota percobaan habis dan tugas masih gagal, pancarkan event `'error'` dengan menyertakan objek `Error` kegagalan akhir (pastikan listener `'error'` terdaftar agar runtime tidak crash).
 
 Contoh input 1 (kasus sukses setelah retry):
 
@@ -517,7 +517,9 @@ Contoh input 1 (kasus sukses setelah retry):
 const emitter = new ReliableTaskEmitter();
 let count = 0;
 
+emitter.on("retry", (data) => console.log("Retrying:", data));
 emitter.on("success", (result) => console.log("Result:", result));
+
 await emitter.runTask("calculation", async () => {
   count++;
   if (count < 2) throw new Error("Temporary failure");
@@ -525,9 +527,10 @@ await emitter.runTask("calculation", async () => {
 });
 ```
 
-Contoh output 1:
+Contoh output 1 yang diharapkan:
 
 ```javascript
+// Retrying: { taskName: 'calculation', attempt: 1 }
 // Result: 42
 ```
 
@@ -535,6 +538,7 @@ Contoh input 2 (kasus gagal hingga kuota habis):
 
 ```javascript
 const emitter = new ReliableTaskEmitter();
+emitter.on("retry", (data) => console.log("Retrying:", data));
 emitter.on("error", (err) => console.log("Fatal error:", err.message));
 
 await emitter.runTask(
@@ -546,9 +550,11 @@ await emitter.runTask(
 );
 ```
 
-Contoh output 2:
+Contoh output 2 yang diharapkan:
 
 ```javascript
+// Retrying: { taskName: 'network', attempt: 1 }
+// Retrying: { taskName: 'network', attempt: 2 }
 // Fatal error: Server unreachable
 ```
 

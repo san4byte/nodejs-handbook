@@ -266,24 +266,34 @@ const buf = Buffer.alloc(10);
 
 ### Menyamakan `string.length` dengan Ukuran Byte Memori
 
-Properti `length` pada teks string menghitung jumlah karakter visual atau kode UTF-16, bukan jumlah byte fisik yang sebenarnya saat disimpan ke dalam format UTF-8 (misalnya huruf beraksen atau emoji membutuhkan lebih dari 1 byte).
+Properti `length` pada teks string menghitung jumlah karakter visual atau kode UTF-16, bukan jumlah byte fisik yang sebenarnya saat disimpan ke dalam format UTF-8 (misalnya huruf beraksen atau emoji membutuhkan lebih dari 1 byte). Menyamakan keduanya saat mengalokasikan memori atau menyusun paket jaringan dapat menyebabkan teks terpotong (_truncated_).
+
+> **Catatan:** Metode `buf.write(string)` digunakan untuk menuliskan teks string ke dalam alokasi memori buffer yang sudah disiapkan sebelumnya via `Buffer.alloc()`.
 
 ```javascript
-// Salah
+// Salah: Mengalokasikan memori berdasarkan string.length
 import { Buffer } from "node:buffer";
 
-const title = "Café";
-const allocated = Buffer.alloc(title.length);
+const title = "Café"; // Panjang karakter: 4, namun ukuran fisik UTF-8: 5 byte
+const allocated = Buffer.alloc(title.length); // Alokasi hanya 4 byte
 allocated.write(title);
+
+console.log(allocated.toString("utf-8"));
+// Output: Caf
+// Keterangan: Karakter 'é' terpotong karena alokasi memori kurang 1 byte
 ```
 
 ```javascript
-// Benar
+// Benar: Mengalokasikan memori berdasarkan Buffer.byteLength()
 import { Buffer } from "node:buffer";
 
 const title = "Café";
-const allocated = Buffer.alloc(Buffer.byteLength(title, "utf-8"));
+const byteSize = Buffer.byteLength(title, "utf-8"); // Ukuran byte fisik aktual: 5
+const allocated = Buffer.alloc(byteSize); // Alokasi tepat 5 byte
 allocated.write(title);
+
+console.log(allocated.toString("utf-8"));
+// Output: Café
 ```
 
 ### Membiarkan Residu Memori pada `Buffer.allocUnsafe()`
@@ -309,47 +319,57 @@ const buf = Buffer.alloc(64);
 
 ## Studi Kasus
 
-Skenario: Membangun fungsi pengurai header otorisasi HTTP Basic Authentication yang mendekode token Base64, memisahkan username serta password pengguna, dan menangani format yang tidak sesuai secara aman tanpa library luar.
+Skenario: Membangun sistem validasi keamanan unggah berkas (_file upload security guard_) dengan teknik deteksi _Magic Bytes_ (tanda tangan biner). Sistem ini memverifikasi tipe MIME asli berkas dari header byte mentahnya untuk menggagalkan upaya peretasan yang menyamarkan skrip berbahaya lewat pemalsuan ekstensi berkas (misalnya skrip yang diganti nama menjadi `.png`).
 
 ```javascript
 import { Buffer } from "node:buffer";
 
-function parseBasicAuth(header) {
-  if (typeof header !== "string" || !header.startsWith("Basic ")) {
-    return { valid: false, reason: "Invalid header format" };
+const FILE_SIGNATURES = {
+  "89504e47": "image/png",
+  ffd8ffe0: "image/jpeg",
+  ffd8ffe1: "image/jpeg",
+  25504446: "application/pdf",
+};
+
+function inspectFileType(fileBuffer) {
+  if (!Buffer.isBuffer(fileBuffer) || fileBuffer.length < 4) {
+    return { valid: false, mimeType: null, reason: "Invalid or empty buffer" };
   }
 
-  const base64Part = header.slice(6).trim();
-  if (base64Part.length === 0) {
-    return { valid: false, reason: "Empty credentials" };
+  // Mengambil 4 byte pertama (magic bytes) secara efisien tanpa menyalin memori baru
+  const magicBytes = fileBuffer.subarray(0, 4).toString("hex");
+  const detectedMime = FILE_SIGNATURES[magicBytes];
+
+  if (!detectedMime) {
+    return {
+      valid: false,
+      mimeType: null,
+      reason: "Unknown or suspicious file signature",
+    };
   }
 
-  const rawBytes = Buffer.from(base64Part, "base64");
-  const decoded = rawBytes.toString("utf-8");
-
-  const delimiterIndex = decoded.indexOf(":");
-  if (delimiterIndex === -1) {
-    return { valid: false, reason: "Missing colon delimiter" };
-  }
-
-  const username = decoded.slice(0, delimiterIndex);
-  const password = decoded.slice(delimiterIndex + 1);
-
-  return { valid: true, username, password };
+  return { valid: true, mimeType: detectedMime, magicBytes };
 }
 
-const validHeader =
-  "Basic " + Buffer.from("admin:secret123").toString("base64");
-const validResult = parseBasicAuth(validHeader);
-console.log(validResult);
-// Output: { valid: true, username: 'admin', password: 'secret123' }
+// Simulasi 1: Berkas PNG valid (header biner: 89 50 4E 47)
+const validPngBuffer = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+]);
+console.log(inspectFileType(validPngBuffer));
+// Output: { valid: true, mimeType: 'image/png', magicBytes: '89504e47' }
 
-const invalidHeader = parseBasicAuth("Basic ");
-console.log(invalidHeader);
-// Output: { valid: false, reason: 'Empty credentials' }
+// Simulasi 2: Berkas skrip berbahaya yang dipalsukan ekstensinya menjadi foto
+const fakePngBuffer = Buffer.from('<?php echo "exploit"; ?>', "utf-8");
+console.log(inspectFileType(fakePngBuffer));
+// Output:
+// {
+//   valid: false,
+//   mimeType: null,
+//   reason: 'Unknown or suspicious file signature'
+// }
 ```
 
-Pendekatan ini mengandalkan `Buffer.from(..., 'base64')` dan `toString('utf-8')` bawaan Node.js untuk mendekode token secara cepat langsung di tingkat memori tanpa perlu mengunduh modul tambahan dari luar.
+Mengapa pola ini menjadi standar industri backend? Di server produksi, peretas dapat dengan mudah memanipulasi nama berkas dan memalsukan header HTTP `Content-Type` dari sisi client. Memeriksa ekstensi saja membuka celah keamanan fatal (_Remote Code Execution_). Oleh karena itu, industri selalu menginspeksi beberapa byte pertama (_magic bytes signature_) langsung di tingkat biner memori menggunakan `Buffer.subarray()` dan representasi `hex` sebelum berkas diizinkan disimpan ke penyimpanan permanen.
 
 ---
 
@@ -362,13 +382,13 @@ Buat fungsi `convertTextToHex(text)` yang menerima string teks dan mengembalikan
 Contoh input:
 
 ```javascript
-convertTextToHex("Node");
+console.log(convertTextToHex("Node"));
 ```
 
 Contoh output yang diharapkan:
 
 ```javascript
-"4e6f6465";
+// '4e6f6465'
 ```
 
 Batasan: Gunakan `Buffer.from()` dengan format UTF-8 dan ekspor hasilnya ke format `'hex'`.
@@ -380,58 +400,109 @@ Buat fungsi `concatBinaryPackets(stringList)` yang menerima daftar array string 
 Contoh input:
 
 ```javascript
-concatBinaryPackets(["Alpha", "Beta"]);
+console.log(concatBinaryPackets(["Alpha", "Beta"]));
 ```
 
 Contoh output yang diharapkan:
 
 ```javascript
-<Buffer 41 6c 70 68 61 0a 42 65 74 61 0a>
+// <Buffer 41 6c 70 68 61 0a 42 65 74 61 0a>
 ```
 
 Batasan: Gunakan fungsi `Buffer.concat()` dan pastikan nilai kembalian berupa instance `Buffer` murni.
 
 ### Soal 3 (Menantang)
 
-Buat fungsi pengurai bingkai biner jaringan `parseDataFrame(bufferInput)`.
+Buat fungsi pengurai amplop paket data biner `parseBinaryPacket(packet)` yang memvalidasi header biner dan mengekstrak payload sesuai format encoding.
 
 Struktur format bingkai data biner:
 
-- Byte 0 (1 byte): Kode penanda tipe data (`1` = Teks Biasa, `2` = Dokumen JSON).
-- Byte 1 sampai 2 (2 byte): Ukuran panjang data payload dalam format bilangan integer 16-bit big-endian (`readUInt16BE(1)`).
-- Byte 3 sampai `3 + payloadLength`: Konten data payload yang sebenarnya.
+- Byte 0 (1 byte): Magic Byte penanda protokol (wajib bernilai heksadesimal `0xAA` atau angka desimal `170`).
+- Byte 1 (1 byte): Kode format encoding (`1` untuk teks biasa UTF-8, `2` untuk teks Base64).
+- Byte 2 (1 byte): Ukuran panjang data payload dalam satuan byte (`payloadLength`).
+- Byte 3 sampai `3 + payloadLength`: Konten data payload mentah yang diambil menggunakan irisan `packet.subarray(3, 3 + payloadLength)`.
 
-Ketentuan penanganan kasus tepi:
+Aturan Penanganan Kondisi Khusus & Error (_Edge Cases_):
 
-- Jika ukuran panjang buffer kurang dari 3 byte, kembalikan `{ success: false, reason: 'Insufficient header length' }`.
-- Jika panjang buffer keseluruhan kurang dari `3 + payloadLength`, kembalikan `{ success: false, reason: 'Truncated payload data' }`.
-- Jika kode tipe bernilai `1`, dekode isi payload menjadi string UTF-8: `{ success: true, type: 'TEXT', payload: '...' }`.
-- Jika kode tipe bernilai `2`, dekode isi payload dan parse ke objek JSON: `{ success: true, type: 'JSON', payload: { ... } }`. Jika sintaks JSON tidak valid, kembalikan `{ success: false, reason: 'Malformed JSON payload' }`.
-- Jika kode tipe bukan bernilai `1` atau `2`, kembalikan `{ success: false, reason: 'Unknown data type' }`.
+- Jika `packet` bukan instance `Buffer` (periksa dengan `Buffer.isBuffer()`) atau panjang totalnya kurang dari 3 byte (header tidak lengkap), kembalikan:
+  `{ valid: false, reason: 'Invalid packet header' }`
+- Jika byte ke-0 bukan `0xAA`, kembalikan:
+  `{ valid: false, reason: 'Invalid magic byte' }`
+- Jika panjang keseluruhan buffer (`packet.length`) kurang dari `3 + payloadLength` (data terpotong), kembalikan:
+  `{ valid: false, reason: 'Truncated packet data' }`
+- Jika byte ke-1 bernilai `1`: dekode payload menggunakan `toString('utf-8')` dan kembalikan:
+  `{ valid: true, encoding: 'utf-8', data: '...' }`
+- Jika byte ke-1 bernilai `2`: dekode payload menggunakan `toString('base64')` dan kembalikan:
+  `{ valid: true, encoding: 'base64', data: '...' }`
+- Jika byte ke-1 bukan bernilai `1` atau `2`, kembalikan:
+  `{ valid: false, reason: 'Unsupported encoding' }`
 
-Contoh input:
-
-```javascript
-const payload = Buffer.from(JSON.stringify({ status: "active" }), "utf-8");
-const frame = Buffer.alloc(3 + payload.length);
-frame[0] = 2;
-frame.writeUInt16BE(payload.length, 1);
-payload.copy(frame, 3);
-
-parseDataFrame(frame);
-```
-
-Contoh output yang diharapkan:
+Contoh input 1 (Kasus sukses - Teks UTF-8):
 
 ```javascript
-{
-  success: true,
-  type: 'JSON',
-  payload: { status: 'active' }
-}
+const textPayload = Buffer.from("NodeJS", "utf-8");
+const packet1 = Buffer.concat([
+  Buffer.from([0xaa, 1, textPayload.length]),
+  textPayload,
+]);
+
+console.log(parseBinaryPacket(packet1));
 ```
 
-Batasan: Dilarang menggunakan paket eksternal dari NPM. Lakukan seluruh pengecekan ukuran byte dan penanganan error secara mandiri.
+Contoh output 1 yang diharapkan:
+
+```javascript
+// { valid: true, encoding: 'utf-8', data: 'NodeJS' }
+```
+
+Contoh input 2 (Kasus sukses - Teks Base64):
+
+```javascript
+const b64Payload = Buffer.from("secret_token", "utf-8");
+const packet2 = Buffer.concat([
+  Buffer.from([0xaa, 2, b64Payload.length]),
+  b64Payload,
+]);
+
+console.log(parseBinaryPacket(packet2));
+```
+
+Contoh output 2 yang diharapkan:
+
+```javascript
+// { valid: true, encoding: 'base64', data: 'c2VjcmV0X3Rva2Vu' }
+```
+
+Contoh input 3 (Kasus error - Magic Byte tidak cocok):
+
+```javascript
+const invalidMagicPacket = Buffer.from([0xff, 1, 0]);
+
+console.log(parseBinaryPacket(invalidMagicPacket));
+```
+
+Contoh output 3 yang diharapkan:
+
+```javascript
+// { valid: false, reason: 'Invalid magic byte' }
+```
+
+Contoh input 4 (Kasus error - Data payload terpotong):
+
+```javascript
+// Header menyatakan payload 10 byte, namun hanya ada 2 byte fisik di buffer
+const truncatedPacket = Buffer.from([0xaa, 1, 10, 0x48, 0x69]);
+
+console.log(parseBinaryPacket(truncatedPacket));
+```
+
+Contoh output 4 yang diharapkan:
+
+```javascript
+// { valid: false, reason: 'Truncated packet data' }
+```
+
+Batasan: Dilarang menggunakan library eksternal. Gunakan metode resmi yang dipelajari pada bab ini seperti `Buffer.isBuffer()`, `Buffer.from()`, `Buffer.concat()`, `subarray()`, dan `toString()`.
 
 ---
 

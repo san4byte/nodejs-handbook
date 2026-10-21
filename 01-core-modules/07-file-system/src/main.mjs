@@ -1,122 +1,114 @@
-/**
- * 06 - File System Demonstration (Industry Standard)
- *
- * Demonstrasi menyeluruh operasi File System tingkat lanjut:
- * 1. CRUD Berkas Modern via node:fs/promises (readFile, writeFile, appendFile)
- * 2. Pembuatan Direktori Bersarang Rekursif (mkdir recursive)
- * 3. Inspeksi Metadata Berkas (stat / lstat: size, mtime, isFile)
- * 4. Pengecekan Izin & Akses Berkas Aman (access & constants)
- * 5. Pembacaan Isi Direktori Efisien (readdir withFileTypes: Dirent)
- * 6. Penyalinan Berkas & Direktori (copyFile & cp)
- * 7. Pola Standar Industri: Atomic File Write Pattern (rename)
- * 8. Penghapusan Berkas & Pembersihan Direktori (unlink & rm force)
- */
-
 import fs from 'node:fs/promises';
 import { constants } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-// 1. Inisialisasi Path Direktori Lokal
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const dataDir = path.join(__dirname, 'data');
-const sandboxDir = path.join(dataDir, 'sandbox');
+const dataDir = path.join(import.meta.dirname, 'data');
+await fs.mkdir(dataDir, { recursive: true });
 
-console.log('=== 1. Direktori Bersarang Rekursif (fs.mkdir) ===');
-// recursive: true mencegah error jika folder sudah ada, mirip 'mkdir -p'
-await fs.mkdir(sandboxDir, { recursive: true });
-console.log('✓ Direktori sandbox siap:', sandboxDir);
+// 1. Pembuatan Folder & Inspeksi Direktori (fs.mkdir & fs.stat)
+console.log('--- 1. Pembuatan Folder & Inspeksi Direktori ---');
+const subFolder = path.join(dataDir, 'sub-folder');
+await fs.mkdir(subFolder, { recursive: true });
 
-console.log('\n=== 2. Penulisan, Penambahan & Pembacaan Berkas ===');
-const targetFile = path.join(sandboxDir, 'catatan-server.log');
-
-// Menulis berkas baru
-await fs.writeFile(targetFile, '[INIT] Server backend dimulai\n', 'utf-8');
-console.log('✓ Menulis berkas awal berhasil.');
-
-// Menambahkan data tanpa menimpa (appendFile)
-await fs.appendFile(
-  targetFile,
-  '[INFO] Koneksi database pool terhubung\n',
-  'utf-8',
-);
-await fs.appendFile(
-  targetFile,
-  '[INFO] Worker thread siap menerima pekerjaan\n',
-  'utf-8',
-);
-console.log('✓ Berhasil menambahkan 2 baris log baru via appendFile.');
-
-// Membaca isi berkas
-const fileContent = await fs.readFile(targetFile, 'utf-8');
-console.log('Isi berkas saat ini:\n' + fileContent.trim());
-
-console.log('\n=== 3. Inspeksi Metadata Berkas (fs.stat) ===');
-const stats = await fs.stat(targetFile);
-console.table({
-  'Ukuran (Bytes)': stats.size,
-  'Tipe Berkas': stats.isFile() ? 'Regular File' : 'Directory',
-  'Waktu Dibuat': stats.birthtime.toISOString(),
-  'Terakhir Dimodifikasi': stats.mtime.toISOString(),
+const dirStat = await fs.stat(subFolder);
+console.log({
+  directoryPath: subFolder,
+  isDirectory: dirStat.isDirectory(),
 });
 
-console.log('\n=== 4. Pengecekan Izin & Eksistensi Berkas (fs.access) ===');
+// 2. Penulisan, Penambahan & Pembacaan Berkas (fs.writeFile, fs.appendFile, fs.readFile)
+console.log('\n--- 2. Tulis, Tambah & Baca Berkas ---');
+const appConfigFile = path.join(dataDir, 'app-config.json');
+const logFile = path.join(dataDir, 'activity.log');
+
+const payload = { PORT: 3000, ENV: 'production' };
+await fs.writeFile(appConfigFile, JSON.stringify(payload, null, 2), 'utf-8');
+
+await fs.writeFile(logFile, '[INIT] Server backend started\n', 'utf-8');
+await fs.appendFile(logFile, '[INFO] Database pool connected\n', 'utf-8');
+await fs.appendFile(logFile, '[READY] Listening on port 3000\n', 'utf-8');
+
+// Membaca string teks (dengan utf-8) vs data biner mentah (Buffer tanpa encoding)
+const configContent = await fs.readFile(appConfigFile, 'utf-8');
+const rawBuffer = await fs.readFile(appConfigFile);
+const logContent = await fs.readFile(logFile, 'utf-8');
+
+console.log({
+  readConfigJson: JSON.parse(configContent),
+  isRawBuffer: Buffer.isBuffer(rawBuffer),
+  bufferByteLength: rawBuffer.length,
+  logLines: logContent.trim().split('\n'),
+});
+
+// 3. Pembacaan Isi Folder Efisien (fs.readdir withFileTypes)
+console.log('\n--- 3. Pembacaan Isi Folder (readdir) ---');
+const entries = await fs.readdir(dataDir, { withFileTypes: true });
+const entrySummary = Object.fromEntries(
+  entries.map((entry) => [
+    entry.name,
+    entry.isDirectory() ? 'directory' : 'file',
+  ]),
+);
+
+console.log({
+  totalEntries: entries.length,
+  scannedEntries: entrySummary,
+});
+
+// 4. Inspeksi Metadata & Hak Akses (fs.stat & fs.access)
+console.log('\n--- 4. Metadata Berkas & Hak Akses (stat & access) ---');
+const accessFile = path.join(dataDir, 'check-access.txt');
+await fs.writeFile(accessFile, 'Inspection file content', 'utf-8');
+
+const fileStat = await fs.stat(accessFile);
+let isWritable = false;
 try {
-  // Mengecek apakah file ada (F_OK) dan dapat ditulis (W_OK)
-  await fs.access(targetFile, constants.F_OK | constants.W_OK);
-  console.log('✓ Berkas ada dan memiliki izin Tulis (Writable).');
+  await fs.access(accessFile, constants.F_OK | constants.W_OK);
+  isWritable = true;
 } catch {
-  console.warn('⚠️ Berkas tidak dapat diakses atau dibaca.');
+  isWritable = false;
 }
 
-console.log(
-  '\n=== 5. Pembacaan Isi Folder Efisien (fs.readdir withFileTypes) ===',
-);
-// Membuat subfile dummy tambahan
-await fs.writeFile(
-  path.join(sandboxDir, 'config.json'),
-  '{"env":"prod"}\n',
-  'utf-8',
-);
+console.log({
+  fileSizeBytes: fileStat.size,
+  isRegularFile: fileStat.isFile(),
+  isWritable,
+  lastModified: fileStat.mtime.toISOString(),
+});
 
-// withFileTypes mengembalikan objek Dirent sehingga tidak perlu memanggil fs.stat terpisah
-const entries = await fs.readdir(sandboxDir, { withFileTypes: true });
-const scannedList = entries.map((entry) => ({
-  Nama: entry.name,
-  Jenis: entry.isDirectory() ? 'Direktori' : 'Berkas',
-}));
-console.table(scannedList);
+// 5. Penyalinan & Penggantian Nama Berkas (fs.copyFile & fs.rename)
+console.log('\n--- 5. Penyalinan & Penggantian Nama (copyFile & rename) ---');
+const textFile = path.join(dataDir, 'text.txt');
+const copyTarget = path.join(subFolder, 'copy-file.txt');
+await fs.writeFile(textFile, 'Node.js Modern File System', 'utf-8');
+await fs.copyFile(textFile, copyTarget);
 
-console.log('\n=== 6. Pola Industri: Atomic Write Pattern ===');
-// Menulis ke file temporary terlebih dahulu, lalu me-rename secara atomik.
-// Jika listrik padam di tengah jalan, berkas utama tidak akan korup/rusak!
-const liveConfigFile = path.join(sandboxDir, 'app-config.json');
-const tempConfigFile = path.join(sandboxDir, 'app-config.json.tmp');
+const oldFile = path.join(dataDir, 'old-name.txt');
+const newFile = path.join(dataDir, 'new-name.txt');
+await fs.writeFile(oldFile, 'Document before rename', 'utf-8');
+await fs.rename(oldFile, newFile);
 
-await fs.writeFile(
-  tempConfigFile,
-  JSON.stringify({ port: 8080, secure: true }, null, 2),
-  'utf-8',
-);
-await fs.rename(tempConfigFile, liveConfigFile); // Operasi atomik di tingkat filesystem OS
-console.log('✓ Atomic write berhasil: file .tmp di-rename ke app-config.json');
+console.log({
+  copiedContent: await fs.readFile(copyTarget, 'utf-8'),
+  renamedContent: await fs.readFile(newFile, 'utf-8'),
+});
 
-console.log('\n=== 7. Penyalinan Berkas & Direktori (fs.copyFile & cp) ===');
-const backupConfigFile = path.join(sandboxDir, 'app-config.json.bak');
-await fs.copyFile(liveConfigFile, backupConfigFile);
-console.log(
-  '✓ Berkas berhasil dicadangkan ke:',
-  path.basename(backupConfigFile),
-);
+// 6. Pembersihan Berkas & Folder (fs.unlink & fs.rm)
+console.log('\n--- 6. Pembersihan Berkas & Folder (unlink & rm) ---');
 
-console.log('\n=== 8. Pembersihan Aman (fs.unlink & fs.rm) ===');
-// Menghapus satu berkas via unlink
-await fs.unlink(backupConfigFile);
-console.log('✓ Berkas backup dihapus via fs.unlink.');
+// CATATAN PEMBELAJARAN MANDIRI:
+// Berkas di bawah ini sengaja dihapus agar folder 'data/' kembali bersih setelah uji coba.
+// Jika ingin memeriksa dan melihat berkas-berkas fisik yang dihasilkan di disk,
+// silakan KOMENTARI (//) atau hapus baris-baris fs.unlink dan fs.rm di bawah ini.
+await fs.unlink(appConfigFile);
+await fs.unlink(logFile);
+await fs.unlink(accessFile);
+await fs.unlink(textFile);
+await fs.unlink(copyTarget);
+await fs.unlink(newFile);
+await fs.rm(subFolder, { recursive: true, force: true });
 
-// Menghapus seluruh folder sementara secara rekursif (mirip rm -rf)
-await fs.rm(sandboxDir, { recursive: true, force: true });
-console.log(
-  '✓ Direktori sandbox dibersihkan tuntas via fs.rm(recursive, force).',
-);
+console.log({
+  cleanupCompleted: true,
+  note: 'Komentari baris unlink & rm di atas jika ingin memeriksa berkas fisik di disk',
+});
