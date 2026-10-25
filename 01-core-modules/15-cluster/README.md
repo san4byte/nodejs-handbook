@@ -446,13 +446,13 @@ Contoh simulasi:
 const breaker = createCrashLoopBreaker(2, 5000);
 
 breaker.recordWorkerCrash(101);
-// Hasil: { allowFork: true, activeCrashCount: 1 }
+// Output: { allowFork: true, activeCrashCount: 1 }
 
 breaker.recordWorkerCrash(102);
-// Hasil: { allowFork: true, activeCrashCount: 2 }
+// Output: { allowFork: true, activeCrashCount: 2 }
 
 breaker.recordWorkerCrash(103);
-// Hasil: { allowFork: false, activeCrashCount: 3, reason: 'CRASH_LOOP_DETECTED' }
+// Output: { allowFork: false, activeCrashCount: 3, reason: 'CRASH_LOOP_DETECTED' }
 ```
 
 Batasan: Gunakan logika murni berbasis selisih waktu tanpa bantuan library eksternal.

@@ -20,7 +20,7 @@
 
 ## Konsep
 
-Modul `node:util` bisa kita bayangkan seperti pisau lipat serbaguna (_Swiss Army Knife_) milik seorang teknisi mekanik. Tentu saja kita tidak menggunakan pisau lipat ini untuk membangun seluruh gedung pabrik dari nol.
+Modul `node:util` bisa kita bayangkan seperti pisau lipat serbaguna (_Swiss Army Knife_) milik seorang teknisi mekanik. Kita tidak menggunakan pisau lipat ini untuk membangun seluruh gedung pabrik dari nol.
 
 Namun, ketika kita butuh kaca pembesar untuk membaca nomor seri komponen yang rumit dan kecil (_`util.inspect`_), kepala adaptor untuk menyambungkan baut lama ke obeng listrik modern (_`util.promisify`_), atau stempel penanda bahwa suatu onderdil sudah mulai usang (_`util.deprecate`_), perkakas bawaan ini siap sedia membantu kita tanpa perlu mengunduh modul tambahan dari luar.
 

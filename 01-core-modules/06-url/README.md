@@ -3,8 +3,8 @@
 > Ringkasan
 >
 > - Fungsi: Membaca, memvalidasi, merakit, dan memanipulasi alamat web (URL) serta parameter kueri sesuai standar resmi WHATWG URL API.
-> - Digunakan saat: Mengambil parameter pencarian di URL, menyambungkan endpoint API ke URL dasar, mencegah celah pengalihan berbahaya (_open redirect_), dan mengonversi format tautan berkas lokal.
-> - Aturan praktis: Hindari fungsi lama `url.parse()` karena memiliki celah keamanan pemalsuan permintaan (SSRF); selalu gunakan kelas modern `URL` dan `URLSearchParams` yang langsung tersedia secara global.
+> - Digunakan saat: Mengambil parameter pencarian di URL, menyambungkan endpoint API ke URL dasar, mencegah celah pengalihan berbahaya (_open redirect_), dan mengonversi format tautan file lokal.
+> - Aturan praktis: Hindari fungsi lama `url.parse()` karena memiliki celah keamanan pemalsuan permintaan (SSRF); selalu gunakan class modern `URL` dan `URLSearchParams` yang langsung tersedia secara global.
 
 ---
 
@@ -13,14 +13,14 @@
 - Mengenal bagian-bagian penyusun URL standar WHATWG (`origin`, `protocol`, `host`, `pathname`, `search`).
 - Mengatur parameter pencarian URL menggunakan metode praktis pada `URLSearchParams`.
 - Memahami perbedaan saat memakai `.set()` versus `.append()` serta `.get()` versus `.getAll()`.
-- Mengubah format URL berkas (`file://`) menjadi jalur sistem berkas lokal via `fileURLToPath` dan sebaliknya via `pathToFileURL`.
+- Mengubah format URL file (`file://`) menjadi path sistem file lokal via `fileURLToPath` dan sebaliknya via `pathToFileURL`.
 - Menerapkan pengalihan URL yang aman untuk menangkal celah manipulasi pengalihan (_Open Redirect_).
 
 ---
 
 ## Konsep
 
-> Alamat URL bisa diibaratkan seperti alamat lengkap pada label pengiriman paket: `https://api.toko.com:8080/v1/produk?kategori=elektronik#stok`. Protokol (`https:`) adalah jenis armada kurir resmi yang digunakan. Nama host (`api.toko.com`) dan port (`:8080`) adalah alamat gedung pergudangan beserta nomor pintu masuknya. Jalur rute (`/v1/produk`) adalah lorong spesifik tempat barang diletakkan. Parameter kueri (`?kategori=elektronik`) adalah lembar catatan instruksi barang yang diminta. Tanda pagar (`#stok`) adalah pembatas catatan kecil bagi pembaca dokumen.
+> Alamat URL bisa diibaratkan seperti alamat lengkap pada label pengiriman paket: `https://api.toko.com:8080/v1/produk?kategori=elektronik#stok`. Protokol (`https:`) adalah jenis armada kurir resmi yang digunakan. Nama host (`api.toko.com`) dan port (`:8080`) adalah alamat gedung pergudangan beserta nomor pintu masuknya. Path rute (`/v1/produk`) adalah lorong spesifik tempat barang diletakkan. Parameter kueri (`?kategori=elektronik`) adalah lembar catatan instruksi barang yang diminta. Tanda pagar (`#stok`) adalah pembatas catatan kecil bagi pembaca dokumen.
 
 ```mermaid
 flowchart LR
@@ -38,9 +38,9 @@ flowchart LR
 
 | Item                                   | Fungsi                                                         | Catatan                                                                     |
 | :------------------------------------- | :------------------------------------------------------------- | :-------------------------------------------------------------------------- |
-| **`new URL(input, [base])`**           | Membedah string alamat web menjadi objek URL standar WHATWG    | Melempar `TypeError` jika format URL salah atau titik basis tidak ada       |
+| **`new URL(input, base)`**             | Membedah string alamat web menjadi objek URL standar WHATWG    | Melempar `TypeError` jika format URL salah atau titik basis tidak ada       |
 | **`url.origin`**                       | Mengambil gabungan protokol, domain, dan nomor port            | Bersifat hanya-baca, sangat penting untuk memeriksa asal domain aman        |
-| **`url.pathname`**                     | Mengambil jalur rute berkas yang selalu diawali garis miring   | Otomatis bernilai `'/'` jika tidak ada rute yang dituliskan                 |
+| **`url.pathname`**                     | Mengambil path rute file yang selalu diawali garis miring      | Otomatis bernilai `'/'` jika tidak ada rute yang dituliskan                 |
 | **`url.searchParams`**                 | Mengakses perkakas manipulasi parameter kueri secara dinamis   | Terhubung otomatis secara langsung dengan nilai `url.search` dan `url.href` |
 | **`searchParams.get(name)`**           | Mengambil nilai pertama yang cocok dari nama parameter kueri   | Mengembalikan string nilai atau `null` jika parameter tidak ada             |
 | **`searchParams.getAll(name)`**        | Mengambil seluruh nilai dari parameter yang namanya sama       | Mengembalikan array string untuk menangani filter multi-pilihan             |
@@ -49,9 +49,15 @@ flowchart LR
 | **`fileURLToPath(url)`**               | Mengubah format URL `file://` menjadi alamat folder lokal      | Menyesuaikan tanda pemisah sistem operasi secara otomatis                   |
 | **`pathToFileURL(path)`**              | Mengubah alamat folder lokal absolut menjadi format `file://`  | Mengubah karakter spasi dan simbol khusus ke persen-encoding                |
 
-### `new URL(input, [base])`
+### `new URL(input, base)`
 
 Konstruktor `new URL()` membedah string alamat web menjadi objek URL standar. Jika kamu memasukkan URL relatif, kamu wajib memberikan argumen kedua `base` sebagai patokan awal alamat.
+
+Struktur parameter: `new URL(input, base)`
+
+- `input`: String alamat URL absolut atau relatif yang ingin dibedah (wajib, tipe data: `string | URL`).
+- `base`: Alamat URL dasar sebagai patokan jika `input` berupa path relatif (opsional, tipe data: `string | URL`).
+- Nilai kembalian: Mengembalikan objek instans `URL` standar WHATWG (tipe data: `URL`).
 
 ```javascript
 const targetUrl = new URL("/v1/users", "https://api.example.com");
@@ -74,6 +80,11 @@ try {
 
 Properti `url.origin` mengembalikan gabungan dari protokol, nama domain, dan port. Properti ini bersifat baca-saja dan sering digunakan untuk mengecek apakah domain pengirim permintaan aman sebelum diproses.
 
+Struktur properti: `url.origin`
+
+- Tipe data: `string`.
+- Peran: Mengembalikan gabungan protokol, domain (hostname), dan nomor port asal URL, atau string `'null'` untuk skema `file:`.
+
 ```javascript
 const targetUrl = new URL("https://example.com:8080/catalog?page=1");
 console.log(targetUrl.origin);
@@ -90,7 +101,12 @@ console.log(fileUrl.origin);
 
 ### `url.pathname`
 
-Properti `url.pathname` menyimpan jalur folder atau rute endpoint pada URL. Properti ini dijamin selalu diawali garis miring `/`, meskipun kamu tidak menuliskan slash di akhir domain.
+Properti `url.pathname` menyimpan path folder atau rute endpoint pada URL. Properti ini dijamin selalu diawali garis miring `/`, meskipun kamu tidak menuliskan slash di akhir domain.
+
+Struktur properti: `url.pathname`
+
+- Tipe data: `string`.
+- Peran: Mengembalikan path rute URL yang selalu diawali karakter garis miring `/`.
 
 ```javascript
 const domainUrl = new URL("https://example.com");
@@ -111,6 +127,11 @@ console.log(targetUrl.href);
 
 Properti `url.searchParams` mengembalikan objek pembantu `URLSearchParams` yang terhubung langsung dengan parameter kueri pada URL induknya.
 
+Struktur properti: `url.searchParams`
+
+- Tipe data: `URLSearchParams`.
+- Peran: Mengembalikan objek instans pembantu manipulasi parameter kueri yang terikat langsung dua arah dengan `url.search` dan `url.href`.
+
 ```javascript
 const targetUrl = new URL("https://api.example.com?sort=latest");
 console.log(targetUrl.searchParams.get("sort"));
@@ -129,6 +150,11 @@ console.log(targetUrl.search === "");
 ### `searchParams.get(name)`
 
 Metode `searchParams.get()` membaca nilai pertama yang cocok untuk parameter tertentu. Jika parameternya tidak ada di URL, metode ini mengembalikan `null`.
+
+Struktur parameter: `searchParams.get(name)`
+
+- `name`: Nama kunci parameter kueri yang dicari (wajib, tipe data: `string`).
+- Nilai kembalian: Mengembalikan nilai string dari parameter pertama yang cocok, atau `null` jika parameter tidak ditemukan (tipe data: `string | null`).
 
 ```javascript
 const searchParams = new URLSearchParams("category=books&page=2");
@@ -150,6 +176,11 @@ console.log(searchParams.get("active") === "");
 
 Metode `searchParams.getAll()` mengumpulkan seluruh nilai yang memiliki nama parameter sama ke dalam bentuk array string.
 
+Struktur parameter: `searchParams.getAll(name)`
+
+- `name`: Nama kunci parameter kueri yang dicari (wajib, tipe data: `string`).
+- Nilai kembalian: Mengembalikan array string berisi seluruh nilai yang menggunakan kunci nama tersebut (tipe data: `string[]`).
+
 ```javascript
 const searchParams = new URLSearchParams("color=red&color=blue&color=green");
 const colors = searchParams.getAll("color");
@@ -169,6 +200,12 @@ console.log(searchParams.getAll("size"));
 ### `searchParams.set(name, value)`
 
 Metode `searchParams.set()` menetapkan nilai baru untuk suatu parameter. Jika parameter tersebut sebelumnya punya nilai ganda, metode ini akan membersihkan duplikatnya dan menyisakan satu nilai baru.
+
+Struktur parameter: `searchParams.set(name, value)`
+
+- `name`: Nama kunci parameter kueri (wajib, tipe data: `string`).
+- `value`: Nilai string baru yang ingin ditetapkan (wajib, tipe data: `string`).
+- Nilai kembalian: Mengembalikan nilai `undefined`. Menimpa nilai yang ada dan menghapus seluruh duplikatnya.
 
 ```javascript
 const searchParams = new URLSearchParams("tag=js&tag=node");
@@ -191,6 +228,12 @@ console.log(searchParams.toString());
 
 Metode `searchParams.append()` menambahkan nilai baru ke parameter kueri tanpa menghapus nilai-nilai lama yang sudah ada.
 
+Struktur parameter: `searchParams.append(name, value)`
+
+- `name`: Nama kunci parameter kueri (wajib, tipe data: `string`).
+- `value`: Nilai string baru yang ingin ditambahkan (wajib, tipe data: `string`).
+- Nilai kembalian: Mengembalikan nilai `undefined`. Nilai baru ditambahkan ke akhir daftar tanpa menghapus nilai sebelumnya.
+
 ```javascript
 const searchParams = new URLSearchParams("category=food");
 searchParams.append("category", "beverages");
@@ -212,6 +255,11 @@ console.log(searchParams.getAll("number").join("-"));
 ### `fileURLToPath(url)`
 
 Fungsi `fileURLToPath()` dari `node:url` mengubah tautan berformat `file://` menjadi alamat folder lokal yang sesuai dengan sistem operasi komputer kamu.
+
+Struktur parameter: `fileURLToPath(url)`
+
+- `url`: String atau objek URL berprotokol `file://` (wajib, tipe data: `string | URL`).
+- Nilai kembalian: Mengembalikan string path sistem file lokal sesuai standar sistem operasi host (tipe data: `string`).
 
 ```javascript
 import { fileURLToPath } from "node:url";
@@ -237,6 +285,11 @@ try {
 ### `pathToFileURL(path)`
 
 Fungsi `pathToFileURL()` dari `node:url` mengubah alamat folder lokal absolut menjadi objek URL berformat `file://`.
+
+Struktur parameter: `pathToFileURL(path)`
+
+- `path`: String path absolut file atau folder di sistem operasi lokal (wajib, tipe data: `string`).
+- Nilai kembalian: Mengembalikan objek `URL` standar WHATWG berprotokol `file://` (tipe data: `URL`).
 
 ```javascript
 import { pathToFileURL } from "node:url";
@@ -270,7 +323,7 @@ console.log(spacedUrl.href.includes("financial%20report.pdf"));
 
 ### Menggunakan URL Relatif pada `new URL()` Tanpa Alamat Basis
 
-Membuat objek `new URL()` memakai jalur relatif tanpa menyertakan argumen basis kedua akan langsung memicu error runtime `ERR_INVALID_URL`.
+Membuat objek `new URL()` memakai path relatif tanpa menyertakan argumen basis kedua akan langsung memicu error runtime `ERR_INVALID_URL`.
 
 ```javascript
 // Salah
@@ -282,7 +335,7 @@ const targetUrl = new URL("/api/users");
 const targetUrl = new URL("/api/users", "https://api.example.com");
 ```
 
-### Terjebak Pemotongan Jalur Akibat Garis Miring Pembuka (_Slash Truncation_)
+### Terjebak Pemotongan Path Akibat Garis Miring Pembuka (_Slash Truncation_)
 
 Jika endpoint diawali tanda slash `/`, Node.js akan menganggapnya sebagai rute dari domain root dan membuang segmen sub-folder yang ada di base URL.
 
@@ -321,7 +374,7 @@ const parsed = new URL("https://example.com/path");
 
 ## Studi Kasus
 
-Skenario: Membangun pembuat permintaan API aman (_secure API client builder_) yang menyambungkan endpoint ke URL basis tanpa memotong jalur folder, mendukung parameter tunggal maupun array, mengurutkan parameter secara rapi, serta mencegah bahaya celah pengalihan luar (_Open Redirect_).
+Skenario: Membangun pembuat permintaan API aman (_secure API client builder_) yang menyambungkan endpoint ke URL basis tanpa memotong path folder, mendukung parameter tunggal maupun array, mengurutkan parameter secara rapi, serta mencegah bahaya celah pengalihan luar (_Open Redirect_).
 
 ```javascript
 class ApiRequestBuilder {
@@ -392,7 +445,7 @@ console.log(phishingCheck.redirectPath);
 // Output: /dashboard
 ```
 
-Desain ini memanfaatkan kelas bawaan `URL` dan `URLSearchParams` dengan penanganan tanda garis miring defensif serta verifikasi pencocokan properti `origin` untuk memastikan keamanan rute aplikasi.
+Desain ini memanfaatkan class bawaan `URL` dan `URLSearchParams` dengan penanganan tanda garis miring defensif serta verifikasi pencocokan properti `origin` untuk memastikan keamanan rute aplikasi.
 
 ---
 
@@ -434,7 +487,7 @@ Contoh output 2:
 }
 ```
 
-Batasan: Gunakan kelas `new URL()` bawaan. Nilai `port` pada objek output wajib bertipe data angka (`number`).
+Batasan: Gunakan class `new URL()` bawaan. Nilai `port` pada objek output wajib bertipe data angka (`number`).
 
 ### Soal 2 (Menengah)
 
@@ -464,7 +517,7 @@ Batasan: Wajib memanfaatkan properti `url.searchParams`, metode `.getAll()`, dan
 
 Buat fungsi pembangun dan pemvalidasi URL webhook `buildWebhookUrl(baseUrl, route, queryParams, allowedDomains)` dengan aturan keamanan berikut:
 
-1. Gabungkan `baseUrl` dan `route` secara aman tanpa memicu masalah pemotongan jalur (_slash truncation_), lalu hasilkan instance `URL`.
+1. Gabungkan `baseUrl` dan `route` secara aman tanpa memicu masalah pemotongan path (_slash truncation_), lalu hasilkan instance `URL`.
 2. Validasi apakah `resultUrl.hostname` terdaftar di dalam array `allowedDomains`. Jika domain tidak terdaftar atau protokol bukan `'https:'`, kembalikan `{ success: false, reason: 'Domain or protocol not allowed' }`.
 3. Tambahkan seluruh `queryParams` ke dalam `searchParams`. Jika nilainya berupa array, gunakan `.append()`. Jika berupa nilai tunggal, gunakan `.set()`. Abaikan nilai yang bernilai `null` atau `undefined`.
 4. Urutkan seluruh parameter secara alfabetis menggunakan `searchParams.sort()`.

@@ -2,8 +2,8 @@
 
 > Ringkasan
 >
-> - Fungsi: Membaca aliran data teks baris demi baris dari Readable Stream, seperti terminal interaktif atau berkas log.
-> - Digunakan saat: Mengajukan pertanyaan interaktif di terminal, membuat antarmuka Command Line Interface (CLI), atau memproses berkas log raksasa secara berurutan.
+> - Fungsi: Membaca stream data teks baris demi baris dari Readable Stream, seperti terminal interaktif atau file log.
+> - Digunakan saat: Mengajukan pertanyaan interaktif di terminal, membuat antarmuka Command Line Interface (CLI), atau memproses file log raksasa secara berurutan.
 > - Aturan praktis: Selalu gunakan blok `try...finally` untuk memastikan `rl.close()` dipanggil setelah interaksi selesai agar proses Node.js tidak menggantung akibat stream yang tetap terbuka di Event Loop.
 
 ---
@@ -12,7 +12,7 @@
 
 - Mengonfigurasi antarmuka readline menggunakan API modern `node:readline/promises`.
 - Mengajukan pertanyaan interaktif secara berurutan menggunakan metode `question()`.
-- Membaca aliran teks baris demi baris menggunakan perulangan `for await...of`.
+- Membaca stream teks baris demi baris menggunakan perulangan `for await...of`.
 - Mengelola status antarmuka terminal interaktif melalui `setPrompt()`, `pause()`, dan `resume()`.
 - Mencegah proses aplikasi menggantung dengan menutup antarmuka secara tertib dan disiplin.
 
@@ -38,13 +38,13 @@ flowchart LR
 | Item                            | Fungsi                                                                 | Catatan                                                                     |
 | :------------------------------ | :--------------------------------------------------------------------- | :-------------------------------------------------------------------------- |
 | **`createInterface()`**         | Membuat jembatan penghubung antara Readable Stream dan Writable Stream | Menerima konfigurasi stream input, output, dan opsi pemisah baris baru      |
-| **`question()`**                | Menampilkan pertanyaan teks dan menunggu jawaban berbasis Promise      | Memerlukan impor dari sub-jalur `node:readline/promises`                    |
+| **`question()`**                | Menampilkan pertanyaan teks dan menunggu jawaban berbasis Promise      | Memerlukan impor dari subpath `node:readline/promises`                      |
 | **`close()`**                   | Menutup antarmuka pembacaan dan melepaskan listener pada stream input  | Wajib dipanggil agar proses Event Loop bisa keluar secara normal            |
-| **`for await...of (Readline)`** | Membaca baris demi baris dari stream secara asinkron                   | Sangat hemat memori karena tidak memuat seluruh isi berkas ke RAM           |
+| **`for await...of (Readline)`** | Membaca baris demi baris dari stream secara asinkron                   | Sangat hemat memori karena tidak memuat seluruh isi file ke RAM             |
 | **`setPrompt()`**               | Mengatur teks atau simbol prompt untuk sesi terminal interaktif        | Nilai bawaan prompt adalah `> ` jika tidak diubah                           |
 | **`prompt()`**                  | Menulis teks prompt yang telah ditentukan ke stream output             | Menyiapkan kursor input bagi pengguna di terminal                           |
 | **`pause()`**                   | Menghentikan sementara pembacaan data dari stream input                | Menahan penumpukan baris baru saat sistem memproses tugas berat             |
-| **`resume()`**                  | Melanjutkan kembali aliran pembacaan stream input yang ditunda         | Mengaktifkan kembali penerimaan baris data baru                             |
+| **`resume()`**                  | Melanjutkan kembali stream pembacaan input yang ditunda                | Mengaktifkan kembali penerimaan baris data baru                             |
 | **`cursorTo()`**                | Menggeser posisi kursor terminal ke koordinat kolom dan baris tertentu | Membutuhkan stream TTY aktif atau stream output berkemampuan kontrol escape |
 
 ### `createInterface()`
@@ -69,7 +69,7 @@ console.log(typeof rl.question);
 rl.close();
 ```
 
-Kasus lain: Mengaktifkan opsi `crlfDelay: Infinity` saat membaca berkas agar format baris ganda `\r\n` (CRLF) pada Windows diperlakukan sebagai satu baris baru biasa.
+Kasus lain: Mengaktifkan opsi `crlfDelay: Infinity` saat membaca file agar format baris ganda `\r\n` (CRLF) pada Windows diperlakukan sebagai satu baris baru biasa.
 
 ```javascript
 import { createInterface } from "node:readline";
@@ -174,7 +174,7 @@ try {
 
 ### `for await...of (Readline)`
 
-Pola perulangan `for await...of` memungkinkan kita membaca isi stream teks baris demi baris secara asinkron tanpa menumpuk seluruh teks di memori RAM. Cara ini sangat ideal untuk memproses berkas log raksasa berukuran puluhan gigabyte.
+Pola perulangan `for await...of` memungkinkan kita membaca isi stream teks baris demi baris secara asinkron tanpa menumpuk seluruh teks di memori RAM. Cara ini sangat ideal untuk memproses file log raksasa berukuran puluhan gigabyte.
 
 ```javascript
 import { createInterface } from "node:readline";
@@ -629,16 +629,16 @@ Batasan: Gunakan `node:readline/promises` dan pastikan tidak ada kebocoran promi
 
 ### Soal 3 (Menantang)
 
-Buat utilitas pengolah berkas log aliran kontinu (_streaming access log aggregator_) bernama `aggregateAccessLogs(logStream)`. Fungsi ini menerima Readable Stream yang mengalirkan data log web baris demi baris dengan format teks terpisah spasi: `[TIMESTAMP] [IP] [METHOD] [STATUS] [LATENCY_MS]`.
+Buat utilitas pengolah file log stream kontinu (_streaming access log aggregator_) bernama `aggregateAccessLogs(logStream)`. Fungsi ini menerima Readable Stream yang mengalirkan data log web baris demi baris dengan format teks terpisah spasi: `[TIMESTAMP] [IP] [METHOD] [STATUS] [LATENCY_MS]`.
 
 Ketentuan fungsional:
 
-- Gunakan `createInterface` untuk memproses aliran data baris demi baris tanpa menampung seluruh teks ke dalam variabel array besar.
+- Gunakan `createInterface` untuk memproses stream data baris demi baris tanpa menampung seluruh teks ke dalam variabel array besar.
 - Hitung total baris log yang valid (`totalRequests`).
 - Kelompokkan kode status ke dalam tiga kategori: `success` (status 200–299), `clientError` (status 400–499), dan `serverError` (status 500–599).
 - Hitung nilai rata-rata latensi dalam satuan milidetik dari entri yang valid (`averageLatencyMs`).
 - Lewati baris data yang rusak (jumlah kata kurang dari 5 atau nilai status/latensi bukan angka valid) dan catat jumlahnya ke dalam properti `invalidLines`.
-- Seluruh proses pembacaan harus aman dan tahan terhadap aliran data input raksasa.
+- Seluruh proses pembacaan harus aman dan tahan terhadap stream data input raksasa.
 
 Contoh input:
 
@@ -671,7 +671,7 @@ Contoh output yang diharapkan:
 }
 ```
 
-Batasan: Wajib menggunakan `node:readline` untuk memproses data stream secara bertahap tanpa memuat seluruh berkas ke memori RAM sekaligus. Dilarang menggunakan paket pihak ketiga.
+Batasan: Wajib menggunakan `node:readline` untuk memproses data stream secara bertahap tanpa memuat seluruh file ke memori RAM sekaligus. Dilarang menggunakan paket pihak ketiga.
 
 ---
 

@@ -45,14 +45,19 @@ flowchart TD
 | **`os.freemem()`**              | Mengembalikan sisa kapasitas memori RAM fisik yang sedang menganggur | Nilainya berubah dinamis sesuai pemakaian sistem operasi host          |
 | **`os.loadavg()`**              | Mengembalikan rata-rata beban antrean proses CPU Linux/macOS         | Berisi rata-rata beban 1, 5, dan 15 menit; selalu `[0,0,0]` di Windows |
 | **`os.networkInterfaces()`**    | Mengembalikan daftar kartu jaringan aktif beserta detail alamat IP   | Memuat properti `family`, `address`, `netmask`, dan status internal    |
-| **`os.tmpdir()`**               | Mengembalikan jalur folder sementara yang sah di sistem operasi      | Mengembalikan `/tmp` di Linux dan folder Temp AppData di Windows       |
-| **`os.homedir()`**              | Mengembalikan jalur folder beranda pengguna yang sedang aktif        | Membaca variabel lingkungan `HOME` atau `USERPROFILE`                  |
+| **`os.tmpdir()`**               | Mengembalikan path folder sementara yang sah di sistem operasi       | Mengembalikan `/tmp` di Linux dan folder Temp AppData di Windows       |
+| **`os.homedir()`**              | Mengembalikan path folder beranda pengguna yang sedang aktif         | Membaca variabel lingkungan `HOME` atau `USERPROFILE`                  |
 | **`os.uptime()`**               | Mengembalikan berapa lama komputer atau server sudah menyala (detik) | Berbeda dari `process.uptime()` yang hanya menghitung aplikasi Node.js |
 | **`os.userInfo()`**             | Mengembalikan informasi profil pengguna OS yang mengeksekusi proses  | Memuat username, homedir, shell, uid, dan gid sistem operasi           |
 
 ### `os.platform()`
 
 Metode `os.platform()` mengembalikan nama sistem operasi tempat Node.js sedang berjalan. Metode ini sangat berguna untuk membedakan perlakuan kode antar-sistem operasi.
+
+Struktur parameter: `os.platform()`
+
+- Tidak memerlukan parameter apa pun.
+- Nilai kembalian: Mengembalikan string nama sistem operasi yang dikompilasi untuk biner Node.js (seperti `'linux'`, `'darwin'`, atau `'win32'`) (tipe data: `string`).
 
 ```javascript
 import os from "node:os";
@@ -78,6 +83,11 @@ console.log(typeof isWindows);
 
 Metode `os.arch()` mengembalikan arsitektur prosesor CPU tempat Node.js berjalan. Fitur ini umum dipakai saat aplikasi perlu mengunduh biner native C++ yang cocok dengan mesin server.
 
+Struktur parameter: `os.arch()`
+
+- Tidak memerlukan parameter apa pun.
+- Nilai kembalian: Mengembalikan string arsitektur CPU tempat proses Node.js berjalan (seperti `'x64'`, `'arm64'`, atau `'ia32'`) (tipe data: `string`).
+
 ```javascript
 import os from "node:os";
 
@@ -102,6 +112,11 @@ console.log(is64Bit);
 
 Metode `os.availableParallelism()` menghitung berapa banyak inti prosesor CPU yang benar-benar boleh dipakai oleh aplikasi kamu. Metode ini otomatis sadar batasan alokasi CPU di lingkungan container Docker dan Kubernetes.
 
+Struktur parameter: `os.availableParallelism()`
+
+- Tidak memerlukan parameter apa pun.
+- Nilai kembalian: Mengembalikan angka integer jumlah thread logis CPU yang tersedia dan aman digunakan proses (tipe data: `number`).
+
 ```javascript
 import os from "node:os";
 
@@ -125,6 +140,11 @@ console.log(Number.isInteger(optimalWorkers));
 ### `os.cpus()`
 
 Metode `os.cpus()` mengembalikan array objek yang memuat rincian setiap inti prosesor, mulai dari nama model, kecepatan (MHz), hingga catatan waktu penggunaan CPU.
+
+Struktur parameter: `os.cpus()`
+
+- Tidak memerlukan parameter apa pun.
+- Nilai kembalian: Mengembalikan array objek berisi rincian spesifikasi dan catatan pemakaian waktu setiap inti CPU (tipe data: `object[]`).
 
 ```javascript
 import os from "node:os";
@@ -154,6 +174,11 @@ console.log(averageSpeed >= 0);
 
 Metode `os.totalmem()` mengembalikan jumlah total kapasitas memori RAM fisik yang terpasang di komputer dalam satuan byte.
 
+Struktur parameter: `os.totalmem()`
+
+- Tidak memerlukan parameter apa pun.
+- Nilai kembalian: Mengembalikan total kapasitas memori RAM fisik sistem dalam satuan byte (tipe data: `number`).
+
 ```javascript
 import os from "node:os";
 
@@ -177,6 +202,11 @@ console.log(Number.isSafeInteger(os.totalmem()));
 ### `os.freemem()`
 
 Metode `os.freemem()` mengembalikan sisa kapasitas memori RAM fisik komputer yang saat ini sedang tidak terpakai dalam ukuran byte.
+
+Struktur parameter: `os.freemem()`
+
+- Tidak memerlukan parameter apa pun.
+- Nilai kembalian: Mengembalikan sisa kapasitas memori RAM fisik sistem yang sedang menganggur dalam satuan byte (tipe data: `number`).
 
 ```javascript
 import os from "node:os";
@@ -202,6 +232,11 @@ console.log(freeRamGb >= 0);
 
 Metode `os.loadavg()` mengembalikan array berisi tiga angka yang menggambarkan rata-rata kepadatan antrean proses CPU selama 1, 5, dan 15 menit terakhir pada sistem POSIX (Linux dan macOS).
 
+Struktur parameter: `os.loadavg()`
+
+- Tidak memerlukan parameter apa pun.
+- Nilai kembalian: Mengembalikan array berisi 3 angka beban antrean proses CPU rata-rata untuk interval 1, 5, dan 15 menit pada POSIX, atau `[0, 0, 0]` pada Windows (tipe data: `number[]`).
+
 ```javascript
 import os from "node:os";
 
@@ -225,6 +260,11 @@ console.log(typeof load1m);
 ### `os.networkInterfaces()`
 
 Metode `os.networkInterfaces()` mengembalikan peta daftar kartu jaringan yang menghubungkan komputer kamu ke jaringan lokal maupun internet.
+
+Struktur parameter: `os.networkInterfaces()`
+
+- Tidak memerlukan parameter apa pun.
+- Nilai kembalian: Mengembalikan objek dictionary yang memetakan nama kartu jaringan ke array objek alamat antarmukanya (tipe data: `Record<string, NetworkInterfaceInfo[]>`).
 
 ```javascript
 import os from "node:os";
@@ -258,7 +298,12 @@ console.log(ipFound);
 
 ### `os.tmpdir()`
 
-Metode `os.tmpdir()` mengembalikan jalur folder penyimpanan sementara resmi dari sistem operasi tempat aplikasi bisa menyimpan file sementara dengan aman.
+Metode `os.tmpdir()` mengembalikan path folder penyimpanan sementara resmi dari sistem operasi tempat aplikasi bisa menyimpan file sementara dengan aman.
+
+Struktur parameter: `os.tmpdir()`
+
+- Tidak memerlukan parameter apa pun.
+- Nilai kembalian: Mengembalikan string path direktori penyimpanan sementara resmi dari sistem operasi host (tipe data: `string`).
 
 ```javascript
 import os from "node:os";
@@ -270,7 +315,7 @@ console.log(tempDirectory.length > 0);
 // Output: true
 ```
 
-Kasus lain: Memastikan jalur folder sementara bersih dari tanda garis miring ganda di ujung teks.
+Kasus lain: Memastikan path folder sementara bersih dari tanda garis miring ganda di ujung teks.
 
 ```javascript
 import os from "node:os";
@@ -282,7 +327,12 @@ console.log(cleanPath.length > 0);
 
 ### `os.homedir()`
 
-Metode `os.homedir()` mengembalikan jalur folder beranda pengguna aktif tempat file dan setelan pribadi biasanya disimpan.
+Metode `os.homedir()` mengembalikan path folder beranda pengguna aktif tempat file dan setelan pribadi biasanya disimpan.
+
+Struktur parameter: `os.homedir()`
+
+- Tidak memerlukan parameter apa pun.
+- Nilai kembalian: Mengembalikan string path direktori beranda pengguna yang sedang aktif mengeksekusi proses (tipe data: `string`).
 
 ```javascript
 import os from "node:os";
@@ -308,6 +358,11 @@ console.log(hasHome);
 
 Metode `os.uptime()` mengembalikan angka yang menunjukkan berapa lama komputer atau server sudah menyala sejak tombol power ditekan (dalam satuan detik).
 
+Struktur parameter: `os.uptime()`
+
+- Tidak memerlukan parameter apa pun.
+- Nilai kembalian: Mengembalikan angka jumlah detik komputer atau sistem operasi telah aktif menyala (tipe data: `number`).
+
 ```javascript
 import os from "node:os";
 
@@ -331,6 +386,11 @@ console.log(uptimeHours >= 0);
 ### `os.userInfo()`
 
 Metode `os.userInfo()` mengembalikan data profil pengguna sistem operasi yang sedang mengeksekusi proses Node.js. Informasi ini meliputi `username`, `homedir`, `shell`, `uid` (User ID), dan `gid` (Group ID).
+
+Struktur parameter: `os.userInfo(options)`
+
+- `options`: Objek konfigurasi encoding karakter teks (opsional, tipe data: `object`), contoh: `{ encoding: 'utf-8' }`.
+- Nilai kembalian: Mengembalikan objek profil pengguna sistem operasi dengan properti `{ username, uid, gid, shell, homedir }` (tipe data: `object`).
 
 ```javascript
 import os from "node:os";
@@ -411,7 +471,7 @@ import process from "node:process";
 const appHeap = process.memoryUsage().heapUsed;
 ```
 
-### Menulis Hardcode Jalur `/tmp` untuk Berkas Sementara
+### Menulis Hardcode Path `/tmp` untuk File Sementara
 
 Menulis teks `/tmp` secara manual akan menyebabkan aplikasi gagal saat dijalankan di server Windows.
 

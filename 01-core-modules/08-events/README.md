@@ -2,7 +2,7 @@
 
 > Ringkasan
 >
-> - Fungsi: Mengembangkan arsitektur berbasis peristiwa (_event-driven architecture_) menggunakan objek pemancar sinyal dan penerima yang saling terpisah.
+> - Fungsi: Mengembangkan arsitektur berbasis event (_event-driven architecture_) menggunakan objek pemancar sinyal dan penerima yang saling terpisah.
 > - Digunakan saat: Mengomunikasikan status antar-modul tanpa ikatan erat (_loose coupling_), mengelola sistem notifikasi, memantau alur proses asinkron, dan menerapkan pola _observer_.
 > - Aturan praktis: Selalu sediakan listener untuk event `'error'` agar aplikasi tidak mendadak mati (_crash_), serta lepas listener yang sudah selesai digunakan agar terhindar dari kebocoran memori (_memory leak_).
 
@@ -12,7 +12,7 @@
 
 - Memahami cara kerja pola desain _Observer_ yang mendasari berbagai modul inti di Node.js.
 - Mendaftarkan dan mencopot fungsi listener menggunakan metode `on`, `once`, `off`, dan `removeAllListeners`.
-- Memancarkan sinyal peristiwa beserta data payload secara teratur lewat metode `emit`.
+- Memancarkan sinyal event beserta data payload secara teratur lewat metode `emit`.
 - Mengontrol ambang batas maksimal listener dan mencegah penumpukan fungsi di memori.
 - Menangani event khusus `'error'` dan menyelaraskan penantian event ke dalam alur Promise menggunakan utilitas `once()`.
 
@@ -51,6 +51,12 @@ flowchart LR
 
 Metode `emitter.on()` digunakan untuk mendaftarkan fungsi listener (_listener_) yang akan dipanggil berulang kali setiap kali event tertentu dipancarkan oleh objek tersebut.
 
+Struktur parameter: `emitter.on(eventName, listener)`
+
+- `eventName`: Nama event string atau simbol yang ingin didengarkan (wajib, tipe data: `string | symbol`).
+- `listener`: Fungsi callback yang akan dipanggil setiap kali event dipancarkan (wajib, tipe data: `Function`).
+- Nilai kembalian: Mengembalikan referensi instans objek `emitter` untuk mendukung _method chaining_ (tipe data: `EventEmitter`).
+
 ```javascript
 import { EventEmitter } from "node:events";
 
@@ -87,6 +93,12 @@ console.log(results);
 ### `emitter.once()`
 
 Metode `emitter.once()` mendaftarkan fungsi listener yang hanya akan merespons satu kali saja. Begitu event pertama kali terpancar, fungsi listener langsung dilepaskan secara otomatis.
+
+Struktur parameter: `emitter.once(eventName, listener)`
+
+- `eventName`: Nama event yang ingin didengarkan (wajib, tipe data: `string | symbol`).
+- `listener`: Fungsi callback yang hanya akan dijalankan satu kali lalu otomatis dilepas (wajib, tipe data: `Function`).
+- Nilai kembalian: Mengembalikan referensi instans objek `emitter` untuk pemanggilan berantai (tipe data: `EventEmitter`).
 
 ```javascript
 import { EventEmitter } from "node:events";
@@ -127,6 +139,12 @@ console.log(counter);
 
 Metode `emitter.emit()` memancarkan nama event tertentu ke seluruh listener terdaftar dan mengeksekusinya secara sinkron bersama data pendukung yang kita kirimkan.
 
+Struktur parameter: `emitter.emit(eventName, ...args)`
+
+- `eventName`: Nama event yang ingin dipancarkan (wajib, tipe data: `string | symbol`).
+- `...args`: Data atau argumen tambahan yang diteruskan ke setiap fungsi listener (opsional, tipe data: `any[]`).
+- Nilai kembalian: Mengembalikan nilai boolean `true` jika event memiliki minimal satu listener, atau `false` jika tidak ada listener sama sekali (tipe data: `boolean`).
+
 ```javascript
 import { EventEmitter } from "node:events";
 
@@ -158,6 +176,12 @@ console.log(delivered);
 ### `emitter.off()`
 
 Metode `emitter.off()` digunakan untuk mencopot fungsi listener tertentu dari daftar langganan event. Fungsi yang ingin dilepas harus menunjuk ke referensi memori yang sama persis dengan fungsi saat didaftarkan.
+
+Struktur parameter: `emitter.off(eventName, listener)`
+
+- `eventName`: Nama event dari listener yang ingin dicopot (wajib, tipe data: `string | symbol`).
+- `listener`: Referensi fungsi callback asli yang sebelumnya didaftarkan (wajib, tipe data: `Function`).
+- Nilai kembalian: Mengembalikan referensi instans objek `emitter` untuk pemanggilan berantai (tipe data: `EventEmitter`).
 
 ```javascript
 import { EventEmitter } from "node:events";
@@ -197,6 +221,11 @@ console.log(counter);
 
 Metode `emitter.removeAllListeners()` menghapus seluruh listener dari suatu nama event tertentu, atau menyapu bersih semua listener dari semua event sekaligus jika dipanggil tanpa menyertakan argumen.
 
+Struktur parameter: `emitter.removeAllListeners(eventName)`
+
+- `eventName`: Nama event spesifik yang ingin dibersihkan seluruh listener-nya, atau kosongkan untuk menghapus listener di seluruh event (opsional, tipe data: `string | symbol`).
+- Nilai kembalian: Mengembalikan referensi instans objek `emitter` untuk pemanggilan berantai (tipe data: `EventEmitter`).
+
 ```javascript
 import { EventEmitter } from "node:events";
 
@@ -232,6 +261,11 @@ console.log(channel.eventNames().length);
 
 Metode `emitter.listenerCount()` mengembalikan angka yang menunjukkan jumlah listener yang sedang aktif mendengarkan suatu event tertentu.
 
+Struktur parameter: `emitter.listenerCount(eventName)`
+
+- `eventName`: Nama event yang ingin dihitung jumlah listener aktifnya (wajib, tipe data: `string | symbol`).
+- Nilai kembalian: Mengembalikan angka integer jumlah listener yang sedang mendengarkan event tersebut (tipe data: `number`).
+
 ```javascript
 import { EventEmitter } from "node:events";
 
@@ -258,6 +292,11 @@ console.log(audit.listenerCount("unknownEvent"));
 
 Secara bawaan, jika ada lebih dari 10 listener pada satu event, Node.js akan menampilkan peringatan di terminal untuk mencegah kebocoran memori. Kita bisa menaikkan atau menurunkan batas ini menggunakan `emitter.setMaxListeners()`.
 
+Struktur parameter: `emitter.setMaxListeners(n)`
+
+- `n`: Batas jumlah maksimal listener sebelum peringatan memory leak ditampilkan, atau angka `0` untuk tanpa batas (wajib, tipe data: `number`).
+- Nilai kembalian: Mengembalikan referensi instans objek `emitter` untuk pemanggilan berantai (tipe data: `EventEmitter`).
+
 ```javascript
 import { EventEmitter } from "node:events";
 
@@ -283,6 +322,27 @@ console.log(unlimited.getMaxListeners());
 ### `events.once()`
 
 Fungsi pembantu `once()` dari modul `node:events` memungkinkan kita menunggu terjadinya suatu event menggunakan Promise, sehingga alur kodenya bisa dipadukan secara rapi dengan kata kunci `await`.
+
+Struktur parameter: `events.once(emitter, eventName, options)`
+
+- `emitter`: Objek pemancar event target (wajib, tipe data: `EventEmitter | EventTarget`).
+- `eventName`: Nama event yang ditunggu pemancarannya (wajib, tipe data: `string | symbol`).
+- `options`: Objek konfigurasi tambahan (opsional, tipe data: `object`), mencakup `{ signal: AbortSignal }` untuk pembatalan penantian.
+- Nilai kembalian: Mengembalikan Promise yang selesai dengan array berisi seluruh argumen yang dipancarkan oleh event (tipe data: `Promise<any[]>`).
+
+```javascript
+import { EventEmitter, once } from "node:events";
+
+const uploader = new EventEmitter();
+
+setTimeout(() => {
+  uploader.emit("complete", { status: "success", filename: "image.png" });
+}, 10);
+
+const [result] = await once(uploader, "complete");
+console.log(result.status, result.filename);
+// Output: success image.png
+```
 
 ```javascript
 import { EventEmitter, once } from "node:events";
@@ -369,12 +429,14 @@ emitter.on("save", (tasks) => {
 });
 
 emitter.emit("save", taskQueue);
-await Promise.all(taskQueue);
+for (const task of taskQueue) {
+  await task;
+}
 ```
 
 ### Mendaftarkan Listener Berulang Kali Tanpa Membersihkannya
 
-Jika kita mendaftarkan listener di dalam fungsi penangan request server tanpa pernah mencopotnya dengan `off()`, jumlah listener akan terus menumpuk di memori pada setiap request yang masuk, hingga akhirnya memicu peringatan kebocoran memori.
+Jika kita mendaftarkan listener di dalam fungsi handler request server tanpa pernah mencopotnya dengan `off()`, jumlah listener akan terus menumpuk di memori pada setiap request yang masuk, hingga akhirnya memicu peringatan kebocoran memori.
 
 ```javascript
 // Salah

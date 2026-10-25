@@ -39,12 +39,17 @@ flowchart LR
 | **`node:` Protocol**                 | Menandai bahwa modul yang diimpor adalah modul bawaan resmi Node.js | Menghemat waktu karena tidak mencari ke `node_modules` dan kebal dari nama tiruan   |
 | **`module.isBuiltin()`**             | Mengecek apakah suatu nama modul merupakan modul bawaan runtime     | Menghasilkan nilai `true` untuk modul bawaan dan `false` untuk paket luar           |
 | **`module.builtinModules`**          | Menampilkan daftar nama seluruh modul bawaan yang didukung runtime  | Berisi daftar string nama modul tanpa awalan `node:`                                |
-| **`module.createRequire()`**         | Membuat fungsi `require()` sendiri di dalam berkas ES Modules       | Berguna saat perlu memanggil modul bawaan dengan format CommonJS                    |
+| **`module.createRequire()`**         | Membuat fungsi `require()` sendiri di dalam file ES Modules         | Berguna saat perlu memanggil modul bawaan dengan format CommonJS                    |
 | **`module.syncBuiltinESMExports()`** | Menyelaraskan ekspor modul bawaan antara gaya CommonJS dan ESM      | Menjaga konsistensi data jika ada nilai ekspor modul bawaan yang berubah di runtime |
 
 ### `node:` Protocol
 
 Awalan `node:` memberi tahu runtime secara tegas bahwa modul yang dipanggil berasal dari modul internal Node.js. Dengan awalan ini, Node.js tidak perlu repot mencari ke folder `node_modules` di disk, sehingga aplikasi memuat modul lebih cepat dan aman.
+
+Format penulisan skema: `import ... from "node:<moduleName>"`
+
+- `moduleName`: Nama modul bawaan resmi dari Node.js (wajib, tipe data: `string`).
+- Peran sintaks: Menegaskan kepada runtime bahwa pemanggilan modul ditujukan langsung ke modul internal Node.js tanpa memindai folder `node_modules`.
 
 ```javascript
 import module from "node:module";
@@ -67,6 +72,11 @@ try {
 ### `module.isBuiltin()`
 
 Fungsi `isBuiltin()` dari modul `node:module` berguna untuk memastikan apakah sebuah nama modul benar-benar modul bawaan resmi. Fungsi ini bisa membaca nama modul baik yang memakai awalan `node:` maupun yang tidak.
+
+Struktur parameter: `module.isBuiltin(moduleName)`
+
+- `moduleName`: Nama modul yang ingin diperiksa status bawaannya (wajib, tipe data: `string`).
+- Nilai kembalian: Mengembalikan nilai `true` jika string tersebut merupakan modul bawaan resmi Node.js, atau `false` jika bukan (tipe data: `boolean`).
 
 ```javascript
 import { isBuiltin } from "node:module";
@@ -92,6 +102,11 @@ console.log(isBuiltin("unknown-library"));
 
 Properti `builtinModules` berisi daftar nama seluruh modul bawaan yang didukung oleh versi Node.js yang sedang kamu pakai.
 
+Struktur properti: `module.builtinModules`
+
+- Tipe data: `string[]`
+- Nilai kembalian: Berisi array string daftar nama seluruh modul bawaan publik yang didukung oleh runtime Node.js saat ini tanpa menyertakan awalan `node:`.
+
 ```javascript
 import { builtinModules } from "node:module";
 
@@ -115,7 +130,12 @@ console.log(publicModules.includes("module"));
 
 ### `module.createRequire()`
 
-Saat menulis kode dengan format modern ES Modules (`import`), terkadang kamu tetap butuh fungsi lama `require()`. Fungsi `createRequire()` memungkinkan kamu membuat pemanggil `require` secara fleksibel di dalam berkas ESM.
+Saat menulis kode dengan format modern ES Modules (`import`), terkadang kamu tetap butuh fungsi lama `require()`. Fungsi `createRequire()` memungkinkan kamu membuat pemanggil `require` secara fleksibel di dalam file ESM.
+
+Struktur parameter: `module.createRequire(filename)`
+
+- `filename`: Lokasi path absolut atau URL file yang dijadikan titik acuan dasar resolusi modul (wajib, tipe data: `string | URL`).
+- Nilai kembalian: Mengembalikan fungsi `require()` format CommonJS yang terikat pada lokasi file acuan tersebut (tipe data: `NodeRequire`).
 
 ```javascript
 import { createRequire } from "node:module";
@@ -146,6 +166,11 @@ try {
 
 Node.js mendukung dua sistem modul: CommonJS dan ES Modules. Jika ada data pada modul bawaan CommonJS yang diperbarui di tengah jalan, fungsi `syncBuiltinESMExports()` memastikan perubahan tersebut ikut terlihat pada format ES Modules.
 
+Struktur parameter: `module.syncBuiltinESMExports()`
+
+- Tidak memerlukan parameter apa pun.
+- Nilai kembalian: Mengembalikan nilai `undefined`. Berfungsi menyelaraskan nilai ekspor modul bawaan yang dimodifikasi pada CommonJS agar terlihat konsisten di sisi ES Modules.
+
 ```javascript
 import { syncBuiltinESMExports } from "node:module";
 
@@ -170,7 +195,7 @@ console.log(true);
 | Karakteristik       | Modul Bawaan (`node:*`)                           | Paket NPM Pihak Ketiga                                             |
 | :------------------ | :------------------------------------------------ | :----------------------------------------------------------------- |
 | **Instalasi**       | Sudah tersedia langsung di Node.js                | Perlu diinstal via `npm install`                                   |
-| **Waktu Mulai**     | Instan tanpa membaca berkas dari disk             | Butuh waktu untuk membaca folder `node_modules`                    |
+| **Waktu Mulai**     | Instan tanpa membaca file dari disk               | Butuh waktu untuk membaca folder `node_modules`                    |
 | **Keamanan**        | Diawasi dan diuji langsung oleh tim resmi Node.js | Berisiko terhadap perubahan kode atau serangan dari pengelola luar |
 | **Ukuran Aplikasi** | Tidak menambah beban ukuran proyek                | Menambah ukuran folder `node_modules` dan container server         |
 
@@ -194,7 +219,7 @@ import module from "node:module";
 
 ### Memasang Modul Inti Melalui Perintah NPM
 
-Menjalankan perintah install untuk modul bawaan justru bisa mengunduh paket palsu dari internet dan membuat berkas `package.json` berantakan.
+Menjalankan perintah install untuk modul bawaan justru bisa mengunduh paket palsu dari internet dan membuat file `package.json` berantakan.
 
 ```bash
 # Salah

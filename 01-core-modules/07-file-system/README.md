@@ -58,7 +58,7 @@ Saat operasi I/O gagal, Node.js melempar objek `Error` dengan properti `error.co
 
 | Kode Error   | Kepanjangan          | Arti dan Penyebab                                                      |
 | :----------- | :------------------- | :--------------------------------------------------------------------- |
-| **`ENOENT`** | _Error No Entry_     | File atau direktori target tidak ditemukan pada jalur yang ditentukan  |
+| **`ENOENT`** | _Error No Entry_     | File atau direktori target tidak ditemukan pada path yang ditentukan   |
 | **`EEXIST`** | _Error Exists_       | Target file atau direktori sudah ada di sistem                         |
 | **`EACCES`** | _Error Access_       | Izin akses ditolak oleh sistem operasi untuk membaca atau menulis file |
 | **`EISDIR`** | _Error Is Directory_ | Operasi mengharapkan file, tetapi target merupakan direktori           |
@@ -82,7 +82,7 @@ Saat operasi I/O gagal, Node.js melempar objek `Error` dengan properti `error.co
 | **`fs.unlink()`**     | Menghapus satu file reguler                            | Melempar error jika diterapkan pada sebuah direktori                                       |
 | **`fs.rm()`**         | Menghapus file atau direktori secara fleksibel         | Opsi `recursive: true` dan `force: true` membersihkan folder bersarang                     |
 
-> **Catatan:** Pada contoh kode modul ini, jalur file ditulis menggunakan nama file langsung (seperti `"user-profile.txt"` atau `"app-config.json"`) agar alur kodenya mudah dibaca dan dipahami. Pada aplikasi skala produksi atau pengujian otomatis (_automated testing_), pembuatan file uji coba/sementara sangat direkomendasikan memanfaatkan folder temporary bawaan sistem operasi melalui `os.tmpdir()` dari modul `node:os`. Tujuannya agar file sementara tidak mengotori repositori proyek dan otomatis dibersihkan oleh sistem operasi saat komputer di-_restart_:
+> **Catatan:** Pada contoh kode modul ini, path file ditulis menggunakan nama file langsung (seperti `"user-profile.txt"` atau `"app-config.json"`) agar alur kodenya mudah dibaca dan dipahami. Pada aplikasi skala produksi atau pengujian otomatis (_automated testing_), pembuatan file uji coba/sementara sangat direkomendasikan memanfaatkan folder temporary bawaan sistem operasi melalui `os.tmpdir()` dari modul `node:os`. Tujuannya agar file sementara tidak mengotori repositori proyek dan otomatis dibersihkan oleh sistem operasi saat komputer di-_restart_:
 >
 > ```javascript
 > import fs from "node:fs/promises";
@@ -95,7 +95,13 @@ Saat operasi I/O gagal, Node.js melempar objek `Error` dengan properti `error.co
 
 ### `fs.mkdir()`
 
-Fungsi `fs.mkdir()` digunakan khusus untuk membuat folder atau direktori baru (bukan untuk membuat file). Opsi `{ recursive: true }` memungkinkan kita membuat seluruh susunan folder bertingkat sekaligus dan mengembalikan jalur direktori pertama yang berhasil dibuat tanpa memicu error jika folder sudah ada.
+Fungsi `fs.mkdir()` digunakan khusus untuk membuat folder atau direktori baru (bukan untuk membuat file). Opsi `{ recursive: true }` memungkinkan kita membuat seluruh susunan folder bertingkat sekaligus dan mengembalikan path direktori pertama yang berhasil dibuat tanpa memicu error jika folder sudah ada.
+
+Struktur parameter: `fs.mkdir(path, options)`
+
+- `path`: Lokasi direktori yang ingin dibuat (wajib, tipe data: `string | URL`).
+- `options`: Objek konfigurasi atau integer permission mode (opsional, tipe data: `object | number`), seperti `{ recursive: boolean, mode: number }`.
+- Nilai kembalian: Mengembalikan Promise yang menghasilkan path direktori pertama yang dibuat jika `recursive: true`, atau `undefined` jika tanpa rekursif (tipe data: `Promise<string | undefined>`).
 
 ```javascript
 import fs from "node:fs/promises";
@@ -134,6 +140,13 @@ await fs.rm("test-folder", { recursive: true, force: true });
 
 Fungsi `fs.writeFile()` berguna untuk menulis data ke sebuah file. Kalau filenya sudah ada, isinya akan langsung ditimpa dengan data baru. Jika filenya belum ada, Node.js otomatis membuatnya. Operasi asinkron ini mengembalikan nilai `undefined` saat penulisan ke disk berhasil diselesaikan.
 
+Struktur parameter: `fs.writeFile(file, data, options)`
+
+- `file`: Lokasi path file tujuan penulisan (wajib, tipe data: `string | URL | FileHandle`).
+- `data`: Konten data yang akan ditulis ke file (wajib, tipe data: `string | Buffer | TypedArray | DataView | AsyncIterable`).
+- `options`: Opsi konfigurasi penulisan seperti encoding karakter string atau flag penulisan (opsional, tipe data: `object | string`, nilai bawaan: `'utf-8'`).
+- Nilai kembalian: Mengembalikan Promise yang selesai dengan nilai `undefined` saat penulisan tuntas (tipe data: `Promise<undefined>`).
+
 ```javascript
 import fs from "node:fs/promises";
 
@@ -167,6 +180,12 @@ await fs.unlink("app.lock");
 
 Fungsi `fs.readFile()` dipakai untuk membaca seluruh isi file ke dalam memori secara asinkron. Jika kita menyertakan parameter encoding (misalnya `'utf-8'`), hasilnya berupa string teks biasa yang siap dibaca.
 
+Struktur parameter: `fs.readFile(path, options)`
+
+- `path`: Lokasi path file yang akan dibaca (wajib, tipe data: `string | URL | FileHandle`).
+- `options`: Objek opsi atau string encoding (opsional, tipe data: `object | string`, nilai bawaan: `null`).
+- Nilai kembalian: Mengembalikan Promise yang menghasilkan `string` jika encoding ditentukan, atau objek `Buffer` biner jika encoding tidak disertakan (tipe data: `Promise<string | Buffer>`).
+
 ```javascript
 import fs from "node:fs/promises";
 
@@ -196,6 +215,13 @@ await fs.unlink("binary-data.txt");
 ### `fs.appendFile()`
 
 Fungsi `fs.appendFile()` menambahkan data ke bagian paling akhir file tanpa menghapus isi yang sudah ada. File tujuan otomatis dibuat jika sebelumnya belum ada.
+
+Struktur parameter: `fs.appendFile(path, data, options)`
+
+- `path`: Lokasi path file target yang ingin ditambahkan datanya (wajib, tipe data: `string | URL | FileHandle`).
+- `data`: Konten data yang akan disambungkan ke akhir file (wajib, tipe data: `string | Buffer`).
+- `options`: String format encoding atau objek konfigurasi penulisan (opsional, tipe data: `object | string`, nilai bawaan: `'utf-8'`).
+- Nilai kembalian: Mengembalikan Promise yang selesai dengan nilai `undefined` saat penambahan data tuntas (tipe data: `Promise<undefined>`).
 
 ```javascript
 import fs from "node:fs/promises";
@@ -228,6 +254,12 @@ await fs.unlink("new-audit.log");
 ### `fs.readdir()`
 
 Fungsi `fs.readdir()` membaca daftar entri yang ada di dalam sebuah direktori. Dengan menambahkan opsi `{ withFileTypes: true }`, kita memperoleh daftar objek `Dirent` untuk langsung memeriksa apakah suatu entri merupakan file atau direktori.
+
+Struktur parameter: `fs.readdir(path, options)`
+
+- `path`: Lokasi direktori yang ingin dibaca daftarnya (wajib, tipe data: `string | URL`).
+- `options`: Objek opsi seperti `{ withFileTypes: boolean, recursive: boolean }` atau string encoding (opsional, tipe data: `object | string`).
+- Nilai kembalian: Mengembalikan Promise yang menghasilkan array string nama entri (`string[]`), atau array objek `Dirent` jika opsi `withFileTypes: true` diaktifkan (tipe data: `Promise<string[] | Dirent[]>`).
 
 ```javascript
 import fs from "node:fs/promises";
@@ -267,6 +299,12 @@ await fs.rm("test-string-entries", { recursive: true, force: true });
 
 Fungsi `fs.stat()` mengambil metadata lengkap sebuah file atau direktori, seperti ukuran dalam satuan byte, waktu pembuatan, waktu perubahan terakhir, serta metode pengecekan tipe entri.
 
+Struktur parameter: `fs.stat(path, options)`
+
+- `path`: Lokasi path file atau direktori yang ingin diinspeksi metadatanya (wajib, tipe data: `string | URL`).
+- `options`: Objek opsi konfigurasi seperti `{ bigint: boolean }` (opsional, tipe data: `object`).
+- Nilai kembalian: Mengembalikan Promise yang menghasilkan objek instans `Stats` berisi metadata teknis entri (tipe data: `Promise<Stats>`).
+
 ```javascript
 import fs from "node:fs/promises";
 
@@ -279,7 +317,7 @@ console.log(stats.isFile(), stats.size);
 await fs.unlink("metadata-sample.txt");
 ```
 
-Kasus lain: Memeriksa jalur yang tidak ada di file system akan menghasilkan kode error `ENOENT`.
+Kasus lain: Memeriksa path yang tidak ada di file system akan menghasilkan kode error `ENOENT`.
 
 ```javascript
 import fs from "node:fs/promises";
@@ -295,6 +333,12 @@ try {
 ### `fs.access()`
 
 Fungsi `fs.access()` digunakan untuk memeriksa apakah suatu file ada dan apakah aplikasi kita memiliki izin akses tertentu tanpa harus membuka file tersebut secara langsung. Fungsi ini menerima konstanta mode dari `node:fs.constants`.
+
+Struktur parameter: `fs.access(path, mode)`
+
+- `path`: Lokasi path file atau folder yang ingin diuji izinnya (wajib, tipe data: `string | URL`).
+- `mode`: Angka kombinasi izin akses menggunakan konstanta `node:fs.constants` (opsional, tipe data: `number`, nilai bawaan: `constants.F_OK`).
+- Nilai kembalian: Mengembalikan Promise yang selesai dengan nilai `undefined` jika izin valid, atau melempar error penolakan akses (tipe data: `Promise<undefined>`).
 
 ```javascript
 import fs from "node:fs/promises";
@@ -334,6 +378,13 @@ try {
 
 Fungsi `fs.copyFile()` menyalin satu file dari lokasi sumber ke lokasi tujuan secara asinkron. File tujuan akan langsung ditimpa jika sudah ada di disk.
 
+Struktur parameter: `fs.copyFile(src, dest, mode)`
+
+- `src`: Lokasi path file sumber yang akan disalin (wajib, tipe data: `string | URL`).
+- `dest`: Lokasi path tujuan tempat salinan file diletakkan (wajib, tipe data: `string | URL`).
+- `mode`: Parameter angka pengatur penyalinan seperti `constants.COPYFILE_EXCL` (opsional, tipe data: `number`, nilai bawaan: `0`).
+- Nilai kembalian: Mengembalikan Promise yang selesai dengan nilai `undefined` saat penyalinan file berhasil tuntas (tipe data: `Promise<undefined>`).
+
 ```javascript
 import fs from "node:fs/promises";
 
@@ -372,6 +423,12 @@ await fs.unlink("destination.txt");
 
 Fungsi `fs.rename()` digunakan untuk memindahkan atau mengganti nama file maupun direktori. Di tingkat sistem operasi, pemindahan dalam sistem penyimpanan yang sama berlangsung secara atomik (seketika).
 
+Struktur parameter: `fs.rename(oldPath, newPath)`
+
+- `oldPath`: Lokasi path asal file atau direktori (wajib, tipe data: `string | URL`).
+- `newPath`: Lokasi path baru tujuan pemindahan atau penggantian nama (wajib, tipe data: `string | URL`).
+- Nilai kembalian: Mengembalikan Promise yang selesai dengan nilai `undefined` saat operasi pemindahan selesai (tipe data: `Promise<undefined>`).
+
 ```javascript
 import fs from "node:fs/promises";
 
@@ -401,6 +458,11 @@ try {
 ### `fs.unlink()`
 
 Fungsi `fs.unlink()` digunakan untuk menghapus satu file reguler dari sistem penyimpanan. Fungsi ini akan menghasilkan error jika dijalankan pada sebuah direktori.
+
+Struktur parameter: `fs.unlink(path)`
+
+- `path`: Lokasi path file reguler yang ingin dihapus dari penyimpanan (wajib, tipe data: `string | URL`).
+- Nilai kembalian: Mengembalikan Promise yang selesai dengan nilai `undefined` saat file berhasil dihapus (tipe data: `Promise<undefined>`).
 
 ```javascript
 import fs from "node:fs/promises";
@@ -439,6 +501,12 @@ await fs.rm("unlink-folder", { recursive: true, force: true });
 ### `fs.rm()`
 
 Fungsi `fs.rm()` adalah solusi modern untuk menghapus file atau direktori secara fleksibel dan aman, termasuk menghapus folder beserta seluruh isinya sekaligus.
+
+Struktur parameter: `fs.rm(path, options)`
+
+- `path`: Lokasi file atau folder yang akan dihapus (wajib, tipe data: `string | URL`).
+- `options`: Objek konfigurasi penghapusan seperti `{ recursive: boolean, force: boolean }` (opsional, tipe data: `object`).
+- Nilai kembalian: Mengembalikan Promise yang selesai dengan nilai `undefined` saat penghapusan berhasil tuntas (tipe data: `Promise<undefined>`).
 
 ```javascript
 import fs from "node:fs/promises";
@@ -637,9 +705,9 @@ Batasan: Gunakan modul `node:fs/promises` dengan opsi rekursif tanpa memicu erro
 
 Buat fungsi `getDirectoryStats(dirPath)` yang membaca isi satu tingkat direktori menggunakan `fs.readdir` dengan opsi `withFileTypes: true`. Fungsi ini harus mengembalikan objek yang merangkum jumlah file reguler (`totalFiles`), jumlah subfolder (`totalDirectories`), dan akumulasi ukuran seluruh file dalam satuan byte (`totalSizeBytes`) menggunakan `fs.stat`.
 
-Ketentuan penanganan kasus tepi:
+Ketentuan penanganan kondisi khusus:
 
-- Jika jalur yang diberikan bukan direktori (misalnya berupa file reguler), lemparkan error dengan pesan `'Target path is not a directory'`.
+- Jika path yang diberikan bukan direktori (misalnya berupa file reguler), lemparkan error dengan pesan `'Target path is not a directory'`.
 - Hanya periksa entri pada tingkat pertama (tanpa rekursi).
 
 Contoh input normal:

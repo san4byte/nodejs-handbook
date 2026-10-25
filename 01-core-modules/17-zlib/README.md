@@ -3,7 +3,7 @@
 > Ringkasan
 >
 > - Fungsi: Mengompresi dan mendekompresi data biner maupun teks menggunakan algoritma standar industri seperti Gzip, Deflate, dan Brotli.
-> - Digunakan saat: Mengurangi ukuran payload respons HTTP, membuat berkas arsip cadangan, menghemat kapasitas disk untuk berkas log, atau mentransfer data besar lewat stream.
+> - Digunakan saat: Mengurangi ukuran payload respons HTTP, membuat file arsip cadangan, menghemat kapasitas disk untuk file log, atau mentransfer data besar lewat stream.
 > - Aturan praktis: Gunakan Transform Stream bersama `node:stream/promises` (`pipeline`) untuk memproses data berukuran besar agar terhindar dari lonjakan memori RAM, dan hindari pemanggilan fungsi sinkron di dalam server produksi.
 
 ---
@@ -12,7 +12,7 @@
 
 - Mengenal perbedaan karakteristik algoritma kompresi Gzip, Deflate, dan Brotli di Node.js.
 - Mengompresi dan mendekompresi data buffer menggunakan fungsi sinkron dan asinkron.
-- Memanfaatkan _Transform Stream_ kompresi bersama `node:stream/promises` untuk pengolahan aliran data yang hemat memori.
+- Memanfaatkan _Transform Stream_ kompresi bersama `node:stream/promises` untuk pengolahan stream data yang hemat memori.
 - Menangani error data rusak (_corrupted payload_) saat proses dekompresi berlangsung.
 - Membangun utilitas pemilihan kompresi otomatis berdasarkan header _Accept-Encoding_.
 
@@ -44,7 +44,7 @@ flowchart LR
 | **`brotliDecompressSync()`** | Mendekompresi buffer berformat Brotli secara sinkron                 | Membutuhkan input struktur biner Brotli yang sah                           |
 | **`deflateSync()`**          | Mengompresi data buffer menggunakan algoritma Deflate secara sinkron | Menghasilkan kompresi data mentah tanpa pembungkus header Gzip penuh       |
 | **`inflateSync()`**          | Mendekompresi buffer berformat Deflate secara sinkron                | Mengembalikan muatan kompresi Deflate ke data aslinya                      |
-| **`createGzip()`**           | Membuat Transform Stream untuk kompresi data Gzip                    | Sangat pas dihubungkan ke stream berkas atau soket HTTP via pipeline       |
+| **`createGzip()`**           | Membuat Transform Stream untuk kompresi data Gzip                    | Sangat pas dihubungkan ke stream file atau soket HTTP via pipeline         |
 | **`createGunzip()`**         | Membuat Transform Stream untuk mendekompresi data Gzip               | Mengurai potongan biner bertahap tanpa memuat seluruh file ke RAM          |
 | **`createBrotliCompress()`** | Membuat Transform Stream untuk kompresi data Brotli                  | Mendukung pengaturan parameter kualitas kompresi tingkat lanjut            |
 
@@ -77,7 +77,7 @@ console.log(emptyBuffer.length);
 
 ### `gunzipSync()`
 
-Fungsi `gunzipSync()` digunakan untuk mengembalikan data biner yang sebelumnya dipadatkan dengan Gzip kembali ke format aslinya secara sinkron. Fungsi ini umum dipakai saat membaca berkas konfigurasi terkompresi dari penyimpanan lokal.
+Fungsi `gunzipSync()` digunakan untuk mengembalikan data biner yang sebelumnya dipadatkan dengan Gzip kembali ke format aslinya secara sinkron. Fungsi ini umum dipakai saat membaca file konfigurasi terkompresi dari penyimpanan lokal.
 
 ```javascript
 import zlib from "node:zlib";
@@ -105,7 +105,7 @@ try {
 
 ### `brotliCompressSync()`
 
-Fungsi `brotliCompressSync()` digunakan untuk memadatkan buffer data menggunakan algoritma Brotli yang dirancang khusus untuk web modern. Fungsi ini umumnya menghasilkan ukuran berkas yang lebih kecil dibanding Gzip untuk teks berulang.
+Fungsi `brotliCompressSync()` digunakan untuk memadatkan buffer data menggunakan algoritma Brotli yang dirancang khusus untuk web modern. Fungsi ini umumnya menghasilkan ukuran file yang lebih kecil dibanding Gzip untuk teks berulang.
 
 ```javascript
 import zlib from "node:zlib";
@@ -163,7 +163,7 @@ try {
 
 ### `deflateSync()`
 
-Fungsi `deflateSync()` digunakan untuk mengompresi data buffer menggunakan format Deflate standar tanpa pembungkus header Gzip tambahan. Fungsi ini sering digunakan pada paket komunikasi jaringan biner ringan atau format berkas seperti ZIP dan PNG.
+Fungsi `deflateSync()` digunakan untuk mengompresi data buffer menggunakan format Deflate standar tanpa pembungkus header Gzip tambahan. Fungsi ini sering digunakan pada paket komunikasi jaringan biner ringan atau format file seperti ZIP dan PNG.
 
 ```javascript
 import zlib from "node:zlib";
@@ -215,7 +215,7 @@ try {
 
 ### `createGzip()`
 
-Fungsi `createGzip()` membuat Transform Stream yang menerima potongan data dan menghasilkan aliran data terkompresi Gzip secara bertahap. Pendekatan stream ini mencegah lonjakan memori saat memproses berkas besar.
+Fungsi `createGzip()` membuat Transform Stream yang menerima potongan data dan menghasilkan stream data terkompresi Gzip secara bertahap. Pendekatan stream ini mencegah lonjakan memori saat memproses file besar.
 
 ```javascript
 import { createGzip } from "node:zlib";
@@ -257,7 +257,7 @@ try {
 
 ### `createGunzip()`
 
-Fungsi `createGunzip()` membuat Transform Stream untuk mendekompresi aliran data biner Gzip secara bertahap, sangat cocok disambungkan ke stream jaringan atau pembacaan berkas disk berukuran raksasa.
+Fungsi `createGunzip()` membuat Transform Stream untuk mendekompresi stream data biner Gzip secara bertahap, sangat cocok disambungkan ke stream jaringan atau pembacaan file disk berukuran raksasa.
 
 ```javascript
 import { createGzip, createGunzip } from "node:zlib";
@@ -277,7 +277,7 @@ console.log(Buffer.concat(chunks).toString("utf-8"));
 // Output: Continuous streaming data pipeline
 ```
 
-Kasus lain: Menangani aliran data biner parsial yang terputus di tengah proses streaming.
+Kasus lain: Menangani stream data biner parsial yang terputus di tengah proses streaming.
 
 ```javascript
 import { createGunzip } from "node:zlib";
@@ -369,9 +369,9 @@ async function handleRequest(res, largeData) {
 }
 ```
 
-### Mengompresi Berkas yang Memang Sudah Terkompresi
+### Mengompresi File yang Memang Sudah Terkompresi
 
-Mencoba memampatkan berkas biner yang sudah terkompresi secara alami (seperti foto JPEG/PNG, video MP4, atau arsip ZIP) hanya akan membuang tenaga CPU secara sia-sia, bahkan terkadang ukuran akhirnya bertambah besar karena tambahan metadata header.
+Mencoba memampatkan file biner yang sudah terkompresi secara alami (seperti foto JPEG/PNG, video MP4, atau arsip ZIP) hanya akan membuang tenaga CPU secara sia-sia, bahkan terkadang ukuran akhirnya bertambah besar karena tambahan metadata header.
 
 ```javascript
 // Salah

@@ -3,8 +3,8 @@
 > Ringkasan
 >
 > - Fungsi: Menjalankan tugas komputasi berat (_CPU-intensive tasks_) pada thread latar belakang terpisah tanpa mengunci thread utama (_Event Loop_) Node.js.
-> - Digunakan saat: Enkripsi kriptografi berat, kompresi berkas raksasa, pengolahan gambar atau video, kalkulasi matematika rumit, atau parsing dataset JSON berukuran besar.
-> - Aturan praktis: Hindari memakai Worker Threads untuk tugas I/O biasa (seperti kueri database atau membaca berkas di disk) karena model asinkron bawaan Node.js sudah sangat efisien. Gunakan Worker Threads khusus untuk tugas-tugas berat yang memeras komputasi CPU (_CPU-bound_).
+> - Digunakan saat: Enkripsi kriptografi berat, kompresi file raksasa, pengolahan gambar atau video, kalkulasi matematika rumit, atau parsing dataset JSON berukuran besar.
+> - Aturan praktis: Hindari memakai Worker Threads untuk tugas I/O biasa (seperti kueri database atau membaca file di disk) karena model asinkron bawaan Node.js sudah sangat efisien. Gunakan Worker Threads khusus untuk tugas-tugas berat yang memeras komputasi CPU (_CPU-bound_).
 
 ---
 
@@ -12,7 +12,7 @@
 
 - Membedakan beban kerja yang dibatasi kecepatan I/O (_I/O-bound_) dengan beban kerja yang menguras CPU (_CPU-bound_).
 - Membedakan arsitektur multi-proses `node:cluster` dengan model multi-threading `node:worker_threads`.
-- Membuat dan menjalankan thread pekerja baru menggunakan kelas `Worker`.
+- Membuat dan menjalankan thread pekerja baru menggunakan class `Worker`.
 - Mengirim dan menerima pesan data antar-thread lewat `postMessage`, `parentPort`, dan event `'message'`.
 - Mengirimkan data konfigurasi awal ke thread pekerja secara instan lewat `workerData`.
 - Berbagi memori secara langsung antar-thread menggunakan `SharedArrayBuffer` dan `Atomics`.
@@ -48,9 +48,9 @@ flowchart LR
 
 | Item                    | Fungsi                                                | Catatan                                                               |
 | :---------------------- | :---------------------------------------------------- | :-------------------------------------------------------------------- |
-| **`new Worker()`**      | Membuat dan menjalankan thread pekerja baru           | Menerima jalur berkas skrip atau teks kode string dengan opsi `eval`  |
+| **`new Worker()`**      | Membuat dan menjalankan thread pekerja baru           | Menerima path file skrip atau teks kode string dengan opsi `eval`     |
 | **`isMainThread`**      | Mengecek apakah kode sedang berjalan di thread utama  | Bernilai `true` saat dieksekusi di proses induk utama                 |
-| **`parentPort`**        | Jalur komunikasi dua arah menuju thread pembuatnya    | Bernilai `null` jika diakses langsung di thread utama                 |
+| **`parentPort`**        | Saluran komunikasi dua arah menuju thread pembuatnya  | Bernilai `null` jika diakses langsung di thread utama                 |
 | **`workerData`**        | Mengirimkan data inisialisasi awal saat thread dibuat | Tersedia seketika di thread pekerja tanpa perlu menunggu event pesan  |
 | **`MessageChannel`**    | Membuat saluran komunikasi dua arah mandiri           | Menyediakan sepasang port (`port1` dan `port2`) yang bisa dipindahkan |
 | **`SharedArrayBuffer`** | Menyiapkan blok memori biner bersama antar-thread     | Memungkinkan manipulasi data langsung tanpa perlu kloning memori      |
@@ -58,7 +58,7 @@ flowchart LR
 
 ### `new Worker()`
 
-Kelas `new Worker()` digunakan untuk membuat dan menjalankan thread pekerja baru di latar belakang. Thread ini memiliki lingkungan V8 Isolate dan Event Loop mandiri yang terpisah dari thread utama.
+Class `new Worker()` digunakan untuk membuat dan menjalankan thread pekerja baru di latar belakang. Thread ini memiliki lingkungan V8 Isolate dan Event Loop mandiri yang terpisah dari thread utama.
 
 ```javascript
 import { Worker } from "node:worker_threads";
@@ -106,7 +106,7 @@ console.log(isMainThread);
 // Output: true
 ```
 
-Kasus lain: Menjalankan kode thread utama dan thread pekerja di dalam satu berkas yang sama dengan memanfaatkan percabangan `isMainThread`.
+Kasus lain: Menjalankan kode thread utama dan thread pekerja di dalam satu file yang sama dengan memanfaatkan percabangan `isMainThread`.
 
 ```javascript
 import { Worker, isMainThread } from "node:worker_threads";
@@ -129,7 +129,7 @@ if (isMainThread) {
 
 ### `parentPort`
 
-Objek `parentPort` adalah jalur komunikasi yang digunakan oleh thread pekerja untuk mengirimkan kabar kembali ke thread utama. Jika kita mengaksesnya di thread utama, nilainya adalah `null`.
+Objek `parentPort` adalah saluran komunikasi yang digunakan oleh thread pekerja untuk mengirimkan kabar kembali ke thread utama. Jika kita mengaksesnya di thread utama, nilainya adalah `null`.
 
 ```javascript
 import { parentPort } from "node:worker_threads";
@@ -211,7 +211,7 @@ worker.on("message", () => {
 
 ### `MessageChannel`
 
-Kelas `MessageChannel` digunakan untuk membuat jalur komunikasi dua arah independen yang terdiri dari dua pintu port (`port1` dan `port2`). Port ini bisa kita kirimkan (_transfer_) ke worker lain untuk membuka jalur komunikasi langsung antarsesama worker.
+Class `MessageChannel` digunakan untuk membuat saluran komunikasi dua arah independen yang terdiri dari dua pintu port (`port1` dan `port2`). Port ini bisa kita kirimkan (_transfer_) ke worker lain untuk membuka saluran komunikasi langsung antarsesama worker.
 
 ```javascript
 import { MessageChannel } from "node:worker_threads";
@@ -325,7 +325,7 @@ console.log(exchangeStatus, Atomics.load(typedArray, 0));
 
 | Karakteristik                 | Beban I/O-Bound                                               | Beban CPU-Bound                                          |
 | :---------------------------- | :------------------------------------------------------------ | :------------------------------------------------------- |
-| **Sifat Pekerjaan**           | Menunggu respon jaringan, soket, atau berkas disk             | Memeras kalkulasi matematika, kompresi, atau enkripsi    |
+| **Sifat Pekerjaan**           | Menunggu respon jaringan, soket, atau file disk               | Memeras kalkulasi matematika, kompresi, atau enkripsi    |
 | **Solusi Terbaik di Node.js** | Fitur non-blocking I/O bawaan Libuv di thread utama           | Menyerahkan ke thread pekerja (`node:worker_threads`)    |
 | **Pemanfaatan CPU**           | Sangat rendah, sebagian besar waktu dihabiskan untuk menunggu | Sangat tinggi, bisa mendominasi 100% kerja satu inti CPU |
 | **Dampak Salah Penempatan**   | Memboroskan memori jika membuat thread untuk tiap I/O         | Mengunci Event Loop dan membuat server membeku total     |
@@ -336,7 +336,7 @@ console.log(exchangeStatus, Atomics.load(typedArray, 0));
 
 ### Memakai Worker Threads untuk Menangani Tugas I/O
 
-Menggunakan thread pekerja hanya untuk membaca berkas dari disk atau menunggu kueri database justru membuat aplikasi lebih lambat, karena operasi asinkron bawaan Node.js di thread utama sudah sangat efisien tanpa perlu beban memori tambahan untuk inisialisasi thread baru.
+Menggunakan thread pekerja hanya untuk membaca file dari disk atau menunggu kueri database justru membuat aplikasi lebih lambat, karena operasi asinkron bawaan Node.js di thread utama sudah sangat efisien tanpa perlu beban memori tambahan untuk inisialisasi thread baru.
 
 ```javascript
 // Salah
@@ -531,7 +531,7 @@ Contoh output yang diharapkan:
 ];
 ```
 
-Batasan: Dilarang menggunakan library luar seperti `piscina`. Bangun murni menggunakan kelas `Worker` dan antrean array internal JavaScript.
+Batasan: Dilarang menggunakan library luar seperti `piscina`. Bangun murni menggunakan class `Worker` dan antrean array internal JavaScript.
 
 ---
 

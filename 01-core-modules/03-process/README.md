@@ -38,16 +38,21 @@ flowchart TD
 | :---------------------------- | :------------------------------------------------------------------ | :------------------------------------------------------------------------ |
 | **`process.env`**             | Membaca variabel lingkungan dari sistem operasi host                | Semua nilainya selalu bertipe string atau `undefined` jika tidak ada      |
 | **`process.argv`**            | Mengambil daftar argumen mentah dari baris perintah terminal        | Indeks 0 adalah biner Node.js, indeks 1 adalah file yang dijalankan       |
-| **`process.exit(code)`**      | Menghentikan jalannya aplikasi seketika dengan kode status tertentu | Angka `0` tanda sukses, angka selain `0` menandakan adanya error          |
-| **`process.cwd()`**           | Mengembalikan jalur direktori kerja terminal saat ini               | Menunjuk ke folder tempat kamu mengetikkan perintah di terminal           |
+| **`process.exit()`**          | Menghentikan jalannya aplikasi seketika dengan kode status tertentu | Angka `0` tanda sukses, angka selain `0` menandakan adanya error          |
+| **`process.cwd()`**           | Mengembalikan path direktori kerja terminal saat ini                | Menunjuk ke folder tempat kamu mengetikkan perintah di terminal           |
 | **`process.uptime()`**        | Menghitung berapa lama proses Node.js sudah aktif dalam detik       | Mengembalikan angka desimal yang terus bertambah selama runtime aktif     |
 | **`process.memoryUsage()`**   | Mengambil laporan ringkas penggunaan memori dalam satuan byte       | Menyajikan rincian `rss`, `heapTotal`, `heapUsed`, dan `external`         |
 | **`process.hrtime.bigint()`** | Mengukur waktu komputasi beresolusi tinggi dalam skala nanodetik    | Berbasis jam perangkat keras sehingga kebal terhadap koreksi jam kalender |
-| **`process.on(event, fn)`**   | Memasang fungsi listener sinyal dan siklus hidup proses             | Menangani sinyal dari sistem operasi seperti `SIGINT` dan `SIGTERM`       |
+| **`process.on()`**            | Memasang fungsi listener sinyal dan siklus hidup proses             | Menangani sinyal dari sistem operasi seperti `SIGINT` dan `SIGTERM`       |
 
 ### `process.env`
 
 Properti `process.env` berisi representasi objek dari variabel lingkungan sistem operasi. Properti ini menjadi standar utama untuk membaca setelan aplikasi (seperti port server atau mode rilis) tanpa menulis rahasia langsung di kode sumber.
+
+Struktur properti: `process.env`
+
+- Tipe data: `Record<string, string | undefined>`.
+- Peran: Objek pasangan kunci-nilai string yang merefleksikan seluruh variabel lingkungan sistem operasi host tempat Node.js dieksekusi.
 
 ```javascript
 import process from "node:process";
@@ -73,6 +78,11 @@ console.log(secretKey === undefined);
 
 Properti `process.argv` mengembalikan array string yang memuat seluruh teks yang kamu ketikkan di terminal saat menjalankan perintah Node.js. Dua item pertama selalu berisi lokasi biner Node.js dan path file utama.
 
+Struktur properti: `process.argv`
+
+- Tipe data: `string[]`.
+- Peran: Array string berisikan argumen baris perintah saat proses dijalankan. Elemen 0 adalah path biner `node`, elemen 1 adalah path file target, dan elemen 2 ke atas adalah argumen kiriman pengguna.
+
 ```javascript
 import process from "node:process";
 
@@ -93,9 +103,14 @@ console.log(Array.isArray(userArgs));
 // Output: true
 ```
 
-### `process.exit(code)`
+### `process.exit()`
 
 Metode `process.exit()` memaksa proses Node.js berhenti seketika itu juga. Memberikan angka `0` menandakan aplikasi selesai dengan sukses, sedangkan angka `1` atau lebih menandakan penghentian darurat akibat error.
+
+Struktur parameter: `process.exit(code)`
+
+- `code`: Kode status keluar angka integer yang dikirimkan ke sistem operasi (opsional, tipe data: `number`, nilai bawaan: `0` atau sesuai `process.exitCode`).
+- Nilai kembalian: Mengembalikan tipe data `never` (runtime langsung berhenti dan mengeksekusi proses terminasi).
 
 ```javascript
 import process from "node:process";
@@ -125,7 +140,12 @@ process.exitCode = 0;
 
 ### `process.cwd()`
 
-Metode `process.cwd()` mengembalikan string jalur folder tempat terminal sedang berada saat menjalankan perintah `node`. Nilai ini tergantung pada posisi kursor terminal, bukan di mana file JavaScript itu disimpan secara fisik.
+Metode `process.cwd()` mengembalikan string path folder tempat terminal sedang berada saat menjalankan perintah `node`. Nilai ini tergantung pada posisi kursor terminal, bukan di mana file JavaScript itu disimpan secara fisik.
+
+Struktur parameter: `process.cwd()`
+
+- Tidak memerlukan parameter apa pun.
+- Nilai kembalian: Mengembalikan string path direktori kerja aktif terminal tempat perintah `node` dieksekusi (tipe data: `string`).
 
 ```javascript
 import process from "node:process";
@@ -151,6 +171,11 @@ console.log(isString);
 
 Metode `process.uptime()` mengembalikan angka dalam detik yang menunjukkan berapa lama aplikasi Node.js kamu sudah menyala sejak pertama kali dijalankan.
 
+Struktur parameter: `process.uptime()`
+
+- Tidak memerlukan parameter apa pun.
+- Nilai kembalian: Mengembalikan angka desimal durasi waktu aktif proses Node.js dalam satuan detik (tipe data: `number`).
+
 ```javascript
 import process from "node:process";
 
@@ -174,6 +199,11 @@ console.log(Number.isInteger(roundedSeconds));
 ### `process.memoryUsage()`
 
 Metode `process.memoryUsage()` memberikan gambaran alokasi memori RAM yang dipakai oleh aplikasi dalam ukuran byte. Properti `heapUsed` mencerminkan ukuran memori yang sedang aktif dipakai oleh variabel dan objek JavaScript.
+
+Struktur parameter: `process.memoryUsage()`
+
+- Tidak memerlukan parameter apa pun.
+- Nilai kembalian: Mengembalikan objek ringkasan alokasi memori RAM dalam satuan byte dengan rincian `{ rss, heapTotal, heapUsed, external, arrayBuffers }` (tipe data: `object`).
 
 ```javascript
 import process from "node:process";
@@ -200,6 +230,11 @@ console.log(heapMb > 0);
 ### `process.hrtime.bigint()`
 
 Metode `process.hrtime.bigint()` mengembalikan catatan waktu perangkat keras bertipe `bigint` dalam satuan nanodetik. Fitur ini sangat cocok untuk menguji efisiensi algoritma karena kebal terhadap perubahan jam komputer.
+
+Struktur parameter: `process.hrtime.bigint()`
+
+- Tidak memerlukan parameter apa pun.
+- Nilai kembalian: Mengembalikan angka waktu resolusi tinggi perangkat keras berformat integer presisi sembarang dalam satuan nanodetik (tipe data: `bigint`).
 
 ```javascript
 import process from "node:process";
@@ -230,9 +265,15 @@ console.log(durationMs >= 0);
 // Output: true
 ```
 
-### `process.on(event, fn)`
+### `process.on()`
 
 Metode `process.on()` dipakai untuk memasang listener pada siklus hidup aplikasi, termasuk menangani sinyal sistem operasi seperti `SIGINT` (saat kamu menekan tombol Ctrl+C di terminal).
+
+Struktur parameter: `process.on(eventName, listener)`
+
+- `eventName`: Nama event siklus hidup proses atau sinyal POSIX sistem operasi yang ingin didengarkan (wajib, tipe data: `string | symbol`).
+- `listener`: Fungsi callback yang akan dieksekusi saat event tersebut dipancarkan (wajib, tipe data: `Function`).
+- Nilai kembalian: Mengembalikan instans objek `process` untuk mendukung pemanggilan berantai atau chaining (tipe data: `NodeJS.Process`).
 
 ```javascript
 import process from "node:process";

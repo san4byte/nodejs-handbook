@@ -2,9 +2,9 @@
 
 > Ringkasan
 >
-> - Fungsi: Membantu kita menyusun, merapikan, membedah bagian nama berkas, dan menentukan lokasi folder yang aman di berbagai sistem operasi.
-> - Digunakan saat: Menggabungkan potongan path folder proyek, memvalidasi ekstensi berkas unggahan, menghitung navigasi impor relatif, dan melindungi server dari serangan intip folder (_path traversal_).
-> - Aturan praktis: Jangan pernah menyambung alamat berkas dengan tanda tambah string (`+ '/'`); gunakan `path.posix` untuk kunci penyimpanan cloud dan selalu periksa batas folder aman menggunakan `.startsWith()`.
+> - Fungsi: Membantu kita menyusun, merapikan, membedah bagian nama file, dan menentukan lokasi folder yang aman di berbagai sistem operasi.
+> - Digunakan saat: Menggabungkan potongan path folder proyek, memvalidasi ekstensi file unggahan, menghitung navigasi impor relatif, dan melindungi server dari serangan intip folder (_path traversal_).
+> - Aturan praktis: Jangan pernah menyambung alamat file dengan tanda tambah string (`+ '/'`); gunakan `path.posix` untuk kunci penyimpanan cloud dan selalu periksa batas folder aman menggunakan `.startsWith()`.
 
 ---
 
@@ -12,7 +12,7 @@
 
 - Memahami perbedaan tanda pemisah folder antara Linux/macOS (`/`) dan Windows (`\`).
 - Membedakan cara kerja penggabungan path `path.join()` dengan kalkulasi path absolut `path.resolve()`.
-- Mengambil bagian-bagian nama berkas menggunakan `path.basename()`, `path.dirname()`, dan `path.extname()`.
+- Mengambil bagian-bagian nama file menggunakan `path.basename()`, `path.dirname()`, dan `path.extname()`.
 - Menghitung rute navigasi relatif antar-folder menggunakan `path.relative()`.
 - Menerapkan pola keamanan untuk menangkal celah pembobolan folder _Path Traversal_ (CWE-22).
 
@@ -20,13 +20,13 @@
 
 ## Konsep
 
-> Modul `node:path` bisa diibaratkan seperti papan penunjuk jalan dan pos satpam di sebuah kawasan perkantoran. Fungsi `path.join()` bertindak seperti petunjuk arah lokal ("dari lobi, naik ke lantai 2, belok ke ruang arsip"). Fungsi `path.resolve()` bekerja seperti titik koordinat GPS lengkap ("Jalan Merdeka No. 10, Menara Palma, Lantai 2, Ruang Arsip"). Pos satpam bertugas memeriksa pengunjung yang mencoba menyelinap keluar batas menggunakan tanda mundur (`..`) agar mereka tidak bisa membuka berkas rahasia di luar area yang diizinkan.
+> Modul `node:path` bisa diibaratkan seperti papan penunjuk jalan dan pos satpam di sebuah kawasan perkantoran. Fungsi `path.join()` bertindak seperti petunjuk arah lokal ("dari lobi, naik ke lantai 2, belok ke ruang arsip"). Fungsi `path.resolve()` bekerja seperti titik koordinat GPS lengkap ("Jalan Merdeka No. 10, Menara Palma, Lantai 2, Ruang Arsip"). Pos satpam bertugas memeriksa pengunjung yang mencoba menyelinap keluar batas menggunakan tanda mundur (`..`) agar mereka tidak bisa membuka file rahasia di luar area yang diizinkan.
 
 ```mermaid
 flowchart TD
     INPUT["Input Pengguna: '../../etc/passwd'"] --> RESOLVE["path.resolve(ROOT_DIR, '.' + path.sep + INPUT)"]
     RESOLVE --> CHECK{"safeTarget.startsWith(ROOT_DIR)?"}
-    CHECK -- Ya (Aman) --> ALLOW["Izinkan Akses Berkas"]
+    CHECK -- Ya (Aman) --> ALLOW["Izinkan Akses File"]
     CHECK -- Tidak (Bahaya) --> BLOCK["Tolak Permintaan: 403 Forbidden"]
 ```
 
@@ -34,25 +34,30 @@ flowchart TD
 
 ## Referensi
 
-| Item                             | Fungsi                                                                   | Catatan                                                            |
-| :------------------------------- | :----------------------------------------------------------------------- | :----------------------------------------------------------------- |
-| **`path.join(...paths)`**        | Menggabungkan potongan path folder dan merapikan tanda `.` atau `..`     | Mempertahankan status relatif atau absolut sesuai potongan pertama |
-| **`path.resolve(...paths)`**     | Menghitung path absolut fisik lengkap dari kanan ke kiri                 | Selalu menghasilkan path absolut yang terikat pada `process.cwd()` |
-| **`path.basename(path, [ext])`** | Mengambil nama berkas paling ujung dari string path                      | Bisa memotong ekstensi jika parameter kedua diisi                  |
-| **`path.dirname(path)`**         | Mengambil path folder induk tempat berkas berada                         | Membuang nama berkas paling belakang                               |
-| **`path.extname(path)`**         | Mengambil ekstensi berkas lengkap beserta tanda titiknya                 | Mengembalikan string kosong jika berkas tidak punya ekstensi       |
-| **`path.relative(from, to)`**    | Menghitung rute navigasi relatif dari satu lokasi ke lokasi tujuan       | Sangat praktis saat menyusun baris kode impor modul otomatis       |
-| **`path.normalize(path)`**       | Merapikan garis miring ganda dan tanda mundur yang berantakan            | Menyeragamkan format path tanpa mengubah status absolutnya         |
-| **`path.isAbsolute(path)`**      | Mengecek apakah suatu path merupakan path absolut atau relatif           | Mengembalikan nilai boolean `true` atau `false`                    |
-| **`path.parse(path)`**           | Membedah string path menjadi objek anatomi berkas                        | Menghasilkan objek `{ root, dir, base, ext, name }`                |
-| **`path.format(obj)`**           | Merakit kembali objek anatomi berkas menjadi satu string path utuh       | Merupakan kebalikan langsung dari `path.parse()`                   |
-| **`path.sep`**                   | Menyediakan karakter pemisah segmen path bawaan sistem operasi           | Bernilai `/` di POSIX (Linux/macOS) dan `\` di Windows             |
-| **`path.posix`**                 | Memaksa seluruh operasi manipulasi path memakai garis miring POSIX (`/`) | Menjamin pemisah selalu berupa `/` untuk URL web dan AWS S3 Object |
-| **`path.win32`**                 | Memaksa seluruh operasi manipulasi path memakai standar Windows (`\`)    | Berguna saat server Linux perlu memproses path dari klien Windows  |
+| Item                           | Fungsi                                                                   | Catatan                                                            |
+| :----------------------------- | :----------------------------------------------------------------------- | :----------------------------------------------------------------- |
+| **`path.join(...paths)`**      | Menggabungkan potongan path folder dan merapikan tanda `.` atau `..`     | Mempertahankan status relatif atau absolut sesuai potongan pertama |
+| **`path.resolve(...paths)`**   | Menghitung path absolut fisik lengkap dari kanan ke kiri                 | Selalu menghasilkan path absolut yang terikat pada `process.cwd()` |
+| **`path.basename(path, ext)`** | Mengambil nama file paling ujung dari string path                        | Bisa memotong ekstensi jika parameter kedua diisi                  |
+| **`path.dirname(path)`**       | Mengambil path folder induk tempat file berada                           | Membuang nama file paling belakang                                 |
+| **`path.extname(path)`**       | Mengambil ekstensi file lengkap beserta tanda titiknya                   | Mengembalikan string kosong jika file tidak punya ekstensi         |
+| **`path.relative(from, to)`**  | Menghitung rute navigasi relatif dari satu lokasi ke lokasi tujuan       | Sangat praktis saat menyusun baris kode impor modul otomatis       |
+| **`path.normalize(path)`**     | Merapikan garis miring ganda dan tanda mundur yang berantakan            | Menyeragamkan format path tanpa mengubah status absolutnya         |
+| **`path.isAbsolute(path)`**    | Mengecek apakah suatu path merupakan path absolut atau relatif           | Mengembalikan nilai boolean `true` atau `false`                    |
+| **`path.parse(path)`**         | Membedah string path menjadi objek anatomi file                          | Menghasilkan objek `{ root, dir, base, ext, name }`                |
+| **`path.format(pathObject)`**  | Merakit kembali objek anatomi file menjadi satu string path utuh         | Merupakan kebalikan langsung dari `path.parse()`                   |
+| **`path.sep`**                 | Menyediakan karakter pemisah segmen path bawaan sistem operasi           | Bernilai `/` di POSIX (Linux/macOS) dan `\` di Windows             |
+| **`path.posix`**               | Memaksa seluruh operasi manipulasi path memakai garis miring POSIX (`/`) | Menjamin pemisah selalu berupa `/` untuk URL web dan AWS S3 Object |
+| **`path.win32`**               | Memaksa seluruh operasi manipulasi path memakai standar Windows (`\`)    | Berguna saat server Linux perlu memproses path dari klien Windows  |
 
 ### `path.join(...paths)`
 
 Metode `path.join()` menggabungkan potongan-potongan path menjadi satu string rapi dan otomatis membereskan tanda navigasi seperti `.` atau `..`. Metode ini tidak memaksakan path menjadi absolut jika potongan pertamanya memang relatif.
+
+Struktur parameter: `path.join(...paths)`
+
+- `...paths`: Rangkaian segmen path yang ingin disambungkan (wajib minimal satu, tipe data: `string[]`).
+- Nilai kembalian: Mengembalikan satu string gabungan path yang telah dinormalisasi (tipe data: `string`).
 
 ```javascript
 import path from "node:path";
@@ -83,6 +88,11 @@ console.log(currentDir);
 
 Metode `path.resolve()` menyusun path absolut lengkap dengan membaca potongan dari kanan ke kiri. Jika belum menemukan tanda slash absolut, metode ini otomatis menyambungkannya ke folder kerja terminal kamu (`process.cwd()`).
 
+Struktur parameter: `path.resolve(...paths)`
+
+- `...paths`: Rangkaian segmen path atau path absolut (opsional, tipe data: `string[]`).
+- Nilai kembalian: Mengembalikan string path fisik absolut dari kanan ke kiri yang terikat pada `process.cwd()` (tipe data: `string`).
+
 ```javascript
 import path from "node:path";
 
@@ -101,9 +111,15 @@ console.log(resetPath);
 // Output: /folderB/file.txt
 ```
 
-### `path.basename(path, [ext])`
+### `path.basename(path, ext)`
 
-Metode `path.basename()` mengambil nama berkas paling ujung dari suatu string path. Kamu juga bisa memberikan parameter kedua untuk langsung membuang ekstensinya.
+Metode `path.basename()` mengambil nama file paling ujung dari suatu string path. Kamu juga bisa memberikan parameter kedua untuk langsung membuang ekstensinya.
+
+Struktur parameter: `path.basename(path, ext)`
+
+- `path`: String alamat path file lengkap (wajib, tipe data: `string`).
+- `ext`: Ekstensi file opsional yang ingin dihilangkan dari hasil akhir (opsional, tipe data: `string`).
+- Nilai kembalian: Mengembalikan nama file paling ujung dari string path (tipe data: `string`).
 
 ```javascript
 import path from "node:path";
@@ -129,7 +145,12 @@ console.log(folder);
 
 ### `path.dirname(path)`
 
-Metode `path.dirname()` mengembalikan lokasi folder induk tempat berkas berada dengan membuang nama berkas terakhir.
+Metode `path.dirname()` mengembalikan lokasi folder induk tempat file berada dengan membuang nama file terakhir.
+
+Struktur parameter: `path.dirname(path)`
+
+- `path`: String alamat path file lengkap (wajib, tipe data: `string`).
+- Nilai kembalian: Mengembalikan string path folder induk tempat file berada (tipe data: `string`).
 
 ```javascript
 import path from "node:path";
@@ -151,7 +172,12 @@ console.log(rootDir);
 
 ### `path.extname(path)`
 
-Metode `path.extname()` mengambil ekstensi berkas mulai dari tanda titik terakhir pada nama berkas.
+Metode `path.extname()` mengambil ekstensi file mulai dari tanda titik terakhir pada nama file.
+
+Struktur parameter: `path.extname(path)`
+
+- `path`: String path yang ingin diambil ekstensinya (wajib, tipe data: `string`).
+- Nilai kembalian: Mengembalikan ekstensi file beserta tanda titik (misal: `'.pdf'`) atau string kosong `""` jika tidak ada ekstensi (tipe data: `string`).
 
 ```javascript
 import path from "node:path";
@@ -161,7 +187,7 @@ console.log(extension);
 // Output: .pdf
 ```
 
-Kasus lain: Nama berkas tanpa titik atau file konfigurasi tersembunyi tanpa ekstensi lanjutan akan menghasilkan string kosong.
+Kasus lain: Nama file tanpa titik atau file konfigurasi tersembunyi tanpa ekstensi lanjutan akan menghasilkan string kosong.
 
 ```javascript
 import path from "node:path";
@@ -175,6 +201,12 @@ console.log(path.extname("Dockerfile") === "");
 ### `path.relative(from, to)`
 
 Metode `path.relative()` menghitung petunjuk rute navigasi relatif dari satu folder asal (`from`) menuju folder tujuan (`to`).
+
+Struktur parameter: `path.relative(from, to)`
+
+- `from`: Path lokasi awal (wajib, tipe data: `string`).
+- `to`: Path lokasi tujuan (wajib, tipe data: `string`).
+- Nilai kembalian: Mengembalikan string rute navigasi relatif dari `from` menuju `to` (tipe data: `string`).
 
 ```javascript
 import path from "node:path";
@@ -201,6 +233,11 @@ console.log(samePath === "");
 
 Metode `path.normalize()` merapikan tanda garis miring ganda dan menyelesaikan tanda mundur (`..`) pada string path yang berantakan.
 
+Struktur parameter: `path.normalize(path)`
+
+- `path`: String path yang memiliki segmen berantakan atau navigasi `.` dan `..` (wajib, tipe data: `string`).
+- Nilai kembalian: Mengembalikan string path yang sudah dirapikan (tipe data: `string`).
+
 ```javascript
 import path from "node:path";
 
@@ -223,6 +260,11 @@ console.log(relativePath);
 
 Metode `path.isAbsolute()` memeriksa apakah sebuah string path merupakan path absolut di sistem operasi tempat aplikasi berjalan.
 
+Struktur parameter: `path.isAbsolute(path)`
+
+- `path`: String path yang ingin diuji (wajib, tipe data: `string`).
+- Nilai kembalian: Mengembalikan boolean `true` jika path merupakan path absolut, atau `false` jika path relatif (tipe data: `boolean`).
+
 ```javascript
 import path from "node:path";
 
@@ -244,6 +286,11 @@ console.log(path.isAbsolute(""));
 ### `path.parse(path)`
 
 Metode `path.parse()` membedah string path menjadi objek struktur data yang rapi, memisahkan root, folder induk, nama lengkap, nama murni, dan ekstensinya.
+
+Struktur parameter: `path.parse(path)`
+
+- `path`: String path file lengkap yang ingin dibedah anatominya (wajib, tipe data: `string`).
+- Nilai kembalian: Mengembalikan objek anatomi file dengan properti `{ root, dir, base, ext, name }` (tipe data: `ParsedPath`).
 
 ```javascript
 import path from "node:path";
@@ -269,9 +316,14 @@ console.log(parsedRelative.root === "");
 // Output: true
 ```
 
-### `path.format(obj)`
+### `path.format(pathObject)`
 
-Metode `path.format()` merakit kembali objek hasil bedahan berkas menjadi string alamat path yang utuh.
+Metode `path.format()` merakit kembali objek hasil bedahan file menjadi string alamat path yang utuh.
+
+Struktur parameter: `path.format(pathObject)`
+
+- `pathObject`: Objek anatomi file seperti hasil `path.parse()` (wajib, tipe data: `FormatInputPathObject`).
+- Nilai kembalian: Mengembalikan satu string gabungan path utuh (tipe data: `string`).
 
 ```javascript
 import path from "node:path";
@@ -302,6 +354,11 @@ console.log(reconstructedPath);
 
 Properti `path.sep` menyediakan karakter pemisah segmen path bawaan sistem operasi host (`/` di Linux/macOS dan `\` di Windows). Properti ini sangat praktis untuk memecah string path atau merangkai formula keamanan tanpa melakukan hardcode karakter slash.
 
+Struktur properti: `path.sep`
+
+- Tipe data: `string`.
+- Peran: Menyediakan karakter pemisah segmen path bawaan sistem operasi host (`/` di POSIX Linux/macOS, `\` di Windows).
+
 ```javascript
 import path from "node:path";
 
@@ -327,6 +384,11 @@ console.log(dynamicPath);
 
 Objek `path.posix` menyediakan seluruh fitur modul `path` yang dipaksa menggunakan standar garis miring POSIX (`/`), baik saat dijalankan di Windows maupun Linux.
 
+Struktur properti: `path.posix`
+
+- Tipe data: `PlatformPath`.
+- Peran: Objek implementasi metode modul path yang dipaksa bekerja sesuai spesifikasi POSIX (menggunakan pemisah `/`).
+
 ```javascript
 import path from "node:path";
 
@@ -347,7 +409,12 @@ console.log(urlPath);
 
 ### `path.win32`
 
-Objek `path.win32` menyediakan implementasi modul `path` yang dipaksa menggunakan standar Windows (pemisah `\`). Fitur ini sangat berguna di server Linux ketika kamu perlu membedah path berkas yang dikirimkan oleh klien berbasis Windows.
+Objek `path.win32` menyediakan implementasi modul `path` yang dipaksa menggunakan standar Windows (pemisah `\`). Fitur ini sangat berguna di server Linux ketika kamu perlu membedah path file yang dikirimkan oleh klien berbasis Windows.
+
+Struktur properti: `path.win32`
+
+- Tipe data: `PlatformPath`.
+- Peran: Objek implementasi metode modul path yang dipaksa bekerja sesuai spesifikasi Windows (menggunakan pemisah `\`).
 
 ```javascript
 import path from "node:path";
@@ -380,7 +447,7 @@ console.log(winDir);
 
 ## Kesalahan Umum
 
-### Menyambung Path Berkas dengan Operator Tambah String
+### Menyambung Path File dengan Operator Tambah String
 
 Menyambung path secara manual dengan tanda `+ '/'` sering menimbulkan garis miring ganda atau rusak saat aplikasi dijalankan di Windows.
 
@@ -403,7 +470,7 @@ Metode `path.join()` hanya merapikan format titik mundur, bukan menjaga agar pat
 // Salah
 const publicDirectory = "/var/www/public";
 const targetPath = path.join(publicDirectory, "../../etc/passwd");
-// targetPath menjadi "/var/etc/passwd" yang membocorkan berkas rahasia sistem!
+// targetPath menjadi "/var/etc/passwd" yang membocorkan file rahasia sistem!
 ```
 
 ```javascript
@@ -420,7 +487,7 @@ const isSafe = safeTarget.startsWith(publicDirectory);
 
 ### Lupa Mengubah Ekstensi Menjadi Huruf Kecil Saat Validasi
 
-Berkas dari kamera atau ponsel sering memiliki ekstensi huruf besar seperti `.JPG` atau `.PNG`, yang bisa gagal jika dicek menggunakan daftar ekstensi huruf kecil.
+File dari kamera atau ponsel sering memiliki ekstensi huruf besar seperti `.JPG` atau `.PNG`, yang bisa gagal jika dicek menggunakan daftar ekstensi huruf kecil.
 
 ```javascript
 // Salah
@@ -439,7 +506,7 @@ const isValid = [".jpg", ".png"].includes(ext); // true
 
 ## Studi Kasus
 
-Skenario: Membangun penyimpan berkas unggahan aman (_secure file upload handler_) yang memeriksa ekstensi dalam format huruf kecil, menolak upaya pembobolan folder _path traversal_, dan membuat kunci penyimpanan cloud POSIX yang cocok untuk protokol AWS S3.
+Skenario: Membangun penyimpan file unggahan aman (_secure file upload handler_) yang memeriksa ekstensi dalam format huruf kecil, menolak upaya pembobolan folder _path traversal_, dan membuat kunci penyimpanan cloud POSIX yang cocok untuk protokol AWS S3.
 
 ```javascript
 import path from "node:path";
@@ -500,7 +567,7 @@ Desain ini menggabungkan `path.resolve()`, `path.extname().toLowerCase()`, valid
 
 ### Soal 1 (Dasar)
 
-Buat fungsi `parseFileComponents(filePath)` yang menerima string alamat berkas dan mengembalikan objek ringkas berisi nama berkas lengkap (`base`), nama murni tanpa ekstensi (`name`), ekstensi dalam format huruf kecil (`ext`), dan nama folder induk (`dir`).
+Buat fungsi `parseFileComponents(filePath)` yang menerima string alamat file dan mengembalikan objek ringkas berisi nama file lengkap (`base`), nama murni tanpa ekstensi (`name`), ekstensi dalam format huruf kecil (`ext`), dan nama folder induk (`dir`).
 
 Contoh input:
 
@@ -523,7 +590,7 @@ Batasan: Gunakan modul bawaan `node:path`. Nilai `ext` wajib diubah ke huruf kec
 
 ### Soal 2 (Menengah)
 
-Buat fungsi `changeFileExtension(oldPath, newExtension)` yang menerima path berkas asal dan string ekstensi baru (misalnya `'.webp'`). Fungsi harus membedah path menggunakan `path.parse()`, memperbarui komponen ekstensi dengan nilai baru, dan menyusunnya kembali memakai `path.format()` tanpa merusak struktur folder asalnya.
+Buat fungsi `changeFileExtension(oldPath, newExtension)` yang menerima path file asal dan string ekstensi baru (misalnya `'.webp'`). Fungsi harus membedah path menggunakan `path.parse()`, memperbarui komponen ekstensi dengan nilai baru, dan menyusunnya kembali memakai `path.format()` tanpa merusak struktur folder asalnya.
 
 Contoh input:
 
@@ -541,13 +608,13 @@ Batasan: Wajib menggunakan `path.parse()` dan `path.format()`. Pastikan ekstensi
 
 ### Soal 3 (Menantang)
 
-Buat fungsi pelindung akses berkas `validateDownloadAccess(rootDir, userInput, allowedExtensions)` yang memeriksa permintaan unduhan file pengguna terhadap celah keamanan _Directory Traversal_ dengan aturan berikut:
+Buat fungsi pelindung akses file `validateDownloadAccess(rootDir, userInput, allowedExtensions)` yang memeriksa permintaan unduhan file pengguna terhadap celah keamanan _Directory Traversal_ dengan aturan berikut:
 
 1. Ubah `rootDir` menjadi alamat absolut lengkap menggunakan `path.resolve()`.
 2. Jika `userInput` kosong, hanya berisi spasi, atau bukan string, kembalikan `{ allowed: false, statusCode: 400, message: 'Invalid file name' }`.
 3. Susun target path aman menggunakan formula defensif: `path.resolve(absoluteRoot, '.' + path.sep + userInput)`.
 4. Pastikan target hasil resolusi berada di dalam `absoluteRoot` menggunakan `.startsWith(absoluteRoot)`. Jika mencoba keluar dari batas folder, tolak dengan `{ allowed: false, statusCode: 403, message: 'Directory access denied' }`.
-5. Ekstrak ekstensi berkas target dan periksa apakah termasuk dalam daftar `allowedExtensions` (pencocokan tidak boleh sensitif huruf besar/kecil). Jika tidak terdaftar, kembalikan `{ allowed: false, statusCode: 415, message: 'Unsupported file type' }`.
+5. Ekstrak ekstensi file target dan periksa apakah termasuk dalam daftar `allowedExtensions` (pencocokan tidak boleh sensitif huruf besar/kecil). Jika tidak terdaftar, kembalikan `{ allowed: false, statusCode: 415, message: 'Unsupported file type' }`.
 6. Jika seluruh uji keamanan lolos, kembalikan `{ allowed: true, statusCode: 200, absolutePath: string }`.
 
 Contoh input 1 (Permintaan aman):

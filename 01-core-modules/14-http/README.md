@@ -12,7 +12,7 @@
 
 - Memahami siklus permintaan dan respons (_request-response cycle_) pada arsitektur protokol HTTP/1.1.
 - Membangun server web HTTP native menggunakan modul bawaan `node:http` tanpa ketergantungan framework luar.
-- Mengelola aliran data masuk `req` sebagai _Readable Stream_ dan aliran data keluar `res` sebagai _Writable Stream_.
+- Mengelola stream data masuk `req` sebagai _Readable Stream_ dan stream data keluar `res` sebagai _Writable Stream_.
 - Menggunakan fungsi global `fetch()` untuk melakukan panggilan HTTP modern dengan metode GET dan POST.
 - Menangani pembatalan permintaan dan batas waktu jaringan menggunakan antarmuka `AbortSignal.timeout()`.
 
@@ -43,9 +43,9 @@ sequenceDiagram
 
 | Item                         | Fungsi                                                        | Catatan                                                            |
 | :--------------------------- | :------------------------------------------------------------ | :----------------------------------------------------------------- |
-| **`http.createServer()`**    | Membuat server web HTTP baru                                  | Menerima fungsi penangan dengan parameter `req` dan `res`          |
+| **`http.createServer()`**    | Membuat server web HTTP baru                                  | Menerima fungsi handler dengan parameter `req` dan `res`           |
 | **`server.listen()`**        | Mengikat server pada nomor port dan host tertentu             | Mengaktifkan server agar siap menerima permintaan masuk            |
-| **`req.method` & `req.url`** | Membaca metode HTTP dan jalur URI yang diminta klien          | Menjadi fondasi penentuan percabangan rute (_routing_) manual      |
+| **`req.method` & `req.url`** | Membaca metode HTTP dan path URI yang diminta klien           | Menjadi fondasi penentuan percabangan rute (_routing_) manual      |
 | **`res.writeHead()`**        | Mengirimkan kode status HTTP dan header respons               | Harus dipanggil sebelum menulis isi data respons (_body_) ke klien |
 | **`res.end()`**              | Mengirimkan data akhir dan menutup respons                    | Menuntaskan transaksi HTTP agar koneksi klien tidak menggantung    |
 | **`fetch()`**                | Melakukan permintaan HTTP klien standar WHATWG                | Tersedia secara global di Node.js berbasis Promise                 |
@@ -72,7 +72,7 @@ server.listen(0, async () => {
 });
 ```
 
-Kasus lain: Mendaftarkan penangan permintaan lewat listener event `'request'` secara terpisah.
+Kasus lain: Mendaftarkan handler permintaan lewat listener event `'request'` secara terpisah.
 
 ```javascript
 import http from "node:http";
@@ -125,7 +125,7 @@ const s1 = http.createServer().listen(0, () => {
 
 ### `req.method` & `req.url`
 
-Properti `req.method` menyimpan kata kerja HTTP (seperti `GET`, `POST`, `PUT`, `DELETE`), sedangkan `req.url` berisi jalur alamat beserta parameter query yang dikirimkan oleh klien.
+Properti `req.method` menyimpan kata kerja HTTP (seperti `GET`, `POST`, `PUT`, `DELETE`), sedangkan `req.url` berisi path alamat beserta parameter query yang dikirimkan oleh klien.
 
 ```javascript
 import http from "node:http";
@@ -143,7 +143,7 @@ server.listen(0, async () => {
 });
 ```
 
-Kasus lain: Mengurai komponen URL dan parameter query string menggunakan kelas standar `URL`.
+Kasus lain: Mengurai komponen URL dan parameter query string menggunakan class standar `URL`.
 
 ```javascript
 import http from "node:http";
@@ -409,7 +409,7 @@ const res = await fetch("http://127.0.0.1:3000/api/data");
 
 ## Studi Kasus
 
-Skenario: Membangun server REST API native mandiri untuk pengelolaan katalog buku yang menangani rute metode `GET` dan `POST`, mengumpulkan body JSON dari aliran chunk, menangani rute yang tidak terdaftar (404), serta diverifikasi menggunakan klien `fetch()` bawaan.
+Skenario: Membangun server REST API native mandiri untuk pengelolaan katalog buku yang menangani rute metode `GET` dan `POST`, mengumpulkan body JSON dari stream chunk, menangani rute yang tidak terdaftar (404), serta diverifikasi menggunakan klien `fetch()` bawaan.
 
 ```javascript
 import http from "node:http";
@@ -483,7 +483,7 @@ server.listen(0, async () => {
 // Total books: 2
 ```
 
-Pendekatan ini membaca data kiriman body secara bertahap lewat event `'data'` dan `'end'`, membungkus parsing data dengan proteksi error agar server tidak mati saat menerima format yang salah, serta mengandalkan kelas standar `URL` WHATWG agar pemrosesan query string selalu akurat.
+Pendekatan ini membaca data kiriman body secara bertahap lewat event `'data'` dan `'end'`, membungkus parsing data dengan proteksi error agar server tidak mati saat menerima format yang salah, serta mengandalkan class standar `URL` WHATWG agar pemrosesan query string selalu akurat.
 
 ---
 
@@ -509,7 +509,7 @@ Batasan: Gunakan fungsi bawaan `fetch()` dan `AbortSignal.timeout()` tanpa depen
 
 ### Soal 2 (Menengah)
 
-Buat fungsi pengurai aliran data `parseJsonBody(req, maxByteSize)` yang menerima objek permintaan `req` (Readable Stream) dan batas maksimal ukuran byte. Fungsi harus mengembalikan Promise yang menghasilkan objek hasil parsing JSON.
+Buat fungsi pengurai stream data `parseJsonBody(req, maxByteSize)` yang menerima objek permintaan `req` (Readable Stream) dan batas maksimal ukuran byte. Fungsi harus mengembalikan Promise yang menghasilkan objek hasil parsing JSON.
 
 Ketentuan penanganan kasus khusus:
 
@@ -529,11 +529,11 @@ Contoh output yang diharapkan:
 { name: 'Laptop', price: 15000000 }
 ```
 
-Batasan: Gunakan modul buffer dan penanganan event `'data'` serta `'end'` langsung pada aliran stream `req`.
+Batasan: Gunakan modul buffer dan penanganan event `'data'` serta `'end'` langsung pada stream `req`.
 
 ### Soal 3 (Menantang)
 
-Buat fungsi server perantara `createGatewayServer(routeMap)` yang bertindak sebagai API Gateway (_reverse proxy_). Server menerima permintaan HTTP masuk lalu meneruskannya ke server tujuan (_upstream_) berdasarkan awalan jalur URL.
+Buat fungsi server perantara `createGatewayServer(routeMap)` yang bertindak sebagai API Gateway (_reverse proxy_). Server menerima permintaan HTTP masuk lalu meneruskannya ke server tujuan (_upstream_) berdasarkan awalan path URL.
 
 Ketentuan fungsional:
 
@@ -541,7 +541,7 @@ Ketentuan fungsional:
 2. Jika ada permintaan masuk ke `/auth/login`, teruskan metode HTTP, header penting, dan data body ke `http://127.0.0.1:4001/login` menggunakan `fetch()`.
 3. Kembalikan status HTTP, header, dan isi balasan dari server upstream ke klien pemanggil asli.
 4. Penanganan kasus khusus:
-   - Jika jalur URL tidak cocok dengan entri yang ada di peta rute, kembalikan HTTP 404 dengan body JSON `{ "error": "Gateway route not found" }`.
+   - Jika path URL tidak cocok dengan entri yang ada di peta rute, kembalikan HTTP 404 dengan body JSON `{ "error": "Gateway route not found" }`.
    - Batasi waktu tunggu ke upstream maksimal 1500 milidetik menggunakan `AbortSignal.timeout(1500)`. Jika batas waktu terlampaui, kembalikan HTTP 504 dengan body JSON `{ "error": "Gateway Timeout" }`.
    - Jika server upstream tujuan sedang mati atau menolak sambungan, tangkap error-nya dan kembalikan HTTP 502 dengan body JSON `{ "error": "Bad Gateway" }`.
 

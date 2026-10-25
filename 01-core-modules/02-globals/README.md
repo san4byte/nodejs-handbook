@@ -21,7 +21,7 @@
 
 ## Konsep
 
-> Bayangkan Node.js seperti gedung kantor bersama (_co-working space_). Objek `globalThis` adalah lobi utama gedung beserta fasilitas umumnya—seperti jam dinding, dispenser air, dan papan informasi yang bebas diakses siapa saja tanpa kunci khusus. Sementara itu, setiap file kode adalah meja kerja pribadi dengan laci terkunci (_module scope_). Menaruh berkas rahasia di atas meja lobi publik tentu berisiko membuat dokumen tertukar atau bocor ke divisi lain.
+> Bayangkan Node.js seperti gedung kantor bersama (_co-working space_). Objek `globalThis` adalah lobi utama gedung beserta fasilitas umumnya—seperti jam dinding, dispenser air, dan papan informasi yang bebas diakses siapa saja tanpa kunci khusus. Sementara itu, setiap file kode adalah meja kerja pribadi dengan laci terkunci (_module scope_). Menaruh file rahasia di atas meja lobi publik tentu berisiko membuat dokumen tertukar atau bocor ke divisi lain.
 
 ```mermaid
 flowchart TD
@@ -49,6 +49,11 @@ flowchart TD
 
 `globalThis` adalah objek universal standar JavaScript untuk merujuk ke cakupan terluar runtime. Di Node.js, `globalThis` menunjuk ke objek yang sama dengan pengenal lama `global`.
 
+Struktur properti: `globalThis`
+
+- Tipe data: `typeof globalThis` (`object`).
+- Peran: Objek cakupan global universal yang dapat diakses di file mana pun tanpa memerlukan impor modul.
+
 ```javascript
 console.log(globalThis === global);
 // Output: true
@@ -69,6 +74,12 @@ console.log(globalThis.localIdentifier);
 ### `structuredClone()`
 
 Fungsi `structuredClone()` dipakai untuk menyalin objek secara menyeluruh hingga ke lapisan terdalam (_deep clone_). Cara ini memutus kaitan memori antara objek asli dan objek salinan.
+
+Struktur parameter: `structuredClone(value, options)`
+
+- `value`: Nilai atau objek JavaScript yang ingin disalin secara mendalam (wajib, tipe data: `any`).
+- `options`: Objek konfigurasi tambahan (opsional, tipe data: `object`), misalnya `{ transfer: [...] }` untuk memindahkan kepemilikan buffer/port.
+- Nilai kembalian: Mengembalikan salinan data baru yang terisolasi total dari referensi memori objek aslinya (`any`).
 
 ```javascript
 const originalProfile = {
@@ -100,6 +111,11 @@ try {
 
 Metode `performance.now()` menghasilkan waktu presisi tinggi dalam satuan milidetik hingga pecahan desimal terkecil. Waktu ini dihitung sejak proses Node.js mulai berjalan, sehingga tidak terpengaruh oleh jam kalender komputer yang diubah.
 
+Struktur parameter: `performance.now()`
+
+- Tidak memerlukan parameter apa pun.
+- Nilai kembalian: Mengembalikan angka desimal waktu resolusi tinggi dalam satuan milidetik sejak proses Node.js dimulai (tipe data: `number`).
+
 ```javascript
 const startTime = performance.now();
 
@@ -128,7 +144,12 @@ console.log(timeB >= timeA);
 
 ### `TextEncoder`
 
-Kelas `TextEncoder` mengubah string teks menjadi deretan byte data biner (`Uint8Array`) berformat UTF-8. Objek ini sangat umum digunakan untuk menyiapkan payload sebelum dikirim lewat jaringan.
+Class `TextEncoder` mengubah string teks menjadi deretan byte data biner (`Uint8Array`) berformat UTF-8. Objek ini sangat umum digunakan untuk menyiapkan payload sebelum dikirim lewat jaringan.
+
+Struktur pemanggilan: `new TextEncoder()` dan metode `encoder.encode(input)`
+
+- `input`: String teks yang ingin dikonversi ke format biner (opsional, tipe data: `string`, nilai bawaan: `""`).
+- Nilai kembalian: Mengembalikan deretan byte biner `Uint8Array` berformat encoding UTF-8 (tipe data: `Uint8Array`).
 
 ```javascript
 const encoder = new TextEncoder();
@@ -151,7 +172,14 @@ console.log(symbolBytes.length);
 
 ### `TextDecoder`
 
-Kelas `TextDecoder` membaca deretan byte biner dan mengubahnya kembali menjadi teks yang bisa dibaca manusia. Objek ini melengkapi tugas `TextEncoder` untuk komunikasi bolak-balik.
+Class `TextDecoder` membaca deretan byte biner dan mengubahnya kembali menjadi teks yang bisa dibaca manusia. Objek ini melengkapi tugas `TextEncoder` untuk komunikasi bolak-balik.
+
+Struktur pemanggilan: `new TextDecoder(label, options)` dan metode `decoder.decode(input, options)`
+
+- `label`: Label format encoding teks (opsional, tipe data: `string`, nilai bawaan: `"utf-8"`).
+- `input`: Array byte biner yang ingin diterjemahkan menjadi teks biasa (opsional, tipe data: `ArrayBuffer | ArrayBufferView`, nilai bawaan: `new Uint8Array(0)`).
+- `options`: Objek konfigurasi tambahan decoding seperti `{ stream: boolean }` (opsional, tipe data: `object`).
+- Nilai kembalian: Mengembalikan string teks hasil decoding (tipe data: `string`).
 
 ```javascript
 const decoder = new TextDecoder("utf-8");
@@ -174,6 +202,11 @@ console.log(emptyResult === "");
 ### `queueMicrotask()`
 
 Fungsi `queueMicrotask()` menjadwalkan tugas ke antrean prioritas mikro (_microtask queue_). Tugas ini akan dieksekusi segera setelah kode sinkron saat ini selesai, sebelum Event Loop berpindah ke antrean timer.
+
+Struktur parameter: `queueMicrotask(callback)`
+
+- `callback`: Fungsi tanpa argumen yang akan dimasukkan ke antrean tugas mikro prioritas tinggi (wajib, tipe data: `Function`).
+- Nilai kembalian: Mengembalikan nilai `undefined`.
 
 ```javascript
 const executionOrder = [];
@@ -207,7 +240,12 @@ try {
 
 ### `AbortController`
 
-Kelas `AbortController` menyediakan cara standar untuk membatalkan proses asinkron kapan saja. Komponen lain bisa memantau status `signal.aborted` atau mendengarkan event pembatalan.
+Class `AbortController` menyediakan cara standar untuk membatalkan proses asinkron kapan saja. Komponen lain bisa memantau status `signal.aborted` atau mendengarkan event pembatalan.
+
+Struktur pemanggilan: `new AbortController()` dan metode `controller.abort(reason)`
+
+- `reason`: Alasan pembatalan operasi yang akan disimpan ke dalam properti `signal.reason` (opsional, tipe data: `any`, nilai bawaan: objek `DOMException` bertipe `AbortError`).
+- Nilai kembalian: Mengembalikan nilai `undefined`. Memancarkan event `'abort'` pada objek `controller.signal`.
 
 ```javascript
 const controller = new AbortController();
@@ -383,7 +421,7 @@ Contoh output yang diharapkan:
 13;
 ```
 
-Batasan: Gunakan kelas `TextEncoder` bawaan global tanpa menghitung panjang karakter string secara manual dengan `.length`.
+Batasan: Gunakan class `TextEncoder` bawaan global tanpa menghitung panjang karakter string secara manual dengan `.length`.
 
 ### Soal 2 (Menengah)
 

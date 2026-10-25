@@ -85,7 +85,7 @@ console.log(accumulator);
 Perintah terminal `node inspect` menjalankan aplikasi di bawah antarmuka debugging interaktif berbasis teks langsung di command line.
 
 ```bash
-# Menjalankan berkas di bawah debugger terminal
+# Menjalankan file di bawah debugger terminal
 node inspect app.js
 ```
 
@@ -249,7 +249,7 @@ console.log(inspector.url());
 
 ### `inspector.Session`
 
-Kelas `inspector.Session` menyediakan jembatan komunikasi langsung ke Chrome DevTools Protocol (CDP) dari dalam kode JavaScript, memungkinkan kita merekam profil performa CPU tanpa perlu membuka port jaringan keluar.
+Class `inspector.Session` menyediakan jembatan komunikasi langsung ke Chrome DevTools Protocol (CDP) dari dalam kode JavaScript, memungkinkan kita merekam profil performa CPU tanpa perlu membuka port jaringan keluar.
 
 ```javascript
 import inspector from "node:inspector";
@@ -456,7 +456,7 @@ Batasan: Gunakan modul bawaan `node:inspector` dan struktur penanganan `try...fi
 
 ### Soal 3 (Menantang)
 
-Buat modul profiler runtime mandiri bernama `captureExecutionProfile(testFn)` yang menggunakan kelas `inspector.Session` untuk berinteraksi langsung dengan Chrome DevTools Protocol tanpa membuka port jaringan TCP.
+Buat modul profiler runtime mandiri bernama `captureExecutionProfile(testFn)` yang menggunakan class `inspector.Session` untuk berinteraksi langsung dengan Chrome DevTools Protocol tanpa membuka port jaringan TCP.
 
 Ketentuan pemrosesan:
 

@@ -2,15 +2,15 @@
 
 > Ringkasan
 >
-> - Fungsi: Mengelola dan memanipulasi aliran data biner mentah langsung pada alokasi memori C++ di luar memori heap V8.
-> - Digunakan saat: Membaca berkas biner (seperti gambar atau audio), mentransfer paket data jaringan TCP, mengolah enkripsi kriptografi, dan mengubah format encoding data.
+> - Fungsi: Mengelola dan memanipulasi data biner mentah langsung pada alokasi memori C++ di luar memori heap V8.
+> - Digunakan saat: Membaca file biner (seperti gambar atau audio), mentransfer paket data jaringan TCP, mengolah enkripsi kriptografi, dan mengubah format encoding data.
 > - Aturan praktis: Selalu gunakan metode modern seperti `Buffer.from()` atau `Buffer.alloc()`, tinggalkan konstruktor usang `new Buffer()`, serta cantumkan encoding secara jelas.
 
 ---
 
 ## Tujuan Belajar
 
-- Memahami peran kelas `Buffer` dalam mengolah data biner mentah di runtime Node.js.
+- Memahami peran class `Buffer` dalam mengolah data biner mentah di runtime Node.js.
 - Mengalokasikan memori buffer dengan aman menggunakan `Buffer.alloc()` dan `Buffer.from()`.
 - Mengonversi data biner ke format teks dan encoding populer seperti UTF-8, Base64, dan Hex.
 - Menggabungkan beberapa potongan buffer menjadi satu kesatuan utuh lewat `Buffer.concat()`.
@@ -20,9 +20,9 @@
 
 ## Konsep
 
-Kita bisa membayangkan `Buffer` seperti ember penampung air dengan ukuran yang sudah ditentukan sejak awal. Pada awalnya, JavaScript di browser hanya dirancang untuk mengolah teks string. Namun, saat bekerja di sisi server, komputer dan jaringan berkomunikasi menggunakan aliran partikel biner mentah (deretan angka `0` dan `1`).
+Kita bisa membayangkan `Buffer` seperti ember penampung air dengan ukuran yang sudah ditentukan sejak awal. Pada awalnya, JavaScript di browser hanya dirancang untuk mengolah teks string. Namun, saat bekerja di sisi server, komputer dan jaringan berkomunikasi menggunakan data biner mentah (deretan angka `0` dan `1`).
 
-Node.js menyediakan wadah bernama `Buffer` dengan kapasitas byte yang terkunci sejak pertama kali dibuat. Aliran data biner yang masuk dari internet atau berkas disk akan ditampung sementara di dalam ember memori ini sebelum kita terjemahkan menjadi teks yang bisa dibaca manusia, disimpan ke database, atau dikirimkan ke modul lainnya.
+Node.js menyediakan wadah bernama `Buffer` dengan kapasitas byte yang terkunci sejak pertama kali dibuat. Data biner mentah yang masuk dari internet atau file disk akan ditampung sementara di dalam ember memori ini sebelum kita terjemahkan menjadi teks yang bisa dibaca manusia, disimpan ke database, atau dikirimkan ke modul lainnya.
 
 ```mermaid
 flowchart LR
@@ -50,6 +50,12 @@ flowchart LR
 
 Fungsi `Buffer.from()` digunakan untuk membuat instance `Buffer` baru dengan menyalin data dari string teks, array angka byte, maupun objek buffer lainnya.
 
+Struktur parameter: `Buffer.from(value, encoding)`
+
+- `value`: Sumber data berupa string, array integer byte, ArrayBuffer, atau Buffer lain (wajib, tipe data: `string | ArrayBuffer | SharedArrayBuffer | Uint8Array | number[]`).
+- `encoding`: Format pengkodean karakter jika `value` berupa string (opsional, tipe data: `string`, nilai bawaan: `'utf-8'`).
+- Nilai kembalian: Mengembalikan instans `Buffer` baru yang memuat salinan data sumber (tipe data: `Buffer`).
+
 ```javascript
 import { Buffer } from "node:buffer";
 
@@ -74,6 +80,13 @@ console.log(byteList.toString("utf-8"));
 
 Fungsi `Buffer.alloc()` menyiapkan blok memori dengan ukuran tetap dan secara otomatis mengisi seluruh nilainya dengan angka nol (`0x00`) agar bersih dan aman.
 
+Struktur parameter: `Buffer.alloc(size, fill, encoding)`
+
+- `size`: Ukuran kapasitas alokasi byte memori baru yang diinginkan (wajib, tipe data: `number`).
+- `fill`: Nilai awal untuk mengisi setiap byte pada alokasi memori (opsional, tipe data: `string | Buffer | Uint8Array | number`, nilai bawaan: `0`).
+- `encoding`: Format pengkodean teks jika nilai `fill` berupa string (opsional, tipe data: `string`, nilai bawaan: `'utf-8'`).
+- Nilai kembalian: Mengembalikan instans `Buffer` baru dengan memori yang telah diinisialisasi bersih (tipe data: `Buffer`).
+
 ```javascript
 import { Buffer } from "node:buffer";
 
@@ -95,6 +108,11 @@ console.log(filledBuf.toString("hex"));
 ### `Buffer.allocUnsafe()`
 
 Fungsi `Buffer.allocUnsafe()` menyiapkan alokasi memori baru tanpa membersihkan data lama yang tertinggal di blok memori tersebut. Cara ini membuat alokasi berjalan sangat cepat, namun kita harus berhati-hati agar tidak membocorkan data lama.
+
+Struktur parameter: `Buffer.allocUnsafe(size)`
+
+- `size`: Ukuran panjang byte alokasi memori baru (wajib, tipe data: `number`).
+- Nilai kembalian: Mengembalikan instans `Buffer` baru tanpa inisialisasi nol pada memorinya (tipe data: `Buffer`).
 
 ```javascript
 import { Buffer } from "node:buffer";
@@ -122,6 +140,13 @@ try {
 
 Metode `buf.toString()` menerjemahkan deretan byte biner di dalam buffer menjadi teks string biasa menggunakan format encoding yang kita tentukan.
 
+Struktur parameter: `buf.toString(encoding, start, end)`
+
+- `encoding`: Format pengkodean teks yang digunakan untuk menerjemahkan deretan byte (opsional, tipe data: `string`, nilai bawaan: `'utf-8'`).
+- `start`: Indeks posisi byte awal pembacaan (opsional, tipe data: `number`, nilai bawaan: `0`).
+- `end`: Indeks posisi byte akhir batas pembacaan (opsional, tipe data: `number`, nilai bawaan: `buf.length`).
+- Nilai kembalian: Mengembalikan string teks hasil penerjemahan byte biner (tipe data: `string`).
+
 ```javascript
 import { Buffer } from "node:buffer";
 
@@ -146,6 +171,12 @@ console.log(buf.toString("utf-8", 0, 4));
 ### `Buffer.concat()`
 
 Fungsi `Buffer.concat()` menyatukan beberapa objek buffer yang tersimpan di dalam sebuah array menjadi satu kesatuan buffer panjang.
+
+Struktur parameter: `Buffer.concat(list, totalLength)`
+
+- `list`: Array kumpulan instans `Buffer` atau `Uint8Array` yang ingin disambungkan (wajib, tipe data: `Uint8Array[]`).
+- `totalLength`: Panjang total kapasitas byte dari buffer gabungan (opsional, tipe data: `number`).
+- Nilai kembalian: Mengembalikan instans `Buffer` baru hasil penyatuan seluruh elemen (tipe data: `Buffer`).
 
 ```javascript
 import { Buffer } from "node:buffer";
@@ -172,6 +203,11 @@ console.log(emptyBuf.length);
 
 Fungsi `Buffer.isBuffer()` dipakai untuk memastikan apakah sebuah variabel benar-benar berupa instance resmi dari objek `Buffer`.
 
+Struktur parameter: `Buffer.isBuffer(obj)`
+
+- `obj`: Nilai atau objek JavaScript yang ingin diperiksa (wajib, tipe data: `any`).
+- Nilai kembalian: Mengembalikan boolean `true` jika objek merupakan instans `Buffer`, atau `false` jika bukan (tipe data: `boolean`).
+
 ```javascript
 import { Buffer } from "node:buffer";
 
@@ -197,6 +233,12 @@ console.log(Buffer.isBuffer(null));
 
 Fungsi `Buffer.byteLength()` menghitung jumlah byte fisik sesungguhnya yang diperlukan untuk menyimpan sebuah string teks pada encoding tertentu.
 
+Struktur parameter: `Buffer.byteLength(string, encoding)`
+
+- `string`: Nilai teks atau buffer yang ingin dihitung ukuran fisik byte aktualnya (wajib, tipe data: `string | Buffer | TypedArray | DataView | ArrayBuffer | SharedArrayBuffer`).
+- `encoding`: Format encoding teks yang digunakan saat evaluasi (opsional, tipe data: `string`, nilai bawaan: `'utf-8'`).
+- Nilai kembalian: Mengembalikan angka integer jumlah byte yang dibutuhkan (tipe data: `number`).
+
 ```javascript
 import { Buffer } from "node:buffer";
 
@@ -220,6 +262,12 @@ console.log(hexLength);
 ### `buf.subarray()`
 
 Metode `buf.subarray()` menghasilkan potongan pandangan (_view_) dari suatu buffer tanpa membuat alokasi memori fisik baru.
+
+Struktur parameter: `buf.subarray(start, end)`
+
+- `start`: Indeks byte awal pemotongan pandangan (opsional, tipe data: `number`, nilai bawaan: `0`).
+- `end`: Indeks byte batas akhir pemotongan (opsional, tipe data: `number`, nilai bawaan: `buf.length`).
+- Nilai kembalian: Mengembalikan instans `Buffer` baru yang berbagi referensi memori fisik yang sama dengan buffer asal (tipe data: `Buffer`).
 
 ```javascript
 import { Buffer } from "node:buffer";
@@ -319,7 +367,7 @@ const buf = Buffer.alloc(64);
 
 ## Studi Kasus
 
-Skenario: Membangun sistem validasi keamanan unggah berkas (_file upload security guard_) dengan teknik deteksi _Magic Bytes_ (tanda tangan biner). Sistem ini memverifikasi tipe MIME asli berkas dari header byte mentahnya untuk menggagalkan upaya peretasan yang menyamarkan skrip berbahaya lewat pemalsuan ekstensi berkas (misalnya skrip yang diganti nama menjadi `.png`).
+Skenario: Membangun sistem validasi keamanan unggah file (_file upload security guard_) dengan teknik deteksi _Magic Bytes_ (tanda tangan biner). Sistem ini memverifikasi tipe MIME asli file dari header byte mentahnya untuk menggagalkan upaya peretasan yang menyamarkan skrip berbahaya lewat pemalsuan ekstensi file (misalnya skrip yang diganti nama menjadi `.png`).
 
 ```javascript
 import { Buffer } from "node:buffer";
@@ -351,14 +399,14 @@ function inspectFileType(fileBuffer) {
   return { valid: true, mimeType: detectedMime, magicBytes };
 }
 
-// Simulasi 1: Berkas PNG valid (header biner: 89 50 4E 47)
+// Simulasi 1: File PNG valid (header biner: 89 50 4E 47)
 const validPngBuffer = Buffer.from([
   0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
 ]);
 console.log(inspectFileType(validPngBuffer));
 // Output: { valid: true, mimeType: 'image/png', magicBytes: '89504e47' }
 
-// Simulasi 2: Berkas skrip berbahaya yang dipalsukan ekstensinya menjadi foto
+// Simulasi 2: File skrip berbahaya yang dipalsukan ekstensinya menjadi foto
 const fakePngBuffer = Buffer.from('<?php echo "exploit"; ?>', "utf-8");
 console.log(inspectFileType(fakePngBuffer));
 // Output:
@@ -369,7 +417,7 @@ console.log(inspectFileType(fakePngBuffer));
 // }
 ```
 
-Mengapa pola ini menjadi standar industri backend? Di server produksi, peretas dapat dengan mudah memanipulasi nama berkas dan memalsukan header HTTP `Content-Type` dari sisi client. Memeriksa ekstensi saja membuka celah keamanan fatal (_Remote Code Execution_). Oleh karena itu, industri selalu menginspeksi beberapa byte pertama (_magic bytes signature_) langsung di tingkat biner memori menggunakan `Buffer.subarray()` dan representasi `hex` sebelum berkas diizinkan disimpan ke penyimpanan permanen.
+Mengapa pola ini menjadi standar industri backend? Di server produksi, peretas dapat dengan mudah memanipulasi nama file dan memalsukan header HTTP `Content-Type` dari sisi client. Memeriksa ekstensi saja membuka celah keamanan fatal (_Remote Code Execution_). Oleh karena itu, industri selalu menginspeksi beberapa byte pertama (_magic bytes signature_) langsung di tingkat biner memori menggunakan `Buffer.subarray()` dan representasi `hex` sebelum file diizinkan disimpan ke penyimpanan permanen.
 
 ---
 

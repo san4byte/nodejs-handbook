@@ -11,7 +11,7 @@
 ## Tujuan Belajar
 
 - Membedakan cara kerja `dns.lookup()` bawaan sistem operasi dengan keluarga metode jaringan `dns.resolve*()`.
-- Menggunakan API resolusi DNS berbasis Promise pada sub-jalur `node:dns/promises`.
+- Menggunakan API resolusi DNS berbasis Promise pada subpath `node:dns/promises`.
 - Melakukan query record spesifik seperti `resolve4()`, `resolveMx()`, `resolveTxt()`, dan `resolveNs()`.
 - Mengatur server resolver DNS kustom secara mandiri menggunakan `dns.setServers()`.
 - Melakukan pencarian balik alamat IP (_reverse DNS lookup_) dengan `reverse()`.
@@ -40,7 +40,7 @@ flowchart TD
 
 | Item                   | Fungsi                                                           | Catatan                                                              |
 | :--------------------- | :--------------------------------------------------------------- | :------------------------------------------------------------------- |
-| **`dns.lookup()`**     | Menyelesaikan nama domain menjadi alamat IP lewat sistem operasi | Memakai thread pool Libuv dan membaca berkas konfigurasi hosts lokal |
+| **`dns.lookup()`**     | Menyelesaikan nama domain menjadi alamat IP lewat sistem operasi | Memakai thread pool Libuv dan membaca file konfigurasi hosts lokal  |
 | **`dns.resolve4()`**   | Meminta record IPv4 (record A) langsung ke jaringan DNS          | Murni asinkron tanpa membebani thread pool Libuv                     |
 | **`dns.resolveMx()`**  | Mengambil record Mail Exchange untuk routing server email        | Mengembalikan daftar objek berisi prioritas dan nama server email    |
 | **`dns.resolveTxt()`** | Mengambil record teks arbitrer (record TXT) dari suatu domain    | Umum dipakai untuk verifikasi domain, serta aturan SPF dan DKIM      |
@@ -50,7 +50,7 @@ flowchart TD
 
 ### `dns.lookup()`
 
-Fungsi `dns.lookup()` menyelesaikan nama domain menggunakan resolver bawaan sistem operasi melalui fungsi C `getaddrinfo`. Fungsi ini memperhitungkan berkas pemetaan host lokal komputer, seperti `/etc/hosts` di Linux atau `hosts` di Windows.
+Fungsi `dns.lookup()` menyelesaikan nama domain menggunakan resolver bawaan sistem operasi melalui fungsi C `getaddrinfo`. Fungsi ini memperhitungkan file pemetaan host lokal komputer, seperti `/etc/hosts` di Linux atau `hosts` di Windows.
 
 ```javascript
 import dns from "node:dns/promises";
@@ -72,7 +72,7 @@ console.log(Array.isArray(list), list.length > 0);
 
 ### `dns.resolve4()`
 
-Fungsi `dns.resolve4()` meminta daftar alamat IPv4 (record A) langsung ke server DNS jaringan tanpa melewati berkas host lokal komputer. Pemanggilan ini berjalan murni secara non-blocking tanpa mengonsumsi antrean thread pool Libuv.
+Fungsi `dns.resolve4()` meminta daftar alamat IPv4 (record A) langsung ke server DNS jaringan tanpa melewati file host lokal komputer. Pemanggilan ini berjalan murni secara non-blocking tanpa mengonsumsi antrean thread pool Libuv.
 
 ```javascript
 import dns from "node:dns/promises";
@@ -232,7 +232,7 @@ try {
 | :--------------------- | :------------------------------------------------- | :------------------------------------------------------------- |
 | **Cara Kerja**         | Memanggil library C sistem operasi (`getaddrinfo`) | Bertanya langsung ke server DNS jaringan via soket             |
 | **Beban Thread Pool**  | Menghabiskan jatah thread pada Libuv thread pool   | Murni asinkron non-blocking tanpa thread pool                  |
-| **Berkas Hosts Lokal** | Memperhitungkan berkas `/etc/hosts` lokal          | Mengabaikan berkas pengaturan lokal sistem                     |
+| **File Hosts Lokal**   | Memperhitungkan file `/etc/hosts` lokal            | Mengabaikan file pengaturan lokal sistem                       |
 | **Dukungan Record**    | Terbatas pada alamat IP (A dan AAAA)               | Sangat lengkap (`A`, `AAAA`, `MX`, `TXT`, `NS`, `CNAME`, dll.) |
 
 ---
@@ -241,7 +241,7 @@ try {
 
 ### Menggunakan `dns.lookup()` untuk Memeriksa Banyak Domain Sekaligus
 
-Memanggil `dns.lookup()` dalam jumlah sangat banyak secara serempak bisa menghabiskan 4 jatah thread bawaan di Libuv thread pool. Akibatnya, operasi I/O lain seperti pembacaan berkas atau enkripsi akan ikut tersendat dan mengantre panjang.
+Memanggil `dns.lookup()` dalam jumlah sangat banyak secara serempak bisa menghabiskan 4 jatah thread bawaan di Libuv thread pool. Akibatnya, operasi I/O lain seperti pembacaan file atau enkripsi akan ikut tersendat dan mengantre panjang.
 
 ```javascript
 // Salah

@@ -2,7 +2,7 @@
 
 > Ringkasan
 >
-> - Fungsi: Membangun server dan klien jaringan berbasis protokol TCP (_Transmission Control Protocol_) dengan aliran data dua arah secara langsung.
+> - Fungsi: Membangun server dan klien jaringan berbasis protokol TCP (_Transmission Control Protocol_) dengan stream data dua arah secara langsung.
 > - Digunakan saat: Mengembangkan layanan komunikasi tingkat rendah seperti protokol kustom, komunikasi antar-proses (IPC), broker pesan ringan, atau perkakas diagnostik soket jaringan.
 > - Aturan praktis: Selalu pasang listener event `'error'` pada server dan soket klien agar aplikasi tidak mendadak mati (_crash_) saat koneksi terputus tiba-tiba.
 
@@ -10,7 +10,7 @@
 
 ## Tujuan Belajar
 
-- Memahami prinsip kerja komunikasi TCP pada lapisan transport jaringan serta sifat alirannya yang berbasis deretan byte mentah (_stream of bytes_).
+- Memahami prinsip kerja komunikasi TCP pada lapisan transport jaringan serta sifat komunikasinya yang berbasis deretan byte mentah (_stream of bytes_).
 - Membuat server TCP menggunakan `net.createServer()` serta mengelola siklus koneksi klien yang masuk.
 - Membangun klien TCP menggunakan `net.createConnection()` untuk bertukar data dua arah.
 - Mengelola siklus hidup soket melalui event `'connect'`, `'data'`, `'end'`, `'close'`, dan `'error'`.
@@ -20,15 +20,15 @@
 
 ## Konsep
 
-Protokol TCP bisa kita bayangkan seperti percakapan lewat panggilan telepon. Sebelum obrolan dimulai, kedua belah pihak melakukan proses proses _three-way handshake_ untuk memastikan jalurnya sudah siap dan terhubung dengan baik.
+Protokol TCP bisa kita bayangkan seperti percakapan lewat panggilan telepon. Sebelum obrolan dimulai, kedua belah pihak melakukan proses proses _three-way handshake_ untuk memastikan koneksinya sudah siap dan terhubung dengan baik.
 
-Setelah panggilan tersambung, kedua belah pihak bisa berbicara dan mendengarkan secara bersamaan (_full-duplex_). Seluruh informasi yang dikirim dijamin tiba secara utuh dan berurutan. Namun, karena TCP mengalirkan data seperti aliran air murni tanpa pemisah bawaan, pihak pengirim dan penerima harus menyepakati penanda akhir pesan sendiri (misalnya memakai karakter baris baru `\n`) agar lawan bicara tahu kapan satu pesan selesai dibaca.
+Setelah panggilan tersambung, kedua belah pihak bisa berbicara dan mendengarkan secara bersamaan (_full-duplex_). Seluruh informasi yang dikirim dijamin tiba secara utuh dan berurutan. Namun, karena TCP mentransfer data secara kontinu tanpa pemisah bawaan, pihak pengirim dan penerima harus menyepakati penanda akhir pesan sendiri (misalnya memakai karakter baris baru `\n`) agar lawan bicara tahu kapan satu pesan selesai dibaca.
 
 ```mermaid
 flowchart LR
     CLIENT["TCP Client"] -- 1. Proses Handshake (Koneksi) --> SERVER["TCP Server"]
-    CLIENT -- 2. Aliran Data Dupleks (socket.write) --> SERVER
-    SERVER -- 3. Balasan Aliran Data (socket.write) --> CLIENT
+    CLIENT -- 2. Data Dupleks (socket.write) --> SERVER
+    SERVER -- 3. Balasan Data Dupleks (socket.write) --> CLIENT
     CLIENT -- 4. Penutupan Sambungan (socket.end) --> SERVER
 ```
 
@@ -43,7 +43,7 @@ flowchart LR
 | **`server.listen()`**        | Mengikat server pada nomor port dan alamat host tertentu  | Nilai port `0` meminta sistem operasi memilihkan port acak yang bebas    |
 | **`server.close()`**         | Menghentikan server dari menerima koneksi baru            | Koneksi yang sudah terhubung tetap dibiarkan berjalan hingga selesai     |
 | **`socket.write()`**         | Mengirimkan teks atau buffer data ke ujung soket lainnya  | Mengembalikan nilai boolean penanda kondisi antrean buffer pengiriman    |
-| **`socket.end()`**           | Menutup jalur pengiriman data dari sisi lokal             | Mengirimkan sinyal selesai kirim, namun masih bisa menerima data balasan |
+| **`socket.end()`**           | Menutup saluran pengiriman data dari sisi lokal           | Mengirimkan sinyal selesai kirim, namun masih bisa menerima data balasan |
 | **`socket.destroy()`**       | Memutuskan dan menutup koneksi soket seketika             | Menghentikan komunikasi langsung tanpa menunggu sisa antrean             |
 | **`socket.setTimeout()`**    | Mengatur batas waktu hening tanpa aktivitas transfer data | Memancarkan event `'timeout'` tanpa memutus koneksi secara otomatis      |
 
@@ -240,7 +240,7 @@ const server = net
 
 ### `socket.end()`
 
-Metode `socket.end()` menutup jalur pengiriman data dari pihak kita dengan mengirimkan sinyal FIN ke lawan bicara. Meskipun kita sudah selesai mengirim, kita tetap bisa menerima sisa data balasan sampai lawan bicara juga menutup sambungannya.
+Metode `socket.end()` menutup saluran pengiriman data dari pihak kita dengan mengirimkan sinyal FIN ke lawan bicara. Meskipun kita sudah selesai mengirim, kita tetap bisa menerima sisa data balasan sampai lawan bicara juga menutup sambungannya.
 
 ```javascript
 import net from "node:net";
@@ -362,7 +362,7 @@ socket.destroy();
 | Karakteristik        | Soket TCP (`node:net`)                          | Server HTTP (`node:http`)                                      |
 | :------------------- | :---------------------------------------------- | :------------------------------------------------------------- |
 | **Lapisan Jaringan** | Lapisan 4 (Transport Layer)                     | Lapisan 7 (Application Layer)                                  |
-| **Bentuk Data**      | Aliran byte mentah tanpa struktur (_raw bytes_) | Pesan terstruktur (_headers_, status code, _body_)             |
+| **Bentuk Data**      | Stream byte mentah tanpa struktur (_raw bytes_) | Pesan terstruktur (_headers_, status code, _body_)             |
 | **Sifat Hubungan**   | Sambungan tetap dua arah penuh (_full-duplex_)  | Siklus tanya-jawab permintaan dan respons (_request-response_) |
 | **Pemisah Pesan**    | Ditentukan manual oleh pengembang (_framing_)   | Ditentukan otomatis sesuai spesifikasi protokol HTTP           |
 
@@ -370,7 +370,7 @@ socket.destroy();
 
 ## Kesalahan Umum
 
-### Lupa Memasang Penangan Event Error pada Soket
+### Lupa Memasang Handler Event Error pada Soket
 
 Jika kita tidak memasang listener event `'error'` pada soket, Node.js akan menganggap setiap kegagalan jaringan (seperti koneksi yang terputus mendadak) sebagai pengecualian tak tertangani yang langsung mematikan seluruh aplikasi.
 
@@ -391,7 +391,7 @@ client.write("Hello Server");
 
 ### Mengira Satu Panggilan Write Pasti Tiba Sebagai Satu Event Data
 
-Protokol TCP bekerja dengan sistem aliran byte tanpa mengetahui batas sebuah kalimat. Artinya, beberapa panggilan `write()` terpisah bisa saja digabungkan jadi satu paket besar di jaringan (_packet coalescing_), atau sebaliknya, satu pesan panjang bisa terpecah menjadi beberapa potongan data kecil (_fragmentation_).
+Protokol TCP bekerja dengan sistem stream byte tanpa mengetahui batas sebuah kalimat. Artinya, beberapa panggilan `write()` terpisah bisa saja digabungkan jadi satu paket besar di jaringan (_packet coalescing_), atau sebaliknya, satu pesan panjang bisa terpecah menjadi beberapa potongan data kecil (_fragmentation_).
 
 ```javascript
 // Salah
@@ -508,7 +508,7 @@ server.listen(0, () => {
 // Length: 9
 ```
 
-Pola ini mengumpulkan aliran data byte menggunakan pembatas baris baru `\n`. Cara ini menjamin setiap pesan JSON berhasil diuraikan secara utuh meskipun datanya tiba dalam beberapa potongan terpisah, sekaligus melindungi server dari kerusakan parsing jika menerima format data yang tidak valid.
+Pola ini mengumpulkan stream data byte menggunakan pembatas baris baru `\n`. Cara ini menjamin setiap pesan JSON berhasil diuraikan secara utuh meskipun datanya tiba dalam beberapa potongan terpisah, sekaligus melindungi server dari kerusakan parsing jika menerima format data yang tidak valid.
 
 ---
 
@@ -534,7 +534,7 @@ Batasan: Gunakan modul bawaan `node:net` murni. Soket harus langsung dihancurkan
 
 ### Soal 2 (Menengah)
 
-Buat fungsi `parseMessageFrames(initialBuffer, chunk, delimiter)` yang memproses aliran potongan data TCP yang terfragmentasi. Fungsi menerima sisa teks dari pembacaan sebelumnya (`initialBuffer`), data baru yang baru saja masuk (`chunk`), serta karakter pemisah pesan (`delimiter`). Fungsi harus mengembalikan objek yang memuat daftar pesan lengkap yang berhasil dipisahkan dan sisa teks yang belum memiliki penanda penutup.
+Buat fungsi `parseMessageFrames(initialBuffer, chunk, delimiter)` yang memproses stream potongan data TCP yang terfragmentasi. Fungsi menerima sisa teks dari pembacaan sebelumnya (`initialBuffer`), data baru yang baru saja masuk (`chunk`), serta karakter pemisah pesan (`delimiter`). Fungsi harus mengembalikan objek yang memuat daftar pesan lengkap yang berhasil dipisahkan dan sisa teks yang belum memiliki penanda penutup.
 
 Contoh input:
 
