@@ -1,8 +1,11 @@
-POST http://localhost:8000 
-content-type: application/json
-Accept: application/json
+GET http://localhost:8000/product?id=1
+
+###
+
+POST http://localhost:8000
+Content-Type: application/json
 
 {
     "name": "Joko Santoso",
-    "age": "21"
+    "age": 21
 }
