@@ -64,7 +64,7 @@ import http from "node:http";
 
 const server = http.createServer((req, res) => {
   res.writeHead(200, { "Content-Type": "text/plain" });
-  res.end("Server aktif");
+  res.end("Server active");
 });
 
 console.log(server instanceof http.Server);
@@ -171,7 +171,7 @@ Nilai kembalian: instance `ServerResponse`.
 import http from "node:http";
 
 const server = http.createServer((req, res) => {
-  res.end("Data selesai");
+  res.end("Data finished");
 });
 
 server.listen(0, async () => {
@@ -180,7 +180,7 @@ server.listen(0, async () => {
   console.log(text);
   server.close();
 });
-// Output: Data selesai
+// Output: Data finished
 ```
 
 Kondisi khusus: Selalu panggil `res.end()` di setiap jalur percabangan kode; jika tidak, browser atau client akan terus menunggu hingga timeout.

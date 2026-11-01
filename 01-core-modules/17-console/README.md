@@ -73,13 +73,13 @@ const out = new PassThrough();
 const err = new PassThrough();
 const customLogger = new Console({ stdout: out, stderr: err });
 
-customLogger.log("Sistem dimulai");
-customLogger.error("Terjadi kegagalan");
+customLogger.log("System initialized");
+customLogger.error("Failure occurred");
 
 console.log(out.read().toString().trim());
-// Output: Sistem dimulai
+// Output: System initialized
 console.log(err.read().toString().trim());
-// Output: Terjadi kegagalan
+// Output: Failure occurred
 ```
 
 Kondisi khusus dan penanganan error: jika `stdout` bukan Writable stream yang valid, pembuatan instance melempar `TypeError [ERR_INVALID_ARG_TYPE]`.
@@ -100,13 +100,13 @@ const outStream = new PassThrough();
 const errStream = new PassThrough();
 const c = new Console({ stdout: outStream, stderr: errStream });
 
-c.log("Status: %s", "AKTIF");
-c.error("Status: %s", "GAGAL");
+c.log("Status: %s", "ACTIVE");
+c.error("Status: %s", "FAILED");
 
 console.log(outStream.read().toString().trim());
-// Output: Status: AKTIF
+// Output: Status: ACTIVE
 console.log(errStream.read().toString().trim());
-// Output: Status: GAGAL
+// Output: Status: FAILED
 ```
 
 Kondisi khusus dan penanganan error: kedua metode otomatis menambahkan karakter baris baru (`\n`) di akhir teks yang dicetak.
@@ -154,10 +154,10 @@ Struktur parameter: `console.dir(item, options)`
 Nilai kembalian: tidak mengembalikan nilai (`undefined`).
 
 ```javascript
-const user = { name: "Budi", profile: { role: "admin" } };
+const user = { name: "Alice", profile: { role: "admin" } };
 console.dir(user, { colors: false, depth: 1 });
 // Output:
-// { name: 'Budi', profile: { role: 'admin' } }
+// { name: 'Alice', profile: { role: 'admin' } }
 ```
 
 Kondisi khusus dan penanganan error: jika objek bersarang melebihi batas `depth`, properti terdalam ditampilkan sebagai label ringkas `[Object]`.

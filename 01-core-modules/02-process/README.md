@@ -100,7 +100,7 @@ Nilai kembalian: tidak mengembalikan nilai (`never`).
 
 ```javascript
 process.on("exit", (code) => {
-  console.log(`Proses berhenti dengan kode: ${code}`);
+  console.log(`Process exited with code: ${code}`);
 });
 
 process.exitCode = 0;
@@ -194,11 +194,11 @@ Nilai kembalian: instance `process` (`EventEmitter`).
 
 ```javascript
 process.once("customTestEvent", (msg) => {
-  console.log(`Tertangkap: ${msg}`);
+  console.log(`Caught: ${msg}`);
 });
 
-process.emit("customTestEvent", "berhasil");
-// Output: Tertangkap: berhasil
+process.emit("customTestEvent", "success");
+// Output: Caught: success
 ```
 
 Kondisi khusus: Jangan biarkan handler `uncaughtException` berjalan tanpa memanggil `process.exit(1)`, karena proses berada dalam kondisi korup yang tidak dapat diprediksi.

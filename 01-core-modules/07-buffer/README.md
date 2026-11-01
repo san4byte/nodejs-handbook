@@ -149,7 +149,7 @@ Nilai kembalian: jumlah byte fisik (`number`).
 ```javascript
 import { Buffer } from "node:buffer";
 
-const text = "Kopi €";
+const text = "Cafe €";
 console.log(text.length);
 // Output: 6
 console.log(Buffer.byteLength(text, "utf-8"));
@@ -282,7 +282,7 @@ Buat fungsi `parseNetworkPacket(buffer, options = {})` untuk membedah paket data
 
 - **Level 1 (Dasar):** Periksa ukuran minimal paket (minimal 2 byte). Ambil isi muatan paket (_payload_) memakai `buffer.subarray(2)` dan konversi ke string UTF-8. Kembalikan objek `{ success: true, payloadText, byteLength: buffer.length }`.
 - **Level 2 (Menengah):** Dukung opsi format encoding teks `options.encoding` (`"utf-8"`, `"hex"`, `"base64"`). Konversi payload ke encoding yang diminta pengguna (default: `"utf-8"`).
-- **Level 3 (Menantang):** Validasi header 2 byte pertama paket. Jika 2 byte pembuka bukan `0xAA 0x55` (hex `"aa55"`), lempar `Error("Header paket tidak valid")`. Jika panjang buffer kurang dari 2 byte, lempar `RangeError("Ukuran paket terlalu kecil")`.
+- **Level 3 (Menantang):** Validasi header 2 byte pertama paket. Jika 2 byte pembuka bukan `0xAA 0x55` (hex `"aa55"`), lempar `Error("Invalid packet header")`. Jika panjang buffer kurang dari 2 byte, lempar `RangeError("Packet size too small")`.
 
 Contoh input dan output normal:
 
@@ -291,14 +291,14 @@ import { Buffer } from "node:buffer";
 
 const packet = Buffer.concat([
   Buffer.from([0xaa, 0x55]),
-  Buffer.from("Halo Node.js", "utf-8"),
+  Buffer.from("Hello Node.js", "utf-8"),
 ]);
 
 const res = parseNetworkPacket(packet, { encoding: "utf-8" });
 console.log(res.success);
 // Output: true
 console.log(res.payloadText);
-// Output: Halo Node.js
+// Output: Hello Node.js
 ```
 
 Contoh input dan penanganan error:
@@ -308,7 +308,7 @@ try {
   parseNetworkPacket(Buffer.from([0x00, 0x01]));
 } catch (err) {
   console.log(err.message);
-  // Output: Header paket tidak valid
+  // Output: Invalid packet header
 }
 ```
 

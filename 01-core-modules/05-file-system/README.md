@@ -53,7 +53,7 @@ flowchart LR
 | `fs.unlink(path)` | Menghapus satu file dari penyimpanan disk | Melempar error `ENOENT` bila file tidak ditemukan |
 | `fs.rm(path, [options])` | Menghapus file atau folder beserta seluruh isinya | Gunakan `{ recursive: true, force: true }` untuk direktori |
 
-### `fs.mkdir(path, [options])`
+### `fs.mkdir(path, options)`
 
 `fs.mkdir()` membuat direktori baru pada lokasi path yang ditentukan.
 
@@ -67,13 +67,13 @@ Nilai kembalian: `Promise<string | undefined>`. Mengembalikan path folder pertam
 import fs from "node:fs/promises";
 
 await fs.mkdir("./data/logs/2026", { recursive: true });
-console.log("Folder berhasil dibuat");
-// Output: Folder berhasil dibuat
+console.log("Folder created successfully");
+// Output: Folder created successfully
 ```
 
 Kondisi khusus: Jika opsi `recursive` bernilai `false` (default) dan folder induknya belum ada, pemanggilan akan melempar error `ENOENT`.
 
-### `fs.writeFile(file, data, [options])`
+### `fs.writeFile(file, data, options)`
 
 `fs.writeFile()` menulis data secara asinkron ke file target. Jika file sudah ada, seluruh isinya akan ditimpa.
 
@@ -87,14 +87,14 @@ Nilai kembalian: `Promise<void>`.
 ```javascript
 import fs from "node:fs/promises";
 
-await fs.writeFile("./data/hello.txt", "Halo Node.js", "utf-8");
-console.log("File berhasil ditulis");
-// Output: File berhasil ditulis
+await fs.writeFile("./data/hello.txt", "Hello Node.js", "utf-8");
+console.log("File written successfully");
+// Output: File written successfully
 ```
 
 Kondisi khusus: Melempar error `ENOENT` jika folder induk dari path file yang dituju belum dibuat.
 
-### `fs.readFile(path, [options])`
+### `fs.readFile(path, options)`
 
 `fs.readFile()` membaca seluruh isi file target ke dalam memori.
 
@@ -109,12 +109,12 @@ import fs from "node:fs/promises";
 
 const content = await fs.readFile("./data/hello.txt", "utf-8");
 console.log(content);
-// Output: Halo Node.js
+// Output: Hello Node.js
 ```
 
 Kondisi khusus: Melempar error `ENOENT` jika file target tidak ditemukan pada penyimpanan disk.
 
-### `fs.appendFile(path, data, [options])`
+### `fs.appendFile(path, data, options)`
 
 `fs.appendFile()` menyisipkan data baru di bagian akhir file tanpa menghapus konten lama.
 
@@ -128,9 +128,9 @@ Nilai kembalian: `Promise<void>`.
 ```javascript
 import fs from "node:fs/promises";
 
-await fs.appendFile("./data/hello.txt", "\nBaris baru", "utf-8");
-console.log("Data berhasil ditambahkan");
-// Output: Data berhasil ditambahkan
+await fs.appendFile("./data/hello.txt", "\nNew line", "utf-8");
+console.log("Data appended successfully");
+// Output: Data appended successfully
 ```
 
 Kondisi khusus: Jika file belum ada, Node.js otomatis membuat file baru tersebut.
@@ -190,13 +190,13 @@ Nilai kembalian: `Promise<void>`.
 import fs from "node:fs/promises";
 
 await fs.rename("./data/hello.txt", "./data/greet.txt");
-console.log("Nama file berhasil diubah");
-// Output: Nama file berhasil diubah
+console.log("File renamed successfully");
+// Output: File renamed successfully
 ```
 
 Kondisi khusus: Jika `newPath` sudah ada sebelumnya, file target tersebut akan langsung ditimpa secara atomik pada sistem file POSIX.
 
-### `fs.unlink(path)` dan `fs.rm(path, [options])`
+### `fs.unlink(path)` dan `fs.rm(path, options)`
 
 `fs.unlink()` menghapus satu file tunggal. `fs.rm()` menghapus file atau folder secara fleksibel termasuk penghapusan rekursif.
 
@@ -209,8 +209,8 @@ import fs from "node:fs/promises";
 
 await fs.unlink("./data/greet.txt");
 await fs.rm("./data/logs", { recursive: true, force: true });
-console.log("Pembersihan selesai");
-// Output: Pembersihan selesai
+console.log("Cleanup completed");
+// Output: Cleanup completed
 ```
 
 Kondisi khusus: Memanggil `fs.unlink()` pada direktori akan melempar error `EISDIR` (pada Linux/macOS) atau `EPERM` (pada Windows).

@@ -77,7 +77,7 @@ Struktur parameter: `structuredClone(value)`
 Nilai kembalian: salinan baru dari nilai input (`any`).
 
 ```javascript
-const user = { name: "Budi", roles: ["admin"], created: new Date() };
+const user = { name: "Alice", roles: ["admin"], created: new Date() };
 const copy = structuredClone(user);
 copy.roles.push("editor");
 
@@ -188,8 +188,8 @@ const ac = new AbortController();
 ac.signal.addEventListener("abort", () => {
   console.log(ac.signal.reason);
 });
-ac.abort("Proses dibatalkan");
-// Output: Proses dibatalkan
+ac.abort("Process aborted");
+// Output: Process aborted
 ```
 
 Kondisi khusus: Memanggil `abort()` berkali-kali hanya memicu event pembatalan sekali; pemanggilan berikutnya diabaikan.
@@ -202,11 +202,11 @@ Menyimpan objek state di `globalThis` memicu tabrakan variabel saat modul lain m
 
 ```javascript
 // Incorrect
-globalThis.currentUser = { id: 101, name: "Ali" };
+globalThis.currentUser = { id: 101, name: "Alice" };
 
 // Correct
 // Keep state scoped to the module and export it explicitly
-export const currentUser = { id: 101, name: "Ali" };
+export const currentUser = { id: 101, name: "Alice" };
 ```
 
 ### Menggandakan Objek Bertingkat dengan `JSON.parse(JSON.stringify())`

@@ -225,7 +225,7 @@ console.log(parsed.ext);
 // Output: .pdf
 
 parsed.name = "final-spec";
-parsed.base = ""; // kosongkan base agar format memakai name + ext
+parsed.base = ""; // clear base so format uses name + ext
 console.log(path.posix.format(parsed));
 // Output: /app/docs/final-spec.pdf
 ```

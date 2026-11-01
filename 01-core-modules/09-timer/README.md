@@ -65,9 +65,9 @@ Nilai kembalian: `Promise<any>` pada versi promises, atau objek `Timeout` pada v
 ```javascript
 import { setTimeout } from "node:timers/promises";
 
-const result = await setTimeout(50, "Operasi tuntas");
+const result = await setTimeout(50, "Operation complete");
 console.log(result);
-// Output: Operasi tuntas
+// Output: Operation complete
 ```
 
 Kondisi khusus: Durasi minimum aktual di runtime adalah 1 milidetik; memberikan angka `0` atau negatif otomatis dianggap `1`.
@@ -85,15 +85,15 @@ Nilai kembalian: `Promise<any>` pada `node:timers/promises`.
 ```javascript
 import { setImmediate } from "node:timers/promises";
 
-let status = "mulai";
-const promise = setImmediate("selesai");
-status = "berjalan";
+let status = "start";
+const promise = setImmediate("finished");
+status = "running";
 
 const res = await promise;
 console.log(status);
-// Output: berjalan
+// Output: running
 console.log(res);
-// Output: selesai
+// Output: finished
 ```
 
 Kondisi khusus: Jika dipanggil di dalam siklus I/O (seperti di dalam handler `fs.readFile`), `setImmediate` selalu dieksekusi lebih dulu daripada `setTimeout(0)`.
@@ -114,7 +114,7 @@ const interval = setInterval(10, "tick");
 
 for await (const val of interval) {
   count++;
-  if (count === 3) break; // Berhenti otomatis dan membersihkan timer
+  if (count === 3) break; // Automatically stops and cleans up the timer
 }
 
 console.log(count);

@@ -61,7 +61,7 @@ Nilai kembalian: instance stream pembacaan (`Readable`).
 ```javascript
 import { Readable } from "node:stream";
 
-const stream = Readable.from(["Halo ", "Dunia"]);
+const stream = Readable.from(["Hello ", "World"]);
 let result = "";
 
 for await (const chunk of stream) {
@@ -69,7 +69,7 @@ for await (const chunk of stream) {
 }
 
 console.log(result);
-// Output: Halo Dunia
+// Output: Hello World
 ```
 
 Kondisi khusus: Stream yang dijeda terlalu lama tanpa ada yang membaca data dapat menumpuk buffer internal di memori jika sumber terus memompa data.
@@ -95,11 +95,11 @@ const customWritable = new Writable({
   },
 });
 
-customWritable.write("Bagian 1");
+customWritable.write("Chunk 1");
 customWritable.end();
 
 console.log(chunks.join(""));
-// Output: Bagian 1
+// Output: Chunk 1
 ```
 
 Kondisi khusus: Menulis data setelah metode `.end()` dipanggil akan melempar error `ERR_STREAM_WRITE_AFTER_END`.
@@ -149,7 +149,7 @@ Nilai kembalian: `Promise<void>`.
 import { Readable, Writable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 
-const source = Readable.from(["belajar", "stream"]);
+const source = Readable.from(["learn", "stream"]);
 const upper = new Transform({
   transform(chunk, enc, cb) {
     cb(null, chunk.toString().toUpperCase() + " ");
@@ -166,7 +166,7 @@ const dest = new Writable({
 
 await pipeline(source, upper, dest);
 console.log(output.trim());
-// Output: BELAJAR STREAM
+// Output: LEARN STREAM
 ```
 
 Kondisi khusus: Jika salah satu stream melempar error, seluruh stream yang terhubung dalam pipa akan otomatis ditutup sehingga mencegah kebocoran sumber daya OS.
@@ -188,7 +188,7 @@ const writer = new Writable({
   },
 });
 
-const canAcceptMore = writer.write("potongan data");
+const canAcceptMore = writer.write("data chunk");
 console.log(canAcceptMore);
 // Output: true
 

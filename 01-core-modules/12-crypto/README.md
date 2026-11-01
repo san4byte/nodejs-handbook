@@ -97,8 +97,8 @@ Data input yang sama selalu menghasilkan nilai hash yang persis sama, tetapi per
 import crypto from "node:crypto";
 
 const hmac = crypto
-  .createHmac("sha256", "kunci-rahasia-saya")
-  .update("pesan-transaksi")
+  .createHmac("sha256", "my-secret-key")
+  .update("transaction-message")
   .digest("hex");
 
 console.log(hmac.length === 64);

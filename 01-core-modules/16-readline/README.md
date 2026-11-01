@@ -65,7 +65,7 @@ Nilai kembalian: instance pembaca baris (`Interface`).
 import { createInterface } from "node:readline/promises";
 import { Readable } from "node:stream";
 
-const source = Readable.from(["baris 1\n", "baris 2\n"]);
+const source = Readable.from(["line 1\n", "line 2\n"]);
 const rl = createInterface({ input: source, crlfDelay: Infinity });
 
 console.log(typeof rl.question);
@@ -129,7 +129,7 @@ const outputStream = new Writable({
 });
 
 const rl = createInterface({ input: inputData, output: outputStream });
-const role = await rl.question("Masukkan role: ");
+const role = await rl.question("Enter role: ");
 rl.close();
 
 console.log(role);
@@ -150,7 +150,7 @@ Nilai kembalian: tidak mengembalikan nilai (`undefined`).
 import { createInterface } from "node:readline/promises";
 import { Readable } from "node:stream";
 
-const rl = createInterface({ input: Readable.from(["teks\n"]) });
+const rl = createInterface({ input: Readable.from(["text\n"]) });
 console.log(rl.closed);
 // Output: false
 rl.close();
@@ -342,9 +342,9 @@ try {
 
 const abortController = new AbortController();
 abortController.abort();
-const streamBatal = Readable.from(["PORT=3000\n"]);
+const abortedStream = Readable.from(["PORT=3000\n"]);
 try {
-  await parseConfigStream(streamBatal, { signal: abortController.signal });
+  await parseConfigStream(abortedStream, { signal: abortController.signal });
 } catch (err) {
   console.log(err.message);
   // Output: Configuration parsing aborted

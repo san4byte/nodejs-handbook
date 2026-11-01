@@ -117,10 +117,10 @@ Nilai kembalian: boolean `true` jika event memiliki minimal satu listener, atau 
 import { EventEmitter } from "node:events";
 
 const emitter = new EventEmitter();
-emitter.on("greet", (name) => console.log(`Halo ${name}`));
+emitter.on("greet", (name) => console.log(`Hello ${name}`));
 
-const hasListeners = emitter.emit("greet", "Budi");
-// Output: Halo Budi
+const hasListeners = emitter.emit("greet", "Alice");
+// Output: Hello Alice
 console.log(hasListeners);
 // Output: true
 ```
@@ -141,7 +141,7 @@ Nilai kembalian: instance `EventEmitter`.
 import { EventEmitter } from "node:events";
 
 const emitter = new EventEmitter();
-const onData = () => console.log("Data masuk");
+const onData = () => console.log("Data received");
 
 emitter.on("data", onData);
 emitter.off("data", onData);

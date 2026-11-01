@@ -60,14 +60,14 @@ Nilai kembalian: fungsi baru yang mengembalikan `Promise<any>`.
 import util from "node:util";
 
 const legacyGreet = (name, callback) => {
-  callback(null, `Halo ${name}`);
+  callback(null, `Hello ${name}`);
 };
 
 const greetAsync = util.promisify(legacyGreet);
-const message = await greetAsync("Budi");
+const message = await greetAsync("Alice");
 
 console.log(message);
-// Output: Halo Budi
+// Output: Hello Alice
 ```
 
 Kondisi khusus: Melempar error jika fungsi callback target tidak menaruh argumen error di urutan pertama.
@@ -109,9 +109,9 @@ Nilai kembalian: string hasil format (`string`).
 ```javascript
 import util from "node:util";
 
-const msg = util.format("Akun %s memiliki saldo: Rp%d", "Ali", 50000);
+const msg = util.format("User %s has balance: %d", "Alice", 500);
 console.log(msg);
-// Output: Akun Ali memiliki saldo: Rp50000
+// Output: User Alice has balance: 500
 ```
 
 Kondisi khusus: Jika jumlah argumen melebihi jumlah placeholder, argumen sisa otomatis disambung di akhir string dengan spasi pemisah.
@@ -153,8 +153,8 @@ Nilai kembalian: string teks berformat ANSI (`string`).
 ```javascript
 import util from "node:util";
 
-const styled = util.styleText(["green", "bold"], "SUKSES");
-console.log(styled.includes("SUKSES"));
+const styled = util.styleText(["green", "bold"], "SUCCESS");
+console.log(styled.includes("SUCCESS"));
 // Output: true
 ```
 

@@ -84,12 +84,12 @@ Nilai kembalian: instance `Buffer` baru (`Buffer`).
 ```javascript
 import zlib from "node:zlib";
 
-const text = "Pembelajaran Kompresi Brotli Node.js";
+const text = "Node.js Brotli Compression Tutorial";
 const compressed = zlib.brotliCompressSync(text);
 const decompressed = zlib.brotliDecompressSync(compressed).toString("utf-8");
 
 console.log(decompressed);
-// Output: Pembelajaran Kompresi Brotli Node.js
+// Output: Node.js Brotli Compression Tutorial
 ```
 
 Kondisi khusus: Kompresi Brotli membutuhkan waktu komputasi CPU sedikit lebih tinggi daripada Gzip, namun menghasilkan output payload yang lebih ramping.
@@ -108,7 +108,7 @@ import { createGzip } from "node:zlib";
 import { Readable, Writable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 
-const source = Readable.from(["potongan data teks panjang"]);
+const source = Readable.from(["long text data chunk"]);
 const gzipStream = createGzip();
 let compressedBytes = 0;
 
@@ -188,13 +188,13 @@ class CompressedMemoryCache {
 }
 
 const store = new CompressedMemoryCache();
-const stats = store.set("user_101", { id: 101, name: "Ali", role: "admin" });
+const stats = store.set("user_101", { id: 101, name: "Alice", role: "admin" });
 console.log(stats.compressedBytes > 0);
 // Output: true
 
 const user = store.get("user_101");
 console.log(user.name);
-// Output: Ali
+// Output: Alice
 ```
 
 Pola penyimpanan ini menghemat alokasi RAM server hingga puluhan persen saat menyimpan ribuan dokumen cache berformat teks JSON.
