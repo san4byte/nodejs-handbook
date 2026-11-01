@@ -179,10 +179,10 @@ Kondisi khusus: Melempar `TypeError` bila `fileURLToPath()` menerima URL dengan 
 Memanggil `new URL("/dashboard")` tanpa origin dasar memicu error kegagalan konstruktor.
 
 ```javascript
-// Salah
+// Incorrect
 const target = new URL("/api/v1"); // TypeError: Invalid URL
 
-// Benar
+// Correct
 const target = new URL("/api/v1", "https://api.example.com");
 ```
 
@@ -191,12 +191,12 @@ const target = new URL("/api/v1", "https://api.example.com");
 Menggabungkan query string secara manual membuat spasi atau simbol ampersand (`&`) merusak struktur data.
 
 ```javascript
-// Salah
-const query = "?name=" + "John & Jane"; // Menghasilkan & yang memecah parameter
+// Incorrect
+const query = "?name=" + "John & Jane"; // Creates an unescaped & that corrupts parameters
 
-// Benar
+// Correct
 const url = new URL("https://example.com/search");
-url.searchParams.set("name", "John & Jane"); // Otomatis menjadi John+%26+Jane
+url.searchParams.set("name", "John & Jane"); // Automatically encoded as John+%26+Jane
 ```
 
 ## Studi Kasus
@@ -214,11 +214,11 @@ class SafeRedirectValidator {
     try {
       parsedUrl = new URL(targetInput);
     } catch {
-      throw new Error("Format URL tujuan tidak valid");
+      throw new Error("Invalid target URL format");
     }
 
     if (!this.allowedOrigins.has(parsedUrl.origin)) {
-      throw new Error("Domain tujuan tidak diizinkan");
+      throw new Error("Target domain not allowed");
     }
 
     parsedUrl.searchParams.set("ref", sourceTracker);
@@ -239,7 +239,7 @@ try {
   validator.createRedirectUrl("https://phishing.badsite.com/steal");
 } catch (err) {
   console.log(err.message);
-  // Output: Domain tujuan tidak diizinkan
+  // Output: Target domain not allowed
 }
 ```
 
@@ -251,7 +251,7 @@ Buat fungsi `buildApiUrl(baseUrl, endpoint, params = {})` untuk menyusun URL req
 
 - **Level 1 (Dasar):** Gabungkan `baseUrl` dan `endpoint` memakai `new URL(endpoint, baseUrl)`. Tambahkan setiap parameter dari objek `params` ke `searchParams` memakai `.set()`. Kembalikan URL utuh dalam format string.
 - **Level 2 (Menengah):** Jika nilai properti pada `params` berupa array, tambahkan setiap elemen memakai `.append()`. Abaikan properti yang bernilai `null` atau `undefined`.
-- **Level 3 (Menantang):** Validasi protokol URL. Jika protokol bukan `"https:"` atau `"http:"`, lempar `Error("Protokol URL tidak aman")`.
+- **Level 3 (Menantang):** Validasi protokol URL. Jika protokol bukan `"https:"` atau `"http:"`, lempar `Error("Insecure URL protocol")`.
 
 Contoh input dan output normal:
 
@@ -273,7 +273,7 @@ try {
   buildApiUrl("ftp://files.example.com", "/download", {});
 } catch (err) {
   console.log(err.message);
-  // Output: Protokol URL tidak aman
+  // Output: Insecure URL protocol
 }
 ```
 

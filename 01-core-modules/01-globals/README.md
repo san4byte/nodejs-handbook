@@ -201,11 +201,11 @@ Kondisi khusus: Memanggil `abort()` berkali-kali hanya memicu event pembatalan s
 Menyimpan objek state di `globalThis` memicu tabrakan variabel saat modul lain memakai nama yang sama.
 
 ```javascript
-// Salah
+// Incorrect
 globalThis.currentUser = { id: 101, name: "Ali" };
 
-// Benar
-// Simpan di variabel lingkup modul dan ekspor secara eksplisit
+// Correct
+// Keep state scoped to the module and export it explicitly
 export const currentUser = { id: 101, name: "Ali" };
 ```
 
@@ -214,12 +214,12 @@ export const currentUser = { id: 101, name: "Ali" };
 Trik JSON merusak tipe data khusus seperti Date (berubah jadi string) dan membuang nilai `undefined` atau Map.
 
 ```javascript
-// Salah
+// Incorrect
 const original = { created: new Date() };
 const clone = JSON.parse(JSON.stringify(original));
 console.log(clone.created instanceof Date); // false
 
-// Benar
+// Correct
 const properClone = structuredClone(original);
 console.log(properClone.created instanceof Date); // true
 ```
@@ -229,10 +229,10 @@ console.log(properClone.created instanceof Date); // true
 Variabel `__dirname` dan `__filename` tidak tersedia di ES Modules karena digantikan oleh properti bawaan `import.meta.url`.
 
 ```javascript
-// Salah: __dirname adalah variabel khusus CommonJS
+// Incorrect: __dirname is specific to CommonJS
 console.log(__dirname); // ReferenceError: __dirname is not defined
 
-// Benar: Gunakan properti global import.meta.url di ES Modules
+// Correct: use import.meta.url in ES Modules
 console.log(typeof import.meta.url);
 // Output: string
 ```
@@ -276,7 +276,7 @@ const dispatcher = new TaskDispatcher();
 const controller = new AbortController();
 
 const normalResult = dispatcher.process(
-  { id: 1, item: "Buku" },
+  { id: 1, item: "Book" },
   { signal: controller.signal },
 );
 console.log(normalResult.success);
@@ -286,15 +286,15 @@ console.log(normalResult.data.status);
 console.log(normalResult.byteLength > 0);
 // Output: true
 
-controller.abort("Operasi dibatalkan sistem");
+controller.abort("System operation aborted");
 const abortedResult = dispatcher.process(
-  { id: 2, item: "Pena" },
+  { id: 2, item: "Pen" },
   { signal: controller.signal },
 );
 console.log(abortedResult.success);
 // Output: false
 console.log(abortedResult.reason);
-// Output: Operasi dibatalkan sistem
+// Output: System operation aborted
 ```
 
 Pola ini mengamankan integritas data input memakai `structuredClone`, mengonversi payload ke representasi biner terukur, dan menghormati sinyal pembatalan standar tanpa bergantung pada library eksternal.
@@ -305,7 +305,7 @@ Buat fungsi `processTask(payload, options = {})` untuk memproses antrean data te
 
 - **Level 1 (Dasar):** Gandakan `payload` memakai `structuredClone()` agar objek input asli tidak termutasi. Hitung ukuran byte hasil encoding string JSON payload memakai `TextEncoder`. Kembalikan objek `{ success: true, byteLength, data: payloadClone }`.
 - **Level 2 (Menengah):** Ukur durasi pengerjaan fungsi dari awal hingga akhir memakai `performance.now()` dalam satuan milidetik, lalu tambahkan nilainya ke properti `durationMs` bertipe number.
-- **Level 3 (Menantang):** Dukung opsi `options.signal` (`AbortSignal`). Jika sinyal dalam keadaan dibatalkan (`options.signal?.aborted`), lempar `Error` dengan pesan dari `options.signal.reason` atau pesan default `"Task aborted"`. Jika `byteLength` melebihi batas `options.maxBytes`, lempar `Error("Payload melebihi batas")`.
+- **Level 3 (Menantang):** Dukung opsi `options.signal` (`AbortSignal`). Jika sinyal dalam keadaan dibatalkan (`options.signal?.aborted`), lempar `Error` dengan pesan dari `options.signal.reason` atau pesan default `"Task aborted"`. Jika `byteLength` melebihi batas `options.maxBytes`, lempar `Error("Payload exceeds limit")`.
 
 Contoh input dan output normal:
 
@@ -325,13 +325,13 @@ Contoh input dan penanganan error:
 
 ```javascript
 const controller = new AbortController();
-controller.abort("Dibatalkan pengguna");
+controller.abort("Cancelled by user");
 
 try {
   processTask({ title: "Audit Log" }, { signal: controller.signal });
 } catch (err) {
   console.log(err.message);
-  // Output: Dibatalkan pengguna
+  // Output: Cancelled by user
 }
 ```
 

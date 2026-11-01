@@ -80,7 +80,7 @@ import { Worker } from "node:worker_threads";
 
 const worker = new Worker(
   `import { parentPort } from "node:worker_threads";
-   parentPort.postMessage("Siap");`,
+   parentPort.postMessage("Ready");`,
   { eval: true }
 );
 
@@ -89,7 +89,7 @@ worker.on("message", (msg) => {
   worker.terminate();
 });
 // Output:
-// Siap
+// Ready
 ```
 
 Kondisi khusus: Setiap instance Worker memiliki runtime V8 isolate sendiri sehingga membutuhkan alokasi memori awal tambahan (overhead memori per thread).
@@ -148,10 +148,10 @@ Kondisi khusus: Operasi pembatalan ini bersifat asinkron dan langsung menghentik
 Membuat worker threads untuk operasi I/O (seperti `fs.readFile` atau pemanggilan HTTP) justru memperlambat performa karena overhead inisialisasi thread dan transfer pesan.
 
 ```javascript
-// Salah: Menggunakan worker untuk membaca file sederhana
+// Incorrect: Using worker threads for simple file I/O
 const worker = new Worker("./read-file-worker.mjs");
 
-// Benar: Gunakan modul asinkron bawaan yang sudah non-blocking
+// Correct: Use built-in asynchronous non-blocking modules
 import fs from "node:fs/promises";
 const data = await fs.readFile("./data.txt", "utf-8");
 ```
@@ -161,18 +161,18 @@ const data = await fs.readFile("./data.txt", "utf-8");
 Membuat worker baru tanpa pernah memanggil `.terminate()` akan meninggalkan thread aktif di latar belakang dan menghabiskan memori server.
 
 ```javascript
-// Salah: Thread terus hidup di background
+// Incorrect: Thread lingers indefinitely in background
 function runTask() {
   const worker = new Worker("./task.mjs");
-  worker.on("message", handleResult); // Memory leak thread
+  worker.on("message", handleResult); // Thread memory leak
 }
 
-// Benar
+// Correct
 function runTask() {
   const worker = new Worker("./task.mjs");
   worker.on("message", (res) => {
     handleResult(res);
-    worker.terminate(); // Bebaskan sumber daya thread
+    worker.terminate(); // Free thread resources
   });
 }
 ```
@@ -225,7 +225,7 @@ Buat fungsi `executeWorkerTask(taskPayload, options = {})` untuk memproses tugas
 
 - **Level 1 (Dasar):** Buat instance `Worker` memakai opsi `eval: true` yang menerima `workerData`. Worker menghitung hasil penggandaan nilai properti `value` (`value * 2`) dan mengirimkannya via `parentPort.postMessage()`. Tangkap hasilnya di event `'message'` dan kembalikan Promise `{ success: true, data: result }`.
 - **Level 2 (Menengah):** Tangani event `'error'` pada instance worker untuk menolak Promise saat terjadi error runtime. Pastikan worker selalu dimatikan memakai `.terminate()` setelah tugas selesai atau gagal untuk mencegah kebocoran thread.
-- **Level 3 (Menantang):** Dukung opsi batas waktu `options.timeoutMs`. Jika worker tidak merespons dalam batas waktu tersebut, hentikan worker via `.terminate()` dan lempar `Error("Eksekusi worker melebihi batas waktu")`. Jika `taskPayload` bukan objek atau bernilai `null`, lempar `TypeError("Payload tugas harus berupa objek")`.
+- **Level 3 (Menantang):** Dukung opsi batas waktu `options.timeoutMs`. Jika worker tidak merespons dalam batas waktu tersebut, hentikan worker via `.terminate()` dan lempar `Error("Worker execution exceeded timeout limit")`. Jika `taskPayload` bukan objek atau bernilai `null`, lempar `TypeError("Task payload must be an object")`.
 
 Contoh input dan output normal:
 
@@ -245,7 +245,7 @@ try {
   await executeWorkerTask(null);
 } catch (err) {
   console.log(err.message);
-  // Output: Payload tugas harus berupa objek
+  // Output: Task payload must be an object
 }
 ```
 

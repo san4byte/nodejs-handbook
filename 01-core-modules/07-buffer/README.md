@@ -172,11 +172,11 @@ Nilai kembalian: string teks hasil terjemahan (`string`).
 ```javascript
 import { Buffer } from "node:buffer";
 
-const buf = Buffer.from("Halo");
+const buf = Buffer.from("Hello");
 console.log(buf.toString("base64"));
-// Output: SGFsbw==
+// Output: SGVsbG8=
 console.log(buf.toString("hex"));
-// Output: 48616c6f
+// Output: 48656c6c6f
 ```
 
 Kondisi khusus: Jika urutan byte multibyte terpotong karena parameter `start` atau `end`, karakter pengganti tanda tanya akan muncul di hasil string.
@@ -211,13 +211,13 @@ Kondisi khusus: Karena berbagi memori, mengubah nilai elemen pada buffer hasil i
 Menghitung ukuran header HTTP `Content-Length` memakai `text.length` akan menyebabkan data terpotong saat teks memuat karakter emoji atau aksen.
 
 ```javascript
-// Salah: text.length menghitung karakter, bukan byte
-const text = "Halo Dunia €";
-const length = text.length; // 12 (karakter)
+// Incorrect: text.length counts characters, not bytes
+const text = "Hello World €";
+const length = text.length; // 13 (characters)
 
-// Benar: Buffer.byteLength menghitung kapasitas byte fisik
+// Correct: Buffer.byteLength measures physical byte size
 import { Buffer } from "node:buffer";
-const byteSize = Buffer.byteLength(text, "utf-8"); // 14 (byte)
+const byteSize = Buffer.byteLength(text, "utf-8"); // 15 (bytes)
 ```
 
 ### Mengasumsikan `subarray()` Melakukan Kloning Memori Baru
@@ -225,12 +225,12 @@ const byteSize = Buffer.byteLength(text, "utf-8"); // 14 (byte)
 Mengubah irisan byte yang dihasilkan `subarray()` akan merusak data pada objek buffer induk.
 
 ```javascript
-// Salah asumsi: mengira slice terisolasi
-const original = Buffer.from("Data Rahasia");
+// Incorrect assumption: expecting slice to be memory-isolated
+const original = Buffer.from("Secret Data");
 const slice = original.subarray(0, 4);
-slice.fill(0); // Menimpa memori original menjadi 0
+slice.fill(0); // Overwrites memory in original buffer to 0
 
-// Benar: Gunakan copy() atau Buffer.from(subarray) jika butuh memori terpisah
+// Correct: use Buffer.from(subarray) if isolated memory is needed
 const isolatedCopy = Buffer.from(original.subarray(0, 4));
 ```
 

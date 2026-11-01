@@ -222,11 +222,11 @@ Kondisi khusus: Memanggil `fs.unlink()` pada direktori akan melempar error `EISD
 Jika tidak menyertakan encoding `"utf-8"`, `fs.readFile()` mengembalikan objek biner `Buffer`, bukan string teks.
 
 ```javascript
-// Salah
+// Incorrect
 const text = await fs.readFile("./data/note.txt");
-console.log(typeof text); // 'object' (instance Buffer)
+console.log(typeof text); // 'object' (Buffer instance)
 
-// Benar
+// Correct
 const text = await fs.readFile("./data/note.txt", "utf-8");
 console.log(typeof text); // 'string'
 ```
@@ -236,18 +236,18 @@ console.log(typeof text); // 'string'
 Mengecek file via `fs.access()` lalu baru membacanya memicu kondisi rentan: file bisa saja dihapus oleh proses lain di antara kedua pemanggilan tersebut.
 
 ```javascript
-// Salah (Time-of-Check to Time-of-Use)
+// Incorrect (Time-of-Check to Time-of-Use race condition)
 try {
   await fs.access("./data/config.json");
   const data = await fs.readFile("./data/config.json", "utf-8");
 } catch {}
 
-// Benar: Langsung baca dan tangani error jika tidak ditemukan
+// Correct: read directly and handle error if file does not exist
 try {
   const data = await fs.readFile("./data/config.json", "utf-8");
 } catch (err) {
   if (err.code === "ENOENT") {
-    // Tangani kondisi file belum ada
+    // Handle missing file case
   }
 }
 ```
@@ -291,7 +291,7 @@ Buat fungsi `appendAuditLog(dirPath, filename, entry, options = {})` untuk menge
 
 - **Level 1 (Dasar):** Pastikan direktori `dirPath` sudah tersedia dengan `fs.mkdir(dirPath, { recursive: true })`. Gabungkan path lengkap file memakai `path.join()`. Tuliskan teks `entry` di baris baru memakai `fs.appendFile(filePath, entry + "\n", "utf-8")`. Kembalikan `{ success: true, filePath }`.
 - **Level 2 (Menengah):** Periksa ukuran file log memakai `fs.stat(filePath)`. Jika ukuran file mencapai atau melebihi batas `options.maxBytes`, lakukan rotasi log dengan memindahkan file lama ke `${filename}.bak` memakai `fs.rename()`, baru kemudian tambahkan entri baru.
-- **Level 3 (Menantang):** Jika `options.dryRun` bernilai `true`, jangan lakukan operasi penulisan file fisik apa pun ke disk dan langsung kembalikan `{ success: true, dryRun: true, filePath }`. Jika parameter `entry` bukan string atau string kosong, lempar `TypeError("Entri log harus berupa string non-kosong")`.
+- **Level 3 (Menantang):** Jika `options.dryRun` bernilai `true`, jangan lakukan operasi penulisan file fisik apa pun ke disk dan langsung kembalikan `{ success: true, dryRun: true, filePath }`. Jika parameter `entry` bukan string atau string kosong, lempar `TypeError("Log entry must be a non-empty string")`.
 
 Contoh input dan output normal:
 
@@ -311,7 +311,7 @@ try {
   await appendAuditLog("data/logs", "audit.log", "");
 } catch (err) {
   console.log(err.message);
-  // Output: Entri log harus berupa string non-kosong
+  // Output: Log entry must be a non-empty string
 }
 ```
 

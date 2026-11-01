@@ -133,11 +133,11 @@ Kondisi khusus: Selalu gunakan `pipeline()` agar error dekompresi menutup seluru
 Memanggil `gzipSync` pada file ratusan megabyte akan memblokir thread utama Event Loop hingga proses kompresi tuntas.
 
 ```javascript
-// Salah: Event Loop terblokir total
+// Incorrect: Event Loop completely blocked
 const bigBuffer = await fs.readFile("./large.log");
-const compressed = zlib.gzipSync(bigBuffer); // Server macet
+const compressed = zlib.gzipSync(bigBuffer); // Server freezes
 
-// Benar: Gunakan streaming pipeline
+// Correct: Use streaming pipeline
 await pipeline(
   fs.createReadStream("./large.log"),
   zlib.createGzip(),
@@ -150,9 +150,9 @@ await pipeline(
 Mencoba mengompresi file gambar (JPEG, PNG) atau arsip (ZIP) menggunakan Zlib tidak akan mengecilkan ukuran, bahkan sering kali menghasilkan ukuran file yang lebih besar karena overhead header.
 
 ```javascript
-// Salah: Mengompresi gambar PNG dengan Gzip
+// Incorrect: Compressing PNG images with Gzip
 const pngData = await fs.readFile("./photo.png");
-const compressed = zlib.gzipSync(pngData); // Ukuran bisa membengkak
+const compressed = zlib.gzipSync(pngData); // File size may increase due to header overhead
 ```
 
 ## Studi Kasus
@@ -205,7 +205,7 @@ Buat fungsi `compressBuffer(inputBuffer, algorithm = "gzip", options = {})` untu
 
 - **Level 1 (Dasar):** Kompresi `inputBuffer` memakai algoritma yang diminta: `"gzip"` (`zlib.gzipSync`), `"deflate"` (`zlib.deflateSync`), atau `"brotli"` (`zlib.brotliCompressSync`). Kembalikan objek `{ success: true, algorithm, originalSize, compressedSize, data: compressed }`.
 - **Level 2 (Menengah):** Hitung persentase penghematan ukuran data (`savingsPercent = Number(((1 - compressedSize / originalSize) * 100).toFixed(2))`). Tambahkan nilai ini ke properti `savingsPercent`.
-- **Level 3 (Menantang):** Jika nilai parameter `algorithm` tidak didukung (selain `"gzip"`, `"deflate"`, `"brotli"`), lempar `TypeError("Algoritma kompresi tidak didukung")`. Jika `inputBuffer` bukan Buffer atau berukuran 0 byte, lempar `RangeError("Buffer data input tidak boleh kosong")`.
+- **Level 3 (Menantang):** Jika nilai parameter `algorithm` tidak didukung (selain `"gzip"`, `"deflate"`, `"brotli"`), lempar `TypeError("Unsupported compression algorithm")`. Jika `inputBuffer` bukan Buffer atau berukuran 0 byte, lempar `RangeError("Input data buffer must not be empty")`.
 
 Contoh input dan output normal:
 
@@ -232,7 +232,7 @@ try {
   compressBuffer(Buffer.from(""), "gzip");
 } catch (err) {
   console.log(err.message);
-  // Output: Buffer data input tidak boleh kosong
+  // Output: Input data buffer must not be empty
 }
 ```
 

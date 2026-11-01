@@ -208,16 +208,16 @@ Kondisi khusus: Jika emitter memancarkan event `'error'` saat Promise masih menu
 Jika event `'error'` dipancarkan pada instance yang tidak memiliki listener penangan, Node.js langsung melempar uncaught error yang mematikan server.
 
 ```javascript
-// Salah
+// Incorrect
 const emitter = new EventEmitter();
-emitter.emit("error", new Error("Koneksi database putus")); // Aplikasi crash
+emitter.emit("error", new Error("Database connection lost")); // Application crashes
 
-// Benar
+// Correct
 const emitter = new EventEmitter();
 emitter.on("error", (err) => {
-  console.error("Tertangkap aman:", err.message);
+  console.error("Safely caught:", err.message);
 });
-emitter.emit("error", new Error("Koneksi database putus"));
+emitter.emit("error", new Error("Database connection lost"));
 ```
 
 ### Mengira Bahwa `emit()` Berjalan Asinkron
@@ -225,13 +225,13 @@ emitter.emit("error", new Error("Koneksi database putus"));
 Eksekusi listener pada `EventEmitter` berjalan sinkron satu per satu. Listener yang menjalankan komputasi berat akan menahan eksekusi kode setelah `emit()`.
 
 ```javascript
-// Salah asumsi: mengira listener berjalan di latar belakang
+// Incorrect assumption: expecting listeners to run in the background
 const emitter = new EventEmitter();
 emitter.on("task", () => {
-  // Komputasi berat sinkron di sini akan memblokir alur utama
+  // Heavy synchronous computation here blocks the main thread
 });
 emitter.emit("task");
-console.log("Selesai"); // Menunggu sampai fungsi di listener tuntas sepenuhnya
+console.log("Done"); // Waits until the listener finishes completely
 ```
 
 ## Studi Kasus
@@ -244,7 +244,7 @@ import { EventEmitter } from "node:events";
 class OrderPipeline extends EventEmitter {
   processOrder(orderId, amount) {
     if (amount <= 0) {
-      this.emit("error", new RangeError("Nominal pembayaran tidak valid"));
+      this.emit("error", new RangeError("Invalid payment amount"));
       return;
     }
 
@@ -256,7 +256,7 @@ class OrderPipeline extends EventEmitter {
 const pipeline = new OrderPipeline();
 
 pipeline.on("orderCreated", (order) => {
-  console.log(`Dibuat: ${order.orderId}`);
+  console.log(`Created: ${order.orderId}`);
 });
 
 pipeline.on("paymentReceived", (order) => {
@@ -269,12 +269,12 @@ pipeline.on("error", (err) => {
 
 pipeline.processOrder("ORD-1", 50000);
 // Output:
-// Dibuat: ORD-1
+// Created: ORD-1
 // Status: PAID
 
 pipeline.processOrder("ORD-2", -10);
 // Output:
-// Error: Nominal pembayaran tidak valid
+// Error: Invalid payment amount
 ```
 
 Pola arsitektur berbasis event ini memisahkan logika validasi bisnis dari modul notifikasi dan modul akuntansi, sehingga penambahan fitur baru di masa depan cukup dengan menambahkan listener baru tanpa mengubah kode utama pemrosesan order.
@@ -285,30 +285,30 @@ Buat class `JobQueue` yang mewarisi `EventEmitter` untuk mengelola antrean pemro
 
 - **Level 1 (Dasar):** Buat class `JobQueue` turunan `EventEmitter`. Sediakan metode `addJob(jobId, payload)` yang memancarkan event `"jobAdded"` dengan data `{ jobId, payload }`.
 - **Level 2 (Menengah):** Sediakan metode `completeJob(jobId)` yang memancarkan event `"jobCompleted"` membawa nilai `jobId`. Pastikan notifikasi tugas selesai bisa ditangkap oleh consumer aplikasi.
-- **Level 3 (Menantang):** Validasi parameter `jobId`. Jika `jobId` bukan string atau berupa string kosong, pancarkan event `"error"` yang membawa `new TypeError("ID pekerjaan tidak valid")`. Daftarkan listener error default agar proses aplikasi tidak berhenti mendadak saat terjadi error.
+- **Level 3 (Menantang):** Validasi parameter `jobId`. Jika `jobId` bukan string atau berupa string kosong, pancarkan event `"error"` yang membawa `new TypeError("Invalid job ID")`. Daftarkan listener error default agar proses aplikasi tidak berhenti mendadak saat terjadi error.
 
 Contoh input dan output normal:
 
 ```javascript
 const queue = new JobQueue();
-queue.on("jobAdded", (job) => console.log("Job masuk:", job.jobId));
-queue.on("jobCompleted", (jobId) => console.log("Job tuntas:", jobId));
+queue.on("jobAdded", (job) => console.log("Job added:", job.jobId));
+queue.on("jobCompleted", (jobId) => console.log("Job completed:", jobId));
 
 queue.addJob("JOB-101", { task: "compress" });
 queue.completeJob("JOB-101");
 // Output:
-// Job masuk: JOB-101
-// Job tuntas: JOB-101
+// Job added: JOB-101
+// Job completed: JOB-101
 ```
 
 Contoh input dan penanganan error:
 
 ```javascript
 const errorQueue = new JobQueue();
-errorQueue.on("error", (err) => console.log("Tertangkap:", err.message));
+errorQueue.on("error", (err) => console.log("Caught:", err.message));
 
 errorQueue.addJob("", {});
-// Output: Tertangkap: ID pekerjaan tidak valid
+// Output: Caught: Invalid job ID
 ```
 
 Tanda selesai:

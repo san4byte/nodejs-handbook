@@ -198,18 +198,18 @@ Kondisi khusus dan penanganan error: jika opsi `output` bernilai `null` saat ini
 Ketika membaca input dari `process.stdin`, runtime Node.js menjaga event loop tetap aktif selama listener stream belum dilepas. Jika lupa memanggil `rl.close()`, program tidak pernah selesai dan menggantung terus di terminal.
 
 ```javascript
-// Salah: rl tidak pernah ditutup, proses menggantung di terminal
+// Incorrect: rl is never closed, leaving process hanging in terminal
 const rl = createInterface({ input: process.stdin, output: process.stdout });
-const name = await rl.question("Siapa nama kamu? ");
-console.log(`Halo ${name}`);
+const name = await rl.question("What is your name? ");
+console.log(`Hello ${name}`);
 ```
 
 ```javascript
-// Benar: bungkus interaksi dengan try...finally dan panggil rl.close()
+// Correct: wrap interaction in try...finally and call rl.close()
 const rl = createInterface({ input: process.stdin, output: process.stdout });
 try {
-  const name = await rl.question("Siapa nama kamu? ");
-  console.log(`Halo ${name}`);
+  const name = await rl.question("What is your name? ");
+  console.log(`Hello ${name}`);
 } finally {
   rl.close();
 }
@@ -220,7 +220,7 @@ try {
 Menggunakan listener event konvensional `rl.on("line")` bersamaan dengan perulangan `for await...of` menyebabkan perebutan konsumsi stream. Data baris bisa terbaca ganda atau hilang di salah satu alur.
 
 ```javascript
-// Salah: dua konsumen membaca stream secara bersamaan
+// Incorrect: two consumers reading the stream concurrently
 rl.on("line", (line) => console.log("Event:", line));
 for await (const line of rl) {
   console.log("Async:", line);
@@ -228,9 +228,9 @@ for await (const line of rl) {
 ```
 
 ```javascript
-// Benar: pilih satu gaya pembacaan, utamakan for await...of
+// Correct: pick one consumption style, prefer for await...of
 for await (const line of rl) {
-  console.log("Baris:", line);
+  console.log("Line:", line);
 }
 ```
 
@@ -276,10 +276,10 @@ class AuditLogScanner {
 }
 
 const mockLogStream = Readable.from([
-  "2026-03-29 10:00:00 [INFO] - Server berjalan di port 3000\n",
-  "2026-03-29 10:01:15 [ERROR] - Koneksi database terputus\n",
-  "2026-03-29 10:02:00 [INFO] - Heartbeat check berhasil\n",
-  "2026-03-29 10:03:22 [ERROR] - Gagal menulis file cache\n",
+  "2026-03-29 10:00:00 [INFO] - Server running on port 3000\n",
+  "2026-03-29 10:01:15 [ERROR] - Database connection lost\n",
+  "2026-03-29 10:02:00 [INFO] - Heartbeat check passed\n",
+  "2026-03-29 10:03:22 [ERROR] - Failed to write cache file\n",
 ]);
 
 const scanner = new AuditLogScanner(mockLogStream);
@@ -290,7 +290,7 @@ console.log(report.totalScanned);
 console.log(report.totalErrors);
 // Output: 2
 console.log(report.errors[0].message);
-// Output: Koneksi database terputus
+// Output: Database connection lost
 ```
 
 Pola ini menjaga penggunaan memori tetap datar karena hanya satu baris teks yang diproses pada satu satuan waktu.
@@ -301,7 +301,7 @@ Buat fungsi `parseConfigStream(inputStream, options = {})` untuk memproses konfi
 
 - **Level 1 (Dasar):** Baca `inputStream` baris demi baris memakai `createInterface` dan perulangan `for await...of`. Abaikan baris kosong atau baris komentar yang diawali tanda pagar `#`.
 - **Level 2 (Menengah):** Urai setiap baris menjadi pasangan kunci dan nilai dengan format `KEY=VALUE`. Simpan nilainya ke dalam satu objek konfigurasi `{ [key]: value }` dengan whitespace terpotong rapi.
-- **Level 3 (Menantang):** Dukung opsi `options.requiredKeys` (array string) dan `options.signal` (instance AbortSignal). Jika ada kunci pada `requiredKeys` yang tidak ditemukan di akhir parsing, lempar `Error("Konfigurasi wajib tidak lengkap: [daftarKunci]")`. Jika `options.signal` dibatalkan di tengah proses, hentikan pembacaan dan lempar `Error("Proses pembacaan konfigurasi dibatalkan")`. Pastikan `rl.close()` selalu dipanggil dalam blok `finally`.
+- **Level 3 (Menantang):** Dukung opsi `options.requiredKeys` (array string) dan `options.signal` (instance AbortSignal). Jika ada kunci pada `requiredKeys` yang tidak ditemukan di akhir parsing, lempar `Error("Missing required configuration: [daftarKunci]")`. Jika `options.signal` dibatalkan di tengah proses, hentikan pembacaan dan lempar `Error("Configuration parsing aborted")`. Pastikan `rl.close()` selalu dipanggil dalam blok `finally`.
 
 Contoh input dan output normal:
 
@@ -309,11 +309,11 @@ Contoh input dan output normal:
 import { Readable } from "node:stream";
 
 const sampleStream = Readable.from([
-  "# Pengaturan Aplikasi\n",
+  "# Application Settings\n",
   "PORT=8080\n",
   "\n",
   "HOST=127.0.0.1\n",
-  "# Mode Environment\n",
+  "# Environment Mode\n",
   "NODE_ENV=production\n",
 ]);
 
@@ -337,7 +337,7 @@ try {
   await parseConfigStream(incompleteStream, { requiredKeys: ["PORT", "DATABASE_URL"] });
 } catch (err) {
   console.log(err.message);
-  // Output: Konfigurasi wajib tidak lengkap: DATABASE_URL
+  // Output: Missing required configuration: DATABASE_URL
 }
 
 const abortController = new AbortController();
@@ -347,7 +347,7 @@ try {
   await parseConfigStream(streamBatal, { signal: abortController.signal });
 } catch (err) {
   console.log(err.message);
-  // Output: Proses pembacaan konfigurasi dibatalkan
+  // Output: Configuration parsing aborted
 }
 ```
 

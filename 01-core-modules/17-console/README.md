@@ -189,18 +189,18 @@ Kondisi khusus dan penanganan error: jika `console.countReset()` dipanggil untuk
 `console.log()` mengirim teks ke file descriptor 1 (`stdout`), sedangkan sistem agregasi log dan container orchestrator mendeteksi peringatan insiden lewat file descriptor 2 (`stderr`). Memakai `console.log()` untuk pesan error membuat sistem monitoring otomatis mengira aplikasi berjalan tanpa masalah.
 
 ```javascript
-// Salah: log error dialirkan ke jalur stdout biasa
+// Incorrect: error log routed to standard stdout channel
 try {
-  throw new Error("Koneksi database terputus");
+  throw new Error("Database connection lost");
 } catch (err) {
   console.log(`[ERROR] ${err.message}`);
 }
 ```
 
 ```javascript
-// Benar: alirkan insiden kegagalan ke jalur stderr
+// Correct: route failures to stderr channel
 try {
-  throw new Error("Koneksi database terputus");
+  throw new Error("Database connection lost");
 } catch (err) {
   console.error(`[ERROR] ${err.message}`);
 }
@@ -211,14 +211,14 @@ try {
 Secara bawaan `console.log()` hanya menampilkan objek hingga kedalaman dua lapis. Saat menginspeksi konfigurasi bersarang atau payload API yang kompleks, properti penting sering terpotong.
 
 ```javascript
-// Salah: properti terdalam terpotong saat diinspeksi
+// Incorrect: deep nested properties truncated during inspection
 const config = { database: { auth: { credentials: { secret: "xyz" } } } };
 console.log(config);
 // { database: { auth: [Object] } }
 ```
 
 ```javascript
-// Benar: gunakan console.dir dengan depth null untuk melihat hierarki utuh
+// Correct: use console.dir with depth: null to view full hierarchy
 const config = { database: { auth: { credentials: { secret: "xyz" } } } };
 console.dir(config, { depth: null });
 ```
@@ -275,7 +275,7 @@ class AuditLogger {
 
 const audit = new AuditLogger();
 audit.logAction("user-101", "LOGIN", { ip: "127.0.0.1" });
-audit.logFailure("user-102", "PAYMENT", "Saldo tidak mencukupi");
+audit.logFailure("user-102", "PAYMENT", "Insufficient balance");
 
 const auditEntries = audit.getAuditLogs();
 const errorEntries = audit.getErrorLogs();
@@ -287,7 +287,7 @@ console.log(auditEntries[0].action);
 console.log(errorEntries.length);
 // Output: 1
 console.log(errorEntries[0].error);
-// Output: Saldo tidak mencukupi
+// Output: Insufficient balance
 ```
 
 Pola ini menjaga isolasi alur data audit sehingga riwayat penting dapat disimpan ke media penyimpanan terpisah secara asinkron.
@@ -298,7 +298,7 @@ Buat fungsi `createBufferedLogger(stdoutStream, stderrStream, options = {})` unt
 
 - **Level 1 (Dasar):** Siapkan instance `Console` kustom yang menyalurkan `stdout` ke `stdoutStream` dan `stderr` ke `stderrStream`. Kembalikan objek pembungkus dengan metode `info(message)` (menulis `[INFO] pesan` ke `stdout`) dan `error(message)` (menulis `[ERROR] pesan` ke `stderr`).
 - **Level 2 (Menengah):** Tambahkan metode `table(data, columns)` yang mendelegasikan pemformatan ke instance console kustom, serta metode `count(label)` untuk memantau frekuensi penanda.
-- **Level 3 (Menantang):** Dukung opsi `options.minLevel` (default: `"INFO"`). Jika `options.minLevel === "ERROR"`, panggilan `info()` harus diabaikan dan tidak menulis apa pun ke stream `stdout`. Jika opsi `options.strictMode` bernilai `true` sementara salah satu stream tidak writable atau tidak tersedia, lempar `Error("Stream tujuan logger tidak valid")`.
+- **Level 3 (Menantang):** Dukung opsi `options.minLevel` (default: `"INFO"`). Jika `options.minLevel === "ERROR"`, panggilan `info()` harus diabaikan dan tidak menulis apa pun ke stream `stdout`. Jika opsi `options.strictMode` bernilai `true` sementara salah satu stream tidak writable atau tidak tersedia, lempar `Error("Target logger stream is invalid")`.
 
 Contoh input dan output normal:
 
@@ -309,13 +309,13 @@ const outStream = new PassThrough();
 const errStream = new PassThrough();
 
 const logger = createBufferedLogger(outStream, errStream);
-logger.info("Server siap");
-logger.error("Database gagal");
+logger.info("Server ready");
+logger.error("Database connection failed");
 
 console.log(outStream.read().toString().trim());
-// Output: [INFO] Server siap
+// Output: [INFO] Server ready
 console.log(errStream.read().toString().trim());
-// Output: [ERROR] Database gagal
+// Output: [ERROR] Database connection failed
 ```
 
 Contoh filter level dan mode ketat:
@@ -327,19 +327,19 @@ const outFiltered = new PassThrough();
 const errFiltered = new PassThrough();
 const errorOnlyLogger = createBufferedLogger(outFiltered, errFiltered, { minLevel: "ERROR" });
 
-errorOnlyLogger.info("Pesan diabaikan");
-errorOnlyLogger.error("Pesan error penting");
+errorOnlyLogger.info("Ignored message");
+errorOnlyLogger.error("Critical error message");
 
 console.log(outFiltered.read());
 // Output: null
 console.log(errFiltered.read().toString().trim());
-// Output: [ERROR] Pesan error penting
+// Output: [ERROR] Critical error message
 
 try {
   createBufferedLogger(null, errFiltered, { strictMode: true });
 } catch (err) {
   console.log(err.message);
-  // Output: Stream tujuan logger tidak valid
+  // Output: Target logger stream is invalid
 }
 ```
 

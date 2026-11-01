@@ -210,16 +210,16 @@ Kondisi khusus: Jangan biarkan handler `uncaughtException` berjalan tanpa memang
 Menangkap `uncaughtException` tanpa mematikan proses berisiko membiarkan aplikasi berjalan dalam status memori yang rusak.
 
 ```javascript
-// Salah
+// Incorrect
 process.on("uncaughtException", (err) => {
-  console.error("Terjadi error tak terduga:", err.message);
-  // Aplikasi dibiarkan tetap melayani request
+  console.error("Unexpected error:", err.message);
+  // Application continues serving requests with corrupted state
 });
 
-// Benar
+// Correct
 process.on("uncaughtException", (err) => {
   console.error("Fatal error:", err.message);
-  process.exit(1); // Hentikan proses dan biarkan supervisor me-restart
+  process.exit(1); // Stop the process and allow supervisor to restart
 });
 ```
 
@@ -228,13 +228,13 @@ process.on("uncaughtException", (err) => {
 Semua nilai di `process.env` selalu berupa string teks, bahkan saat ditulis angka atau boolean.
 
 ```javascript
-// Salah
+// Incorrect
 process.env.PORT = 8080;
 if (process.env.PORT === 8080) {
-  // Kondisi ini selalu bernilai false karena perbandingan strict equality
+  // This condition is always false due to strict equality check against a string
 }
 
-// Benar
+// Correct
 process.env.PORT = "8080";
 const port = Number(process.env.PORT) || 3000;
 ```
@@ -300,7 +300,7 @@ Buat fungsi `parseServerConfig(cliArgs = [], envVars = {})` untuk memvalidasi ko
 
 - **Level 1 (Dasar):** Periksa array `cliArgs` untuk mencari nilai flag `--port <angka>` dan `--env <string>`. Jika tidak ditemukan di argumen, gunakan nilai cadangan dari `envVars.PORT` dan `envVars.NODE_ENV`. Jika masih tidak ada, pakai nilai bawaan port `3000` dan env `"development"`. Kembalikan objek `{ port: Number(port), env }`.
 - **Level 2 (Menengah):** Tambahkan metrik diagnostik sistem: `uptimeSeconds` (menggunakan `Math.floor(process.uptime())`) dan `heapUsedMb` (dihitung dari `Number((process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2))`).
-- **Level 3 (Menantang):** Validasi nomor port. Jika nilai port bukan angka (NaN), kurang dari 1, atau lebih dari 65535, lempar `RangeError("Nomor port tidak valid")`.
+- **Level 3 (Menantang):** Validasi nomor port. Jika nilai port bukan angka (NaN), kurang dari 1, atau lebih dari 65535, lempar `RangeError("Invalid port number")`.
 
 Contoh input dan output normal:
 
@@ -322,7 +322,7 @@ try {
   parseServerConfig(["--port", "99999"], {});
 } catch (err) {
   console.log(err.message);
-  // Output: Nomor port tidak valid
+  // Output: Invalid port number
 }
 ```
 

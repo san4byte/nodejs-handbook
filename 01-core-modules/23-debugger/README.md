@@ -9,7 +9,7 @@ Menelusuri bug rumit di aplikasi server sering kali tidak cukup hanya dengan `co
 ```javascript
 import inspector from "node:inspector";
 
-// Memeriksa status sesi inspector aktif
+// Check active inspector session status
 console.log(inspector.url() === undefined);
 // Output: true
 ```

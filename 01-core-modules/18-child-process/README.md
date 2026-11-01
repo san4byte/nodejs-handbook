@@ -64,12 +64,12 @@ Nilai kembalian: instance kontrol sub-proses (`ChildProcess`).
 ```javascript
 import { spawn } from "node:child_process";
 
-const child = spawn("node", ["-e", "console.log('Halo spawn')"]);
+const child = spawn("node", ["-e", "console.log('Hello spawn')"]);
 
 for await (const chunk of child.stdout) {
   console.log(chunk.toString().trim());
 }
-// Output: Halo spawn
+// Output: Hello spawn
 ```
 
 Kondisi khusus dan penanganan error: jika biner pada argumen `command` tidak ditemukan pada variabel sistem PATH, sub-proses memicu event `'error'` dengan kode `ENOENT`.
@@ -140,7 +140,7 @@ Nilai kembalian: instance `ChildProcess` dengan metode tambahan `child.send()` d
 ```javascript
 import { fork } from "node:child_process";
 
-// Menyiapkan sub-proses modul dengan kanal komunikasi IPC
+// Initialize child process module with IPC communication channel
 const child = fork("./worker-task.mjs", [], { silent: true });
 console.log(typeof child.send);
 // Output: function
@@ -180,13 +180,13 @@ Kondisi khusus dan penanganan error: mengirim sinyal ke proses yang sudah mati m
 Menggabungkan input yang belum divalidasi ke dalam argumen string `exec()` memungkinkan penyerang menyisipkan pemisah perintah (seperti `;`, `&&`, atau `|`) untuk menjalankan skrip berbahaya di server.
 
 ```javascript
-// Salah: input user disambung langsung ke string shell exec
+// Incorrect: raw user input concatenated directly into shell exec string
 const userFolder = "docs; rm -rf /";
 exec(`ls -l ${userFolder}`, (err, stdout) => { ... });
 ```
 
 ```javascript
-// Benar: gunakan execFile atau spawn dengan array argumen terisolasi
+// Correct: use execFile or spawn with isolated arguments array
 const userFolder = "docs";
 execFile("ls", ["-l", userFolder], (err, stdout) => { ... });
 ```
@@ -196,15 +196,15 @@ execFile("ls", ["-l", userFolder], (err, stdout) => { ... });
 `exec()` menyimpan seluruh teks output di dalam buffer memori internal Node.js. Saat biner eksternal menghasilkan puluhan ribu baris output, batas `maxBuffer` akan terlampaui dan aplikasi crash mendadak.
 
 ```javascript
-// Salah: output masif ditampung ke buffer memori exec
+// Incorrect: massive output dumped directly into exec memory buffer
 exec("generate-big-log-dump", (err, stdout) => { ... });
 ```
 
 ```javascript
-// Benar: konsumsi data secara bertahap lewat stream spawn
+// Correct: consume data incrementally via spawn stream
 const child = spawn("generate-big-log-dump");
 child.stdout.on("data", (chunk) => {
-  // memproses bongkahan buffer sepotong demi sepotong
+  // Process buffer chunks piece by piece
 });
 ```
 
@@ -252,11 +252,11 @@ class SafeTaskRunner {
 
 const runner = new SafeTaskRunner(2000);
 
-const okResult = await runner.runNodeScript("console.log('Tugas selesai')");
+const okResult = await runner.runNodeScript("console.log('Task completed')");
 console.log(okResult.success);
 // Output: true
 console.log(okResult.output);
-// Output: Tugas selesai
+// Output: Task completed
 
 const failResult = await runner.runNodeScript("process.exit(1)");
 console.log(failResult.success);
@@ -273,17 +273,17 @@ Buat fungsi `runExternalCommand(command, args = [], options = {})` untuk menjala
 
 - **Level 1 (Dasar):** Jalankan perintah biner `command` beserta array argumen `args` memakai `execFile` yang dibungkus `promisify`. Kembalikan objek `{ success: true, stdout: string, stderr: string, exitCode: 0 }`.
 - **Level 2 (Menengah):** Tangani kasus saat program eksternal keluar dengan error (exit code non-zero). Tangkap error tersebut dan kembalikan objek `{ success: false, stdout: string, stderr: string, exitCode: number }` tanpa melempar kegagalan unhandled rejection ke pemanggil fungsi.
-- **Level 3 (Menantang):** Dukung opsi `options.timeout` (angka milidetik batas eksekusi) dan `options.disallowedCommands` (array string daftar biner terlarang, misal `["sudo", "rm", "sh"]`). Jika `command` yang diminta terdaftar di `disallowedCommands`, lempar `Error("Perintah dilarang: [namaCommand]")`. Pastikan opsi `timeout` membatalkan proses yang menggantung.
+- **Level 3 (Menantang):** Dukung opsi `options.timeout` (angka milidetik batas eksekusi) dan `options.disallowedCommands` (array string daftar biner terlarang, misal `["sudo", "rm", "sh"]`). Jika `command` yang diminta terdaftar di `disallowedCommands`, lempar `Error("Disallowed command: [namaCommand]")`. Pastikan opsi `timeout` membatalkan proses yang menggantung.
 
 Contoh input dan output normal:
 
 ```javascript
-const res = await runExternalCommand("node", ["-e", "console.log('Sukses')"]);
+const res = await runExternalCommand("node", ["-e", "console.log('Success')"]);
 
 console.log(res.success);
 // Output: true
 console.log(res.stdout);
-// Output: Sukses
+// Output: Success
 console.log(res.exitCode);
 // Output: 0
 ```
@@ -302,7 +302,7 @@ try {
   await runExternalCommand("sudo", ["ls"], { disallowedCommands: ["sudo", "rm"] });
 } catch (err) {
   console.log(err.message);
-  // Output: Perintah dilarang: sudo
+  // Output: Disallowed command: sudo
 }
 ```
 

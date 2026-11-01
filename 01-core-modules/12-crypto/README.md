@@ -131,12 +131,12 @@ Kedua buffer wajib memiliki panjang ukuran byte yang sama persis saat diuji deng
 `Math.random()` bukan generator acak kriptografi dan rentan dieksploitasi oleh penyerang untuk merekayasa token.
 
 ```javascript
-// Salah
+// Incorrect
 const token = Math.random().toString(36).substring(2);
 ```
 
 ```javascript
-// Benar
+// Correct
 import crypto from "node:crypto";
 const token = crypto.randomBytes(32).toString("hex");
 ```
@@ -146,12 +146,12 @@ const token = crypto.randomBytes(32).toString("hex");
 Membandingkan tanda tangan digital atau token rahasia memakai operator kesamaan biasa membuka celah pembacaan waktu respon (_timing attack_).
 
 ```javascript
-// Salah
+// Incorrect
 if (userSignature === validSignature) {}
 ```
 
 ```javascript
-// Benar
+// Correct
 import crypto from "node:crypto";
 const a = Buffer.from(userSignature);
 const b = Buffer.from(validSignature);

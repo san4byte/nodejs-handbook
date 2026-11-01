@@ -170,11 +170,11 @@ Kondisi khusus: Fitur ini tersedia di Node.js modern untuk memecah proses CPU bo
 Menjalankan perulangan komputasi berat secara sinkron membekukan seluruh server; timer dan request jaringan baru tidak bisa dilayani sama sekali.
 
 ```javascript
-// Salah: Thread macet total selama perulangan
+// Incorrect: Thread completely freezes during the loop
 const target = Date.now() + 2000;
-while (Date.now() < target) {} // CPU 100%, Event Loop berhenti
+while (Date.now() < target) {} // 100% CPU, Event Loop halts
 
-// Benar: Beri jeda asinkron agar Event Loop tetap bernapas
+// Correct: Use non-blocking timer pause so Event Loop can breathe
 import { setTimeout } from "node:timers/promises";
 await setTimeout(2000);
 ```
@@ -184,12 +184,12 @@ await setTimeout(2000);
 `setInterval` versi callback yang tidak dibatalkan via `clearInterval()` akan terus berjalan tanpa henti dan menahan aplikasi Node.js keluar dari terminal.
 
 ```javascript
-// Salah
+// Incorrect
 setInterval(() => {
   pollExternalService();
-}, 5000); // Mencegah proses Node.js berhenti saat shutdown
+}, 5000); // Prevents Node.js process from exiting gracefully
 
-// Benar
+// Correct
 const timerId = setInterval(() => {
   pollExternalService();
 }, 5000);
@@ -214,7 +214,7 @@ async function retryWithBackoff(taskFn, maxRetries = 3, baseDelayMs = 20) {
         throw err;
       }
       await setTimeout(delay);
-      delay *= 2; // Gandakan durasi tunggu untuk percobaan berikutnya
+      delay *= 2; // Double delay for subsequent retry
     }
   }
 }
@@ -223,13 +223,13 @@ let attempts = 0;
 const result = await retryWithBackoff(async (attempt) => {
   attempts++;
   if (attempt < 3) {
-    throw new Error("Layanan sibuk");
+    throw new Error("Service busy");
   }
-  return `Sukses pada percobaan ke-${attempt}`;
+  return `Success on attempt ${attempt}`;
 });
 
 console.log(result);
-// Output: Sukses pada percobaan ke-3
+// Output: Success on attempt 3
 console.log(attempts);
 // Output: 3
 ```
@@ -240,17 +240,17 @@ Pola backoff ini mencegah server membanjiri downstream API yang sedang down deng
 
 Buat fungsi `withTimeout(asyncFn, timeoutMs, options = {})` untuk membatasi durasi maksimal eksekusi fungsi asynchronous.
 
-- **Level 1 (Dasar):** Jalankan `asyncFn()` berdampingan dengan timer `setTimeout()` memakai `Promise.race()`. Jika `asyncFn` selesai sebelum `timeoutMs`, kembalikan nilainya. Jika timer habis lebih dulu, lempar `Error("Batas waktu operasi terlampaui")`.
+- **Level 1 (Dasar):** Jalankan `asyncFn()` berdampingan dengan timer `setTimeout()` memakai `Promise.race()`. Jika `asyncFn` selesai sebelum `timeoutMs`, kembalikan nilainya. Jika timer habis lebih dulu, lempar `Error("Operation timeout exceeded")`.
 - **Level 2 (Menengah):** Pakai `AbortController` untuk membatalkan timer penunggu saat `asyncFn` selesai lebih dulu, agar Event Loop tidak tertahan oleh timer yang masih aktif.
-- **Level 3 (Menantang):** Dukung opsi `options.fallbackValue`. Jika timeout terjadi dan `options.fallbackValue` didefinisikan (bukan `undefined`), kembalikan nilai tersebut alih-alih melempar error. Jika `timeoutMs` bukan angka bernilai positif, lempar `RangeError("Durasi timeout harus bernilai positif")`.
+- **Level 3 (Menantang):** Dukung opsi `options.fallbackValue`. Jika timeout terjadi dan `options.fallbackValue` didefinisikan (bukan `undefined`), kembalikan nilai tersebut alih-alih melempar error. Jika `timeoutMs` bukan angka bernilai positif, lempar `RangeError("Timeout duration must be positive")`.
 
 Contoh input dan output normal:
 
 ```javascript
-const res = await withTimeout(async () => "Data berhasil diambil", 100);
+const res = await withTimeout(async () => "Data fetched successfully", 100);
 
 console.log(res);
-// Output: Data berhasil diambil
+// Output: Data fetched successfully
 ```
 
 Contoh input dan penanganan timeout dengan fallback:
@@ -260,12 +260,12 @@ import { setTimeout } from "node:timers/promises";
 
 const slowTask = async () => {
   await setTimeout(100);
-  return "Data lambat";
+  return "Slow data";
 };
 
-const fallbackRes = await withTimeout(slowTask, 10, { fallbackValue: "Nilai default" });
+const fallbackRes = await withTimeout(slowTask, 10, { fallbackValue: "Default fallback value" });
 console.log(fallbackRes);
-// Output: Nilai default
+// Output: Default fallback value
 ```
 
 Contoh input dan penanganan error:
@@ -275,7 +275,7 @@ try {
   await withTimeout(async () => {}, -10);
 } catch (err) {
   console.log(err.message);
-  // Output: Durasi timeout harus bernilai positif
+  // Output: Timeout duration must be positive
 }
 ```
 

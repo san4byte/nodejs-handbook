@@ -167,12 +167,12 @@ Kondisi khusus: Tersedia sejak Node.js versi 20.12.0 dan 22.0.0 ke atas sebagai 
 `JSON.stringify()` tidak menjamin urutan kunci properti objek dan mengabaikan tipe data seperti `undefined`, fungsi, atau `Date`.
 
 ```javascript
-// Salah: Urutan kunci yang berbeda menghasilkan string berbeda
+// Incorrect: Different property order produces different serialized strings
 const obj1 = { a: 1, b: 2 };
 const obj2 = { b: 2, a: 1 };
 console.log(JSON.stringify(obj1) === JSON.stringify(obj2)); // false
 
-// Benar
+// Correct
 import util from "node:util";
 console.log(util.isDeepStrictEqual(obj1, obj2)); // true
 ```
@@ -182,12 +182,12 @@ console.log(util.isDeepStrictEqual(obj1, obj2)); // true
 `typeof new Date()` dan `typeof /abc/` selalu menghasilkan string `"object"` sehingga tidak bisa membedakan tipe sebenarnya.
 
 ```javascript
-// Salah
-if (typeof dateValue === "object") { /* Belum tentu Date */ }
+// Incorrect
+if (typeof dateValue === "object") { /* Not necessarily a Date */ }
 
-// Benar
+// Correct
 import util from "node:util";
-if (util.types.isDate(dateValue)) { /* Dipastikan instance Date */ }
+if (util.types.isDate(dateValue)) { /* Guaranteed to be a Date instance */ }
 ```
 
 ## Studi Kasus
@@ -204,11 +204,11 @@ class ConfigAuditor {
 
   updateConfig(newConfig) {
     if (util.isDeepStrictEqual(this.currentConfig, newConfig)) {
-      return { changed: false, message: "Konfigurasi tidak berubah" };
+      return { changed: false, message: "Configuration unchanged" };
     }
 
     const logMessage = util.format(
-      "Konfigurasi diperbarui: %s -> %s",
+      "Configuration updated: %s -> %s",
       util.inspect(this.currentConfig, { compact: true }),
       util.inspect(newConfig, { compact: true })
     );
@@ -237,9 +237,9 @@ Pola audit ini menjamin perbandingan konfigurasi bersarang berjalan presisi tanp
 
 Buat fungsi `inspectStateDiff(oldState, newState, options = {})` untuk membandingkan dua snapshot state aplikasi.
 
-- **Level 1 (Dasar):** Periksa kesetaraan mendalam antara `oldState` dan `newState` memakai `util.isDeepStrictEqual()`. Jika kedua state identik, kembalikan objek `{ isEqual: true, diffLog: "Tidak ada perubahan" }`.
-- **Level 2 (Menengah):** Jika state berbeda, format string log perubahan memakai `util.format()` dan `util.inspect()`. Gunakan template `"Perubahan state: %s -> %s"` dengan representasi compact dari kedua objek. Kembalikan `{ isEqual: false, diffLog }`.
-- **Level 3 (Menantang):** Jika salah satu parameter bukan objek atau bernilai `null`, lempar `TypeError("Parameter state harus berupa objek valid")`. Jika opsi `options.colored` bernilai `true`, bungkus string `diffLog` dengan warna hijau memakai `util.styleText("green", diffLog)`.
+- **Level 1 (Dasar):** Periksa kesetaraan mendalam antara `oldState` dan `newState` memakai `util.isDeepStrictEqual()`. Jika kedua state identik, kembalikan objek `{ isEqual: true, diffLog: "No changes detected" }`.
+- **Level 2 (Menengah):** Jika state berbeda, format string log perubahan memakai `util.format()` dan `util.inspect()`. Gunakan template `"State changed: %s -> %s"` dengan representasi compact dari kedua objek. Kembalikan `{ isEqual: false, diffLog }`.
+- **Level 3 (Menantang):** Jika salah satu parameter bukan objek atau bernilai `null`, lempar `TypeError("State parameter must be a valid object")`. Jika opsi `options.colored` bernilai `true`, bungkus string `diffLog` dengan warna hijau memakai `util.styleText("green", diffLog)`.
 
 Contoh input dan output normal:
 
@@ -259,7 +259,7 @@ try {
   inspectStateDiff(null, { role: "admin" });
 } catch (err) {
   console.log(err.message);
-  // Output: Parameter state harus berupa objek valid
+  // Output: State parameter must be a valid object
 }
 ```
 

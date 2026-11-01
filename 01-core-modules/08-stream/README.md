@@ -204,12 +204,12 @@ Kondisi khusus: Jika `.write()` mengembalikan `false`, produsen data harus berhe
 Metode `readable.pipe(writable)` bawaan lama tidak meneruskan error dari stream sumber ke stream tujuan, sehingga memicu stream menggantung tanpa tertutup.
 
 ```javascript
-// Salah
-readable.pipe(transform).pipe(writable); // Kebocoran file descriptor saat error
+// Incorrect
+readable.pipe(transform).pipe(writable); // Leaks file descriptors on error
 
-// Benar
+// Correct
 import { pipeline } from "node:stream/promises";
-await pipeline(readable, transform, writable); // Bersih dan melempar error ke catch
+await pipeline(readable, transform, writable); // Automatically cleans up and propagates errors
 ```
 
 ### Mengabaikan Sinyal Tekanan Balik (Backpressure)
@@ -217,13 +217,13 @@ await pipeline(readable, transform, writable); // Bersih dan melempar error ke c
 Memompa data secara membabi buta saat `.write()` mengembalikan `false` akan memaksa Node.js menimbun data di memori heap hingga aplikasi crash kehabisan RAM.
 
 ```javascript
-// Salah
+// Incorrect
 while (hasMoreData()) {
-  writable.write(data); // RAM melonjak tidak terkendali jika consumer lambat
+  writable.write(data); // Uncontrolled RAM spike if consumer is slow
 }
 
-// Benar
-// Gunakan pipeline() atau tunggu event drain sebelum menulis kembali
+// Correct
+// Use pipeline() or wait for the 'drain' event before writing more data
 ```
 
 ## Studi Kasus
@@ -279,12 +279,12 @@ Buat fungsi `processDataStream(inputStream, transformFn, outputStream, options =
 
 - **Level 1 (Dasar):** Buat instance `Transform` yang memodifikasi setiap potongan data `chunk` memakai fungsi `transformFn(chunk)`. Hubungkan `inputStream` ke transformer dan `outputStream` memakai `pipeline()` dari `node:stream/promises`.
 - **Level 2 (Menengah):** Hitung metrik pemrosesan selama stream berjalan: jumlah potongan data (`processedChunks`) dan total ukuran byte yang diproses (`totalBytes`). Kembalikan objek `{ processedChunks, totalBytes }`.
-- **Level 3 (Menantang):** Dukung opsi `options.signal` (`AbortSignal`). Jika sinyal pembatalan aktif di tengah streaming, tangkap pembatalan tersebut dan lempar `Error("Stream pipeline dibatalkan")`.
+- **Level 3 (Menantang):** Dukung opsi `options.signal` (`AbortSignal`). Jika sinyal pembatalan aktif di tengah streaming, tangkap pembatalan tersebut dan lempar `Error("Stream pipeline aborted")`.
 
 Contoh input dan output normal:
 
 ```javascript
-const source = Readable.from(["pesan satu", "pesan dua"]);
+const source = Readable.from(["first message", "second message"]);
 let outputData = [];
 const dest = new Writable({
   write(chunk, enc, cb) {
@@ -300,7 +300,7 @@ const stats = await processDataStream(
 );
 
 console.log(outputData.join(", "));
-// Output: PESAN SATU, PESAN DUA
+// Output: FIRST MESSAGE, SECOND MESSAGE
 console.log(stats.processedChunks);
 // Output: 2
 console.log(stats.totalBytes > 0);
@@ -310,7 +310,7 @@ console.log(stats.totalBytes > 0);
 Contoh input dan penanganan error:
 
 ```javascript
-const source = Readable.from(["baris 1", "baris 2"]);
+const source = Readable.from(["line 1", "line 2"]);
 const dest = new Writable({
   write(c, e, cb) {
     cb();
@@ -325,7 +325,7 @@ try {
   });
 } catch (err) {
   console.log(err.message);
-  // Output: Stream pipeline dibatalkan
+  // Output: Stream pipeline aborted
 }
 ```
 

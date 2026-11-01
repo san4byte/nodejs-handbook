@@ -239,10 +239,10 @@ Kondisi khusus: Jika properti `base` tetap diisi saat memanggil `path.format()`,
 Menyambung path secara manual dengan tanda `+` rentan menghasilkan garis miring ganda atau rusak saat dijalankan di sistem operasi lain.
 
 ```javascript
-// Salah
-const filePath = baseDir + "/" + fileName; // Bermasalah di Windows
+// Incorrect
+const filePath = baseDir + "/" + fileName; // Problematic on Windows
 
-// Benar
+// Correct
 import path from "node:path";
 const filePath = path.join(baseDir, fileName);
 ```
@@ -252,15 +252,15 @@ const filePath = path.join(baseDir, fileName);
 `path.join()` tetap memproses segmen `..` sehingga input jahat pengguna bisa kabur dari direktori yang ditentukan.
 
 ```javascript
-// Salah: Masih rentan lolos ke direktori sistem
+// Incorrect: vulnerable to path traversal escaping into system folders
 const target = path.join("/app/uploads", "../../etc/passwd");
-// target bernilai: /etc/passwd
+// target evaluates to: /etc/passwd
 
-// Benar: Kunci dengan path.resolve dan validasi awalannya
+// Correct: lock with path.resolve and validate base prefix
 const safeBase = path.resolve("/app/uploads");
 const safeTarget = path.resolve(safeBase, userInput);
 if (!safeTarget.startsWith(safeBase)) {
-  throw new Error("Akses direktori ditolak");
+  throw new Error("Access denied: path escapes safe directory");
 }
 ```
 
@@ -280,7 +280,7 @@ class StoragePathResolver {
     const resolvedPath = path.resolve(this.baseDir, userRelativePath);
 
     if (!resolvedPath.startsWith(this.baseDir)) {
-      throw new Error("Akses path di luar direktori aman ditolak");
+      throw new Error("Access denied: path escapes safe directory");
     }
 
     const fileExt = path.extname(resolvedPath).toLowerCase();
@@ -308,7 +308,7 @@ try {
   resolver.resolveSafe("../../secret/passwords.txt");
 } catch (err) {
   console.log(err.message);
-  // Output: Akses path di luar direktori aman ditolak
+  // Output: Access denied: path escapes safe directory
 }
 ```
 
@@ -319,8 +319,8 @@ Pola ini menggunakan `path.resolve` untuk mengevaluasi alamat absolut riil, meng
 Buat fungsi `normalizeStoragePath(baseDir, userPath, allowedExtensions = [])` untuk memvalidasi lokasi penyimpanan file pada server aplikasi.
 
 - **Level 1 (Dasar):** Gabungkan `baseDir` dan `userPath` menggunakan `path.resolve()`. Ambil nama file memakai `path.basename()` dan ekstensi file memakai `path.extname()`. Kembalikan objek `{ fullPath, filename, ext }` dengan `ext` berupa huruf kecil.
-- **Level 2 (Menengah):** Jika parameter `allowedExtensions` diisi (misalnya `[".pdf", ".docx"]`), validasi apakah ekstensi file termasuk dalam daftar tersebut (abaikan huruf besar/kecil). Jika tidak terdaftar, lempar `Error("Format ekstensi file tidak diizinkan")`.
-- **Level 3 (Menantang):** Cegah celah keamanan _path traversal_. Jika `fullPath` hasil resolusi berada di luar direktori dasar aman (`baseDir`), lempar `Error("Akses path di luar batas ditolak")`.
+- **Level 2 (Menengah):** Jika parameter `allowedExtensions` diisi (misalnya `[".pdf", ".docx"]`), validasi apakah ekstensi file termasuk dalam daftar tersebut (abaikan huruf besar/kecil). Jika tidak terdaftar, lempar `Error("File extension format not allowed")`.
+- **Level 3 (Menantang):** Cegah celah keamanan _path traversal_. Jika `fullPath` hasil resolusi berada di luar direktori dasar aman (`baseDir`), lempar `Error("Access denied: path escapes safe directory")`.
 
 Contoh input dan output normal:
 
@@ -342,7 +342,7 @@ try {
   normalizeStoragePath("data/uploads", "../../secret.key", [".key"]);
 } catch (err) {
   console.log(err.message);
-  // Output: Akses path di luar batas ditolak
+  // Output: Access denied: path escapes safe directory
 }
 ```
 

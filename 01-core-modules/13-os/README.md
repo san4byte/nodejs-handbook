@@ -158,10 +158,10 @@ Kondisi khusus: Pada sistem POSIX, properti `uid` dan `gid` bernilai integer, se
 Di dalam lingkungan Docker atau Kubernetes, `os.cpus().length` tetap membaca total core fisik mesin host sehingga memicu alokasi thread berlebih di luar batas kuota cgroup.
 
 ```javascript
-// Salah: Membaca total core mesin fisik induk
+// Incorrect: Reads total physical CPU cores of the host machine
 const workerCount = os.cpus().length;
 
-// Benar: Menghormati batasan kuota container
+// Correct: Respects container cgroup CPU quota limits
 const workerCount = os.availableParallelism();
 ```
 
@@ -170,10 +170,10 @@ const workerCount = os.availableParallelism();
 `os.freemem()` mencatat memori fisik OS secara global, bukan batas memori heap JavaScript yang diizinkan untuk aplikasi Node.js.
 
 ```javascript
-// Salah asumsi: mengira aplikasi bisa memakai seluruh RAM bebas OS
-const bufferSize = os.freemem(); // Bisa melempar out-of-memory di V8 heap
+// Incorrect assumption: expecting application can allocate all free OS RAM
+const bufferSize = os.freemem(); // May trigger V8 heap out-of-memory crash
 
-// Benar: Pantau alokasi heap via process.memoryUsage().heapUsed
+// Correct: Monitor heap allocation via process.memoryUsage().heapUsed
 ```
 
 ## Studi Kasus
@@ -221,7 +221,7 @@ Buat fungsi `inspectHostServer(options = {})` untuk mengumpulkan diagnostik spes
 
 - **Level 1 (Dasar):** Ambil informasi platform sistem operasi memakai `os.platform()`, arsitektur CPU via `os.arch()`, dan jumlah core prosesor aktif lewat `os.availableParallelism()`. Kembalikan objek `{ platform, arch, cpuCores }`.
 - **Level 2 (Menengah):** Hitung metrik memori RAM host: total RAM dalam gigabyte (`totalGb = Number((os.totalmem() / 1024 / 1024 / 1024).toFixed(2))`) dan persentase RAM bebas (`freePercent = Number(((os.freemem() / os.totalmem()) * 100).toFixed(2))`). Tambahkan kedua nilai ke objek kembalian.
-- **Level 3 (Menantang):** Dukung opsi `options.minFreePercent`. Jika `freePercent` berada di bawah nilai ambang tersebut, set properti `status: "WARNING"` (default: `"HEALTHY"`). Jika opsi `options.strictMode` bernilai `true` saat kondisi warning terjadi, lempar `Error("Kapasitas RAM bebas berada di bawah batas minimum")`.
+- **Level 3 (Menantang):** Dukung opsi `options.minFreePercent`. Jika `freePercent` berada di bawah nilai ambang tersebut, set properti `status: "WARNING"` (default: `"HEALTHY"`). Jika opsi `options.strictMode` bernilai `true` saat kondisi warning terjadi, lempar `Error("Free RAM is below minimum threshold")`.
 
 Contoh input dan output normal:
 
@@ -245,7 +245,7 @@ try {
   inspectHostServer({ minFreePercent: 100, strictMode: true });
 } catch (err) {
   console.log(err.message);
-  // Output: Kapasitas RAM bebas berada di bawah batas minimum
+  // Output: Free RAM is below minimum threshold
 }
 ```
 

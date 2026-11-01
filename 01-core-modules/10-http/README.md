@@ -210,14 +210,14 @@ Kondisi khusus: `fetch()` hanya berstatus reject jika terjadi kegagalan jaringan
 Jika alur rute percabangan lupa memanggil `res.end()`, koneksi client akan menggantung sampai batas waktu koneksi habis.
 
 ```javascript
-// Salah
+// Incorrect
 if (req.url === "/api") {
   res.writeHead(200);
   res.write("OK");
-  // Lupa res.end() -> client loading selamanya
+  // Missing res.end() -> client hangs forever
 }
 
-// Benar
+// Correct
 if (req.url === "/api") {
   res.writeHead(200);
   res.end("OK");
@@ -229,11 +229,11 @@ if (req.url === "/api") {
 `fetch()` tidak melempar error saat server mengembalikan error 404 atau 500.
 
 ```javascript
-// Salah: Mengira fetch otomatis melempar error saat HTTP gagal
+// Incorrect: Assuming fetch automatically throws on HTTP error status
 const res = await fetch("https://api.example.com/not-found");
-const data = await res.json(); // Mengurai body error HTML yang berujung JSON parse error
+const data = await res.json(); // Tries parsing HTML error page leading to JSON parse error
 
-// Benar
+// Correct
 const res = await fetch("https://api.example.com/not-found");
 if (!res.ok) {
   throw new Error(`HTTP Error: ${res.status}`);
@@ -313,12 +313,12 @@ Buat fungsi `createProductServer(initialProducts = [])` untuk membuat HTTP serve
 
 - **Level 1 (Dasar):** Buat instance server dengan `http.createServer`. Tangani route `GET /products` untuk mengembalikan seluruh item array produk dalam format JSON dengan status `200`. Jika path atau method tidak cocok, kembalikan status `404` dengan JSON `{ error: "Not Found" }`.
 - **Level 2 (Menengah):** Tangani route `POST /products`. Baca body request yang masuk secara streaming menggunakan perulangan `for await...of`, parse body JSON tersebut, tetapkan properti `id: Date.now()`, simpan item baru ke array produk, dan kembalikan status `201` dengan JSON `{ success: true, product: item }`.
-- **Level 3 (Menantang):** Jika payload JSON pada request `POST` rusak atau tidak bisa diurai, tangkap error tersebut dan kembalikan status `400` dengan JSON `{ error: "Format JSON tidak valid" }`.
+- **Level 3 (Menantang):** Jika payload JSON pada request `POST` rusak atau tidak bisa diurai, tangkap error tersebut dan kembalikan status `400` dengan JSON `{ error: "Invalid JSON format" }`.
 
 Contoh input dan output normal:
 
 ```javascript
-const server = createProductServer([{ id: 1, name: "Buku", price: 50000 }]);
+const server = createProductServer([{ id: 1, name: "Book", price: 50000 }]);
 
 server.listen(0, async () => {
   const port = server.address().port;
@@ -328,7 +328,7 @@ server.listen(0, async () => {
   console.log(res.status);
   // Output: 200
   console.log(products[0].name);
-  // Output: Buku
+  // Output: Book
   server.close();
 });
 ```
@@ -343,14 +343,14 @@ server.listen(0, async () => {
   const res = await fetch(`http://localhost:${port}/products`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: "JSON_RUSAK",
+    body: "INVALID_JSON",
   });
   const data = await res.json();
 
   console.log(res.status);
   // Output: 400
   console.log(data.error);
-  // Output: Format JSON tidak valid
+  // Output: Invalid JSON format
   server.close();
 });
 ```
