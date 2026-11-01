@@ -20,50 +20,57 @@ Kurikulum disusun secara sistematis dalam **4 Fase Utama**:
 
 Fondasi runtime, arsitektur Libuv, dan API bawaan standar tanpa dependensi eksternal:
 
-1. [01 - Node.js Standard Library](01-core-modules/01-standard-library/README.md)
-   - Konsep modul bawaan native, resolusi C++ binding, dan standar prefiks protokol `node:`.
-2. [02 - Global Objects & Web Standards](01-core-modules/02-globals/README.md)
-   - Objek global bawaan, `globalThis`, Web APIs (`structuredClone`, `performance`, `TextEncoder`).
-3. [03 - Process Lifecycle & SRE Telemetry](01-core-modules/03-process/README.md)
-   - Objek `process`, argumen CLI (`process.argv`), variabel lingkungan (`process.env`), dan graceful shutdown.
-4. [04 - OS (Operating System)](01-core-modules/04-os/README.md)
-   - Informasi perangkat keras, arsitektur CPU, deteksi core prosesor (`availableParallelism`), dan memori RAM.
-5. [05 - Path Manipulation & Filesystem Security](01-core-modules/05-path/README.md)
-   - Normalisasi jalur berkas lintas platform (POSIX vs Windows), resolusi absolut, dan proteksi Path Traversal.
-6. [06 - URL & Query String Resolution](01-core-modules/06-url/README.md)
+#### Materi Fondasi (01–12, Pelajari Berurutan)
+1. [01 - Global Objects & Web Standards](01-core-modules/01-globals/README.md)
+   - Objek global bawaan, `globalThis`, Web APIs (`structuredClone`, `performance`, `TextEncoder`, `AbortController`).
+2. [02 - Process Lifecycle & Telemetry](01-core-modules/02-process/README.md)
+   - Objek `process`, argumen CLI (`process.argv`), variabel lingkungan (`process.env`), dan metrik memori RAM.
+3. [03 - Path Manipulation & Security](01-core-modules/03-path/README.md)
+   - Normalisasi path file lintas platform (POSIX vs Windows), resolusi absolut, dan proteksi Path Traversal.
+4. [04 - URL & Query String Resolution](01-core-modules/04-url/README.md)
    - Standar WHATWG URL API, parsing hostname/port/pathname, dan manipulasi parameter via `URLSearchParams`.
-7. [07 - File System (fs & fs/promises)](01-core-modules/07-file-system/README.md)
-   - Manajemen berkas CRUD lengkap, scanning Dirent, atomic write pattern, dan kamus kode error sistem.
-8. [08 - Events (EventEmitter)](01-core-modules/08-events/README.md)
-   - Pola Event-Driven Architecture native, registrasi listener, manipulasi sinyal, dan pencegahan memory leak.
-9. [09 - Buffer & Data Encoding](01-core-modules/09-buffer/README.md)
-   - Penanganan raw binary data di luar memori V8 heap, manipulasi byte, serta konversi UTF-8, Base64, dan Hex.
-10. [10 - Stream & Backpressure Management](01-core-modules/10-stream/README.md)
-    - Aliran data berkelanjutan (Readable, Writable, Duplex, Transform), konsumsi memori hemat, dan piping stream.
-11. [11 - Timer & Asynchronous Runtime](01-core-modules/11-timer/README.md)
-    - Fase Event Loop, perbedaan `setTimeout`, `setInterval`, `setImmediate`, modern `timers/promises`, dan Top-Level Await.
-12. [12 - Net (TCP Socket Networking)](01-core-modules/12-net/README.md)
-    - Pemrograman jaringan tingkat rendah via TCP Server dan Client dua arah (*bidirectional socket stream*).
-13. [13 - DNS (Domain Name System Resolution)](01-core-modules/13-dns/README.md)
-    - Resolusi nama domain ke alamat IP mesin, perbedaan `dns.lookup` vs `dns.resolve`, dan query DNS record.
-14. [14 - HTTP Server & HTTP Client](01-core-modules/14-http/README.md)
-    - Pembuatan web server native dengan modul `http`, parsing headers/body mentah, dan eksekusi HTTP client request.
-15. [15 - Cluster Module (Multi-Process Scaling)](01-core-modules/15-cluster/README.md)
-    - Penskalaan multi-process memanfaatkan seluruh core CPU dengan arsitektur Primary-Worker dan port sharing.
-16. [16 - Worker Threads (Multi-Threaded Parallelism)](01-core-modules/16-worker-threads/README.md)
+5. [05 - File System (fs/promises)](01-core-modules/05-file-system/README.md)
+   - Manajemen file CRUD lengkap, scanning Dirent, atomic write pattern, dan kamus kode error sistem.
+6. [06 - Events (EventEmitter)](01-core-modules/06-events/README.md)
+   - Pola Event-Driven Architecture native, registrasi listener, penanganan error, dan mitigasi memory leak.
+7. [07 - Buffer & Data Encoding](01-core-modules/07-buffer/README.md)
+   - Penanganan data biner mentah di luar V8 heap, manipulasi byte, serta konversi UTF-8, Base64, dan Hex.
+8. [08 - Stream & Backpressure Management](01-core-modules/08-stream/README.md)
+   - Aliran data berkelanjutan (Readable, Writable, Transform), konsumsi memori hemat, dan modul `pipeline`.
+9. [09 - Timer & Asynchronous Runtime](01-core-modules/09-timer/README.md)
+   - Fase Event Loop Libuv, perbedaan macrotask vs microtask, dan penjadwalan via `node:timers/promises`.
+10. [10 - HTTP Server & HTTP Client](01-core-modules/10-http/README.md)
+    - Pembuatan HTTP server native, parsing header/body streaming, dan pemanggilan client request via `fetch()`.
+11. [11 - Util (Standard Utility Functions)](01-core-modules/11-util/README.md)
+    - Jembatan callback ke Promise (`util.promisify`), inspeksi objek mendalam, komparasi state, dan pewarnaan teks terminal.
+12. [12 - Crypto (Kriptografi & Keamanan)](01-core-modules/12-crypto/README.md)
+    - Pembuatan string acak aman, hashing SHA-256, HMAC, dan pencegahan timing attack.
+
+#### Materi Pendukung (13–18, Pelajari Sesuai Kebutuhan)
+13. [13 - OS (Operating System)](01-core-modules/13-os/README.md)
+    - Informasi perangkat keras, arsitektur CPU, deteksi core prosesor (`availableParallelism`), dan memori RAM.
+14. [14 - Worker Threads (Multi-Threaded Parallelism)](01-core-modules/14-worker-threads/README.md)
     - Eksekusi komputasi CPU berat di background thread tanpa memblokir Event Loop menggunakan modul `worker_threads`.
-17. [17 - Zlib (Data Compression & Decompression)](01-core-modules/17-zlib/README.md)
+15. [15 - Zlib (Data Compression & Decompression)](01-core-modules/15-zlib/README.md)
     - Kompresi dan dekompresi data streaming berbasis algoritma Gzip, Deflate, dan Brotli.
-18. [18 - Readline (Interactive CLI Input & Streams)](01-core-modules/18-readline/README.md)
-    - Pembacaan input interaktif baris demi baris dari terminal dan berkas via `node:readline/promises`.
-19. [19 - Diagnostic Report (`process.report`)](01-core-modules/19-report/README.md)
+16. [16 - Readline (Interactive Input & Line Streams)](01-core-modules/16-readline/README.md)
+    - Pembacaan input interaktif baris demi baris dari terminal dan file stream via `readline/promises`.
+17. [17 - Console & Custom Stream Logging](01-core-modules/17-console/README.md)
+    - Pencetakan diagnostik, format tabular, dan pembuatan instance logger kustom ke file disk stream.
+18. [18 - Child Process](01-core-modules/18-child-process/README.md)
+    - Menjalankan perintah eksternal sistem operasi memakai fungsi `spawn` dan `exec`.
+
+#### Materi Eksplorasi (19–23, Pelajari Saat Dibutuhkan)
+19. [19 - Net (TCP Socket Networking)](01-core-modules/19-net/README.md)
+    - Pemrograman jaringan tingkat rendah via TCP Server dan Client dua arah (*bidirectional socket stream*).
+20. [20 - DNS (Domain Name System Resolution)](01-core-modules/20-dns/README.md)
+    - Resolusi nama domain ke alamat IP mesin, perbedaan `dns.lookup` vs `dns.resolve`, dan query DNS record.
+21. [21 - Cluster Module (Multi-Process Scaling)](01-core-modules/21-cluster/README.md)
+    - Penskalaan multi-proses memanfaatkan seluruh core CPU dengan arsitektur Primary-Worker dan port sharing.
+22. [22 - Diagnostic Report (`process.report`)](01-core-modules/22-report/README.md)
     - Pembuatan laporan diagnosa mendalam dalam format JSON untuk analisis crash dan investigasi memori.
-20. [20 - Util (Standard Utility Functions)](01-core-modules/20-util/README.md)
-    - Fungsi bantuan formatting string, inspeksi objek mendalam (`util.inspect`), dan konversi callback (`util.promisify`).
-21. [21 - Debugger & V8 Inspector](01-core-modules/21-debugger/README.md)
-    - Titik henti terprogram `debugger;`, inspeksi nilai variabel runtime, dan integrasi V8 Inspector dengan Chrome DevTools.
-22. [22 - Console & Custom Stream Logging](01-core-modules/22-console/README.md)
-    - Fasilitas pencetakan diagnostik, format tabular `console.table`, dan pembuatan custom console ke berkas disk stream.
+23. [23 - Debugger & V8 Inspector](01-core-modules/23-debugger/README.md)
+    - Titik henti terprogram `debugger;`, inspeksi nilai variabel runtime, dan integrasi V8 Inspector.
 
 ---
 
@@ -157,17 +164,17 @@ Proyek implementasi nyata yang menggabungkan seluruh konsep teori:
 ### 1. Menjalankan Modul Core Node.js (Fase 1)
 
 ```bash
-# Menjalankan modul arsitektur & process
-node 01-core-modules/01-architecture-and-globals/process.mjs
+# Menjalankan modul Process
+node 01-core-modules/02-process/src/main.mjs
 
 # Menjalankan manipulasi Buffer
-node 01-core-modules/04-buffer-and-encoding/buffer.mjs
+node 01-core-modules/07-buffer/src/main.mjs
 
 # Menjalankan File System I/O
-node 01-core-modules/05-file-system/file-system.mjs
+node 01-core-modules/05-file-system/src/main.mjs
 
 # Menjalankan Native HTTP Server
-node 01-core-modules/10-http-server-and-client/http-server.mjs
+node 01-core-modules/10-http/src/main.mjs
 ```
 
 ### 2. Menjalankan Pengujian Unit Jest (Fase 2)
