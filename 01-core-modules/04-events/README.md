@@ -55,8 +55,8 @@ const bus = new EventEmitter();
 bus.on('status', (code, detail) => console.log(`Status: ${code} - ${detail}`));
 
 const hasListeners = bus.emit('status', 200, 'OK');
-console.log('Delivered:', hasListeners);
 // Output: Status: 200 - OK
+console.log('Delivered:', hasListeners);
 // Output: Delivered: true
 ```
 
@@ -128,13 +128,15 @@ processor.on('error', (err) => {
 });
 
 processor.placeOrder('ORD-101', 50);
-processor.placeOrder('ORD-102', 120);
-processor.emit('error', new Error('Payment gateway timeout'));
 // Output: Order ORD-101 received.
 // Output: [Notification] Order ORD-101 processed ($50).
 // Output: [Analytics] First order recorded: ORD-101.
+
+processor.placeOrder('ORD-102', 120);
 // Output: Order ORD-102 received.
 // Output: [Notification] Order ORD-102 processed ($120).
+
+processor.emit('error', new Error('Payment gateway timeout'));
 // Output: [Error Listener] Caught error: Payment gateway timeout
 ```
 

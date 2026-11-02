@@ -93,15 +93,15 @@ child.stdout.on('data', (data) => {
   const lines = data.toString().trim().split('\n');
   for (const line of lines) {
     console.log(`STDOUT: ${line}`);
+    // Output: STDOUT: Child process output
+    // Output: STDOUT: More text
   }
 });
 
 child.on('close', (code) => {
   console.log(`Child process exited with code ${code}`);
+  // Output: Child process exited with code 0
 });
-// Output: STDOUT: Child process output
-// Output: STDOUT: More text
-// Output: Child process exited with code 0
 ```
 
 ## Real-World Use Case

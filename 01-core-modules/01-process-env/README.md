@@ -36,8 +36,8 @@ import process from 'node:process';
 const port = Number(process.env.PORT) || 3000;
 const isProd = process.env.NODE_ENV === 'production';
 console.log('Port configured:', port);
-console.log('Production mode:', isProd);
 // Output: Port configured: 3000
+console.log('Production mode:', isProd);
 // Output: Production mode: false
 ```
 
@@ -100,14 +100,14 @@ const port = Number(process.env.PORT || args[1]) || 3000;
 const env = process.env.NODE_ENV || 'development';
 
 console.log('PID is number:', typeof process.pid === 'number');
-console.log('Platform:', process.platform);
-console.log('Target Port:', port);
-console.log('Environment:', env);
-console.log('Raw Arguments:', args);
 // Output: PID is number: true
+console.log('Platform:', process.platform);
 // Output: Platform: linux
+console.log('Target Port:', port);
 // Output: Target Port: 8080
+console.log('Environment:', env);
 // Output: Environment: development
+console.log('Raw Arguments:', args);
 // Output: Raw Arguments: [ '--port', '8080' ]
 ```
 
@@ -129,9 +129,11 @@ function handleShutdown(signal) {
   isShuttingDown = true;
 
   console.log(`Received ${signal}. Draining active connections...`);
+  // Output: Received SIGTERM. Draining active connections...
 
   setTimeout(() => {
     console.log('All connections drained. Safe exit completed.');
+    // Output: All connections drained. Safe exit completed.
     process.exit(0);
   }, 100);
 }
@@ -140,14 +142,12 @@ process.on('SIGTERM', () => handleShutdown('SIGTERM'));
 process.on('SIGINT', () => handleShutdown('SIGINT'));
 
 console.log('Application started. Simulating shutdown event...');
+// Output: Application started. Simulating shutdown event...
 
 // Simulate OS signal for demonstration
 setTimeout(() => {
   process.emit('SIGTERM');
 }, 50);
-// Output: Application started. Simulating shutdown event...
-// Output: Received SIGTERM. Draining active connections...
-// Output: All connections drained. Safe exit completed.
 ```
 
 ## Pitfalls

@@ -1,9 +1,12 @@
 import path from 'node:path';
-import { URL } from 'node:url';
+import { URLSearchParams } from 'node:url';
 
-const target = path.join('uploads', 'report.pdf');
-console.log('Joined:', target);
+const fullPath = path.join('uploads', 'users', 'avatar.png');
+console.log('Joined:', fullPath);
+console.log('Dirname:', path.dirname(fullPath));
 
-const endpoint = new URL('https://api.site.com/v1/search?q=node');
-endpoint.searchParams.append('page', '2');
-console.log('Search:', endpoint.search);
+const params = new URLSearchParams('sort=asc&limit=10');
+params.set('page', '2');
+params.append('filter', 'active');
+console.log('Query:', params.toString());
+console.log('Sort:', params.get('sort'));

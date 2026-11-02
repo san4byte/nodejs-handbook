@@ -84,10 +84,12 @@ if (isMainThread) {
 
   worker.on('message', (result) => {
     console.log('Result received from worker:', result);
+    // Output: Result received from worker: { input: 40, fib: 102334155 }
   });
 
   worker.on('exit', (code) => {
     console.log('Worker exited with code:', code);
+    // Output: Worker exited with code: 0
   });
 } else {
   function fibonacci(n) {
@@ -103,8 +105,6 @@ if (isMainThread) {
   const result = fibonacci(workerData.num);
   parentPort.postMessage({ input: workerData.num, fib: result });
 }
-// Output: Result received from worker: { input: 40, fib: 102334155 }
-// Output: Worker exited with code: 0
 ```
 
 ## Real-World Use Case
@@ -121,13 +121,13 @@ if (isMainThread) {
   const worker = new Worker(new URL(import.meta.url));
   worker.on('message', (data) => {
     console.log('Delegated calculation:', data.sum);
+    // Output: Delegated calculation: 499999500000
   });
 } else {
   let sum = 0;
   for (let i = 0; i < 1_000_000; i++) sum += i;
   parentPort.postMessage({ sum });
 }
-// Output: Delegated calculation: 499999500000
 ```
 
 ## Pitfalls

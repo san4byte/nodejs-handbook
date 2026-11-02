@@ -111,16 +111,16 @@ server.listen(0, async () => {
   const res = await fetch(`http://localhost:${port}/health`);
   const body = await res.text();
   console.log('GET /health status:', res.status, 'body:', body);
+  // Output: GET /health status: 200 body: ok
 
   const postRes = await fetch(`http://localhost:${port}/echo`, {
     method: 'POST',
   });
   const postData = await postRes.json();
   console.log('POST /echo status:', postRes.status, 'echoed:', postData.echoed);
+  // Output: POST /echo status: 200 echoed: Hello from client!
   server.close();
 });
-// Output: GET /health status: 200 body: ok
-// Output: POST /echo status: 200 echoed: Hello from client!
 ```
 
 ## Real-World Use Case

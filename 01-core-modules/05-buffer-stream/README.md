@@ -35,8 +35,8 @@ const utf8Buf = Buffer.from('Node.js', 'utf8');
 const base64Buf = Buffer.from('Tm9kZS5qcw==', 'base64');
 
 console.log(utf8Buf.toString('hex'));
-console.log(base64Buf.toString('utf8'));
 // Output: 4e6f64652e6a73
+console.log(base64Buf.toString('utf8'));
 // Output: Node.js
 ```
 
@@ -126,8 +126,8 @@ const destinationStream = new Writable({
 
 await pipeline(sourceStream, upperTransform, destinationStream);
 console.log('Processed Stream Chunks:');
-process.stdout.write(output.join(''));
 // Output: Processed Stream Chunks:
+process.stdout.write(output.join(''));
 // Output: ALPHA
 // Output: BETA
 // Output: GAMMA

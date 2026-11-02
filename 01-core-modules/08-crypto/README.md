@@ -119,12 +119,12 @@ import crypto from 'node:crypto';
 const text = 'secret message';
 const hash = crypto.createHash('sha256').update(text).digest('hex');
 console.log('SHA-256 Hash length:', hash.length);
+// Output: SHA-256 Hash length: 64
 console.log('SHA-256 Hash sample:', hash.slice(0, 16));
+// Output: SHA-256 Hash sample: bb0b57005f01018b
 
 const id = crypto.randomUUID();
 console.log('Valid UUID v4:', typeof id === 'string');
-// Output: SHA-256 Hash length: 64
-// Output: SHA-256 Hash sample: bb0b57005f01018b
 // Output: Valid UUID v4: true
 ```
 
@@ -156,8 +156,8 @@ async function verifyPassword(password, stored) {
 
 const hash = await hashPassword('mySecretPass');
 console.log('Verified:', await verifyPassword('mySecretPass', hash));
-console.log('Wrong pass:', await verifyPassword('wrong', hash));
 // Output: Verified: true
+console.log('Wrong pass:', await verifyPassword('wrong', hash));
 // Output: Wrong pass: false
 ```
 

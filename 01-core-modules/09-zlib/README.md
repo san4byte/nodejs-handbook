@@ -96,14 +96,14 @@ const compressedBrotli = await brotliCompress(Buffer.from(sampleText));
 const decompressedBrotli = await brotliDecompress(compressedBrotli);
 
 console.log('Original size (bytes):', Buffer.from(sampleText).length);
-console.log('Gzip compressed size:', compressedGzip.length);
-console.log('Gzip decompressed matches:', decompressedGzip.toString() === sampleText);
-console.log('Brotli compressed size:', compressedBrotli.length);
-console.log('Brotli decompressed matches:', decompressedBrotli.toString() === sampleText);
 // Output: Original size (bytes): 406
+console.log('Gzip compressed size:', compressedGzip.length);
 // Output: Gzip compressed size: 54
+console.log('Gzip decompressed matches:', decompressedGzip.toString() === sampleText);
 // Output: Gzip decompressed matches: true
+console.log('Brotli compressed size:', compressedBrotli.length);
 // Output: Brotli compressed size: 33
+console.log('Brotli decompressed matches:', decompressedBrotli.toString() === sampleText);
 // Output: Brotli decompressed matches: true
 ```
 
@@ -153,8 +153,8 @@ server.listen(0, async () => {
     return /json|text|javascript|css|xml/.test(contentType);
   }
   console.log('Compress JSON:', shouldCompress('application/json'));
-  console.log('Compress JPEG:', shouldCompress('image/jpeg'));
   // Output: Compress JSON: true
+  console.log('Compress JPEG:', shouldCompress('image/jpeg'));
   // Output: Compress JPEG: false
   ```
 - Menggunakan level kompresi maksimum (`level: 9`) secara membabi-buta untuk seluruh respons realtime HTTP, yang membebani CPU secara tidak proporsional.

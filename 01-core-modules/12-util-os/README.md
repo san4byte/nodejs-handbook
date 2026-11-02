@@ -136,8 +136,8 @@ function getWorkerCount(argv) {
 }
 
 console.log('Auto-detected cores > 0:', getWorkerCount([]) > 0);
-console.log('Explicit flag:', getWorkerCount(['--concurrency', '4']));
 // Output: Auto-detected cores > 0: true
+console.log('Explicit flag:', getWorkerCount(['--concurrency', '4']));
 // Output: Explicit flag: 4
 ```
 
