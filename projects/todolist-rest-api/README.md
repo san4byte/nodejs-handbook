@@ -1,113 +1,148 @@
 # Todolist RESTful API Server
 
-> ⏱️ **TL;DR (Ringkasan Cepat):**
->
-> - **Fungsi Utama**: Layanan RESTful API mandiri untuk operasi CRUD (_Create, Read, Update, Delete_) data to-do list menggunakan HTTP Server bawaan Node.js murni dengan pola arsitektur **Service Layer Pattern** tanpa dependensi pihak ketiga.
-> - **Kapan Digunakan**: Studi kasus ideal untuk memahami bagaimana web server dan REST API bekerja di level fundamental sebelum beralih ke framework tingkat tinggi seperti Express, NestJS, atau Fastify.
-> - **Aturan Praktis**: Pisahkan logika HTTP routing di `app.mjs` dari logika manipulasi data di `todolist.service.mjs`. Gunakan berkas `test.http` untuk menguji semua skenario request HTTP langsung dari editor.
+> Layanan RESTful API mandiri untuk operasi CRUD data todo list menggunakan HTTP Server bawaan Node.js dengan pemisahan tanggung jawab berbasis Service Layer tanpa framework eksternal.
 
----
+## Core Concepts
 
-## 1. 🎯 Tujuan Pembelajaran Proyek
+- Routing HTTP murni ditentukan melalui inspeksi kombinasi properti `req.method` dan `req.url`.
+- Service Layer (`TodolistService`) memisahkan urusan parsing protokol HTTP dari logika bisnis data.
+- Stream request body dikumpulkan secara asinkron sebelum parsing JSON dilakukan.
+- Format response terstandarisasi seragam: `{ code, status, data }`.
 
-- Membangun server RESTful API fungsional dari awal hanya bermodalkan modul `node:http`.
-- Menerapkan arsitektur bersih pemisahan tanggung jawab (**Separation of Concerns**) menggunakan Service Layer (`TodolistService`).
-- Menangani parsing request body streaming JSON secara asinkron via event `req.on('data')`.
-- Menghasilkan format respons seragam berstandar industri: `{ code, status, data }`.
-- Menyusun dokumentasi spesifikasi API standar (`apidoc.md` & `apidoc.json`).
+## Referensi
 
----
+Daftar endpoint RESTful API:
 
-## 2. 📖 Arsitektur & Spesifikasi Endpoint
+| Endpoint | Method | Request Body | Status | Fungsi |
+|---|---|---|---|---|
+| `/api` | `GET` | _(Kosong)_ | `200 OK` | Mengambil seluruh daftar item todo |
+| `/api` | `POST` | `{"todo": string}` | `200 OK` | Menambahkan item todo baru |
+| `/api` | `PUT` | `{"id": number, "todo": string}` | `200 OK` | Memperbarui teks todo berdasarkan indeks ID |
+| `/api` | `DELETE` | `{"id": number}` | `200 OK` | Menghapus todo berdasarkan indeks ID |
 
-### 🎭 Alur Arsitektur Request
+### `GET /api`
 
-```text
-[HTTP Client / test.http / Postman]
-              │ (HTTP Request: GET/POST/PUT/DELETE /api)
-              ▼
-    [app.mjs - HTTP Router]
-       - Memeriksa request.url & request.method
-       - Memanggil method service yang sesuai
-              │
-              ▼
-[todolist.service.mjs - Service Layer]
-   ├── getAllTodolist()   -> Mengambil array state JSON
-   ├── createTodolist()   -> Parse stream data & push array
-   ├── updateTodolist()   -> Ganti teks todo berdasarkan ID
-   └── deleteTodolist()   -> Hapus elemen via splice(id, 1)
-              │
-              ▼
-     [HTTP Response JSON]
-   Status: 200 OK | Content-Type: application/json
-```
+Endpoint ini mengambil seluruh item koleksi todo aktif.
 
----
-
-### Tabel Kontrak REST API
-
-| Method | Endpoint | Request Body | Keterangan Respon |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api` | _Kosong_ | Mengembalikan seluruh daftar todo item |
-| `POST` | `/api` | `{"todo": "Belajar Docker"}` | Menambahkan item baru & mengembalikan list terbaru |
-| `PUT` | `/api` | `{"id": 1, "todo": "Belajar K8s"}` | Mengubah isi todo pada indeks ID |
-| `DELETE` | `/api` | `{"id": 0}` | Menghapus todo pada indeks ID |
-
----
-
-## 3. 💻 Kode Praktik & Berkas Proyek
-
-Berkas-berkas dalam proyek ini:
-- [`app.mjs`](app.mjs): Titik masuk utama HTTP server, parser url, dan router request.
-- [`todolist.service.mjs`](todolist.service.mjs): Lapisan layanan bisnis yang menyimpan in-memory state array dan fungsi manipulasi CRUD.
-- [`test.http`](test.http): Koleksi request HTTP otomatis untuk pengujian GET, POST, PUT, dan DELETE.
-- [`apidoc.md`](apidoc.md): Dokumentasi spesifikasi API berformat Markdown.
-- [`apidoc.json`](apidoc.json): Spesifikasi JSON API definition.
-
----
-
-## 4. 🛠️ Cara Menjalankan Server & Eksekusi Pengujian
-
-### 1. Menjalankan Server
+- Tidak memerlukan request payload.
+- **Returns:** objek JSON `{ code: 200, status: "OK", data: Array<{ id: number, todo: string }> }`.
 
 ```bash
-cd projects/todolist-rest-api
-node app.mjs
-```
-
-Server akan aktif dan siap menerima request di port `3000`.
-
-### 2. Menguji dengan Curl (Terminal Alternatif)
-
-```bash
-# 1. Mengambil semua data:
 curl -X GET http://localhost:3000/api
+# Output: {"code":200,"status":"OK","data":[{"id":0,"todo":"nodejs"}]}
+```
 
-# 2. Menambahkan todo baru:
+### `POST /api`
+
+Endpoint ini menambahkan satu item todo baru ke dalam daftar.
+
+- `todo` (string, required): Teks catatan aktivitas yang disimpan.
+- **Returns:** objek JSON respons berisi seluruh daftar todo yang telah diperbarui.
+
+```bash
 curl -X POST http://localhost:3000/api \
   -H "Content-Type: application/json" \
-  -d '{"todo": "Belajar Node.js Core Modules"}'
+  -d '{"todo": "Learn Node.js core"}'
+# Output: {"code":200,"status":"OK","data":[{"id":0,"todo":"nodejs"},{"id":1,"todo":"Learn Node.js core"}]}
+```
 
-# 3. Memperbarui todo (ID 0):
+### `PUT /api`
+
+Endpoint ini memperbarui teks todo pada indeks tertentu.
+
+- `id` (number, required): Indeks posisi item target.
+- `todo` (string, required): Teks baru pengganti.
+- **Returns:** objek JSON respons berisi seluruh daftar todo terbaru.
+
+```bash
 curl -X PUT http://localhost:3000/api \
   -H "Content-Type: application/json" \
-  -d '{"id": 0, "todo": "Menguasai Node.js Modern"}'
+  -d '{"id": 0, "todo": "Learn Node.js advanced"}'
+# Output: {"code":200,"status":"OK","data":[{"id":0,"todo":"Learn Node.js advanced"}]}
+```
 
-# 4. Menghapus todo (ID 0):
+### `DELETE /api`
+
+Endpoint ini menghapus satu rekaman todo berdasarkan indeksnya.
+
+- `id` (number, required): Indeks posisi item yang dihapus.
+- **Returns:** objek JSON respons dengan item yang telah dihapus dari array.
+
+```bash
 curl -X DELETE http://localhost:3000/api \
   -H "Content-Type: application/json" \
   -d '{"id": 0}'
+# Output: {"code":200,"status":"OK","data":[]}
 ```
 
-### 3. Menguji via REST Client VS Code
+## Examples
 
-Buka file [`test.http`](test.http) di VS Code, lalu klik tombol **"Send Request"** di atas setiap blok request untuk melihat respons JSON langsung di editor.
+### 1. Inisialisasi HTTP Server dan Router
+
+```js title="app.mjs"
+import http from 'node:http';
+import { TodolistService } from './todolist.service.mjs';
+
+const service = new TodolistService();
+
+export const server = http.createServer((req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+
+  if (req.method === 'GET' && req.url === '/api') {
+    service.getAllTodolist(req, res);
+    return;
+  }
+  if (req.method === 'POST' && req.url === '/api') {
+    service.createTodolist(req, res);
+    return;
+  }
+  res.writeHead(404).end(JSON.stringify({ code: 404, status: 'Not Found' }));
+});
+// Output: Server running and routing requests to TodolistService
+```
+
+## Real-World Use Case
+
+**Backend**
+
+**Masalah:** memverifikasi bahwa HTTP server membalas dengan header `application/json` dan format response seragam tanpa ketergantungan framework Express.
+**Solusi:** router mengekstrak body stream, mendelegasikannya ke `TodolistService`, lalu mengirim respon JSON terstruktur.
+
+```js title="client-test.mjs"
+const response = await fetch('http://localhost:3000/api');
+const result = await response.json();
+console.log('API Status:', result.status);
+console.log('Is array:', Array.isArray(result.data));
+// Output: API Status: OK
+// Output: Is array: true
+```
+
+## Pitfalls
+
+- Menulis logika data langsung di dalam callback `http.createServer()`. Hal ini mencampur urusan routing jaringan dan manipulasi state.
+  ```js
+  // ❌ Incorrect: tightly coupling data mutations inside router
+  // if (req.url === '/api') { todoList.push(item); res.end(); }
+
+  // ✅ Correct: isolate business logic inside dedicated service methods
+  if (req.method === 'POST' && req.url === '/api') {
+    service.createTodolist(req, res);
+  }
+  ```
+- Tidak menangani kegagalan parsing JSON pada body request (`SyntaxError`), yang dapat membuat server crash ketika client mengirim format data rusak.
+  ```js
+  // ✅ Correct: guard JSON.parse with try...catch
+  try {
+    const body = JSON.parse(rawChunk);
+  } catch (err) {
+    res.writeHead(400).end(JSON.stringify({ error: 'Malformed JSON' }));
+  }
+  ```
+
+## References
+
+- [Node.js Docs: HTTP Transaction Anatomy](https://nodejs.org/en/learn/modules/anatomy-of-an-http-transaction)
 
 ---
 
-## 5. 🧭 Navigasi
-
-- ⬅️ **Kembali ke Modul 06 Database:** [06 - Modern Database Persistence with Prisma ORM](../../06-database-prisma/README.md)
-- 🏠 **Daftar Proyek:** [README Direktori Projects](../README.md)
-- 📑 **Daftar Isi Utama:** [Kembali ke Root README](../../README.md)
-
+Sebelumnya: [06 - Database](../../06-database/README.md)

@@ -1,129 +1,115 @@
-# 03 - Menggunakan Third-Party Packages
+# Third-Party Packages
 
-> ⏱️ **TL;DR (Ringkasan Cepat):**
->
-> - **Fungsi Utama**: Memanfaatkan ribuan pustaka siap pakai yang dibuat oleh komunitas open-source global di [NPM Registry](https://www.npmjs.com) untuk mempercepat siklus pembuatan aplikasi.
-> - **Kapan Digunakan**: Digunakan saat membutuhkan fungsionalitas umum yang kompleks daripada menulis dari nol (misalnya manipulasi struktur koleksi data kompleks via `lodash`, parsing tanggal via `date-fns` atau `moment`, token JWT, dll).
-> - **Aturan Praktis**: Periksa selalu reputasi paket sebelum memasangnya (jumlah download mingguan, update terakhir, ukuran bundle, dan audit celah keamanan `npm audit`).
+> Mengintegrasikan pustaka eksternal dari registry NPM, mengevaluasi kualitas dan pemeliharaan kode sumber, serta mengamankan dependensi dari kerentanan keamanan.
 
----
+## Core Concepts
 
-## 1. 🎯 Tujuan Belajar
+- Evaluasi paket sebelum instalasi: periksa frekuensi update, popularitas mingguan (downloads), lisensi terbuka (MIT/Apache 2.0), dan rasio issue yang terselesaikan.
+- Gunakan `npm audit` secara berkala untuk memindai celah keamanan (*CVE vulnerabilities*) pada dependency tree.
+- Hindari menginstal paket untuk fungsi sepele yang sudah didukung secara native oleh Node.js modern (misalnya: tidak perlu `chalk` karena ada `util.styleText`, tidak perlu `uuid` karena ada `crypto.randomUUID()`).
+- Di lingkungan CI/CD dan server produksi, selalu utamakan `npm ci` daripada `npm install` demi reproduktibilitas build.
 
-- Menguasai perintah instalasi paket: `npm install <package-name>` dan flag `--save-dev`.
-- Mengimpor pustaka pihak ketiga ke dalam format modern ES Modules (`import ... from '...'`).
-- Memahami bagaimana Node.js mencari lokasi modul di direktori bertingkat `node_modules/`.
-- Memeriksa kerentanan keamanan pustaka dengan perintah `npm audit`.
+## Referensi
 
----
+Daftar perintah CLI pengelolaan paket pihak ketiga:
 
-## 2. 📖 Penjelasan Konsep & API Reference
+| Perintah | Opsi Flag | Fungsi |
+|---|---|---|
+| `npm install <pkg>` | `-D`, `-E` | Menginstal dependensi runtime atau developer |
+| `npm audit` | `--json`, `--audit-level` | Memindai laporan kerentanan keamanan dependensi |
+| `npm ci` | `--omit=dev` | Menginstal dependensi persis sesuai `package-lock.json` untuk CI/CD |
 
-### 🎭 Analogi Dunia Nyata
+### `npm install <pkg>`
 
-> Bayangkan membangun rumah menggunakan paket NPM seperti **merakit furnitur dari IKEA**:
->
-> - Anda tidak perlu menebang pohon, memotong kayu, dan menghaluskan permukaan meja sendiri dari nol (menulis seluruh kode utilitas sendiri).
-> - Anda cukup memesan modul meja yang sudah teruji kekuatannya dari katalog terpercaya (`npm install lodash`).
-> - Anda tinggal membuka paket tersebut di ruang tamu Anda dan memasangnya dengan baut standar yang sudah disediakan.
+Perintah ini mengunduh paket dari registry publik, menempatkannya di direktori `node_modules`, dan memperbarui manifest proyek.
 
----
-
-### Alur Resolusi Modul Node.js
-
-Ketika Anda menulis `import _ from 'lodash'`, Node.js melakukan pencarian lokasi secara bertahap:
-1. Memeriksa apakah `lodash` merupakan modul bawaan Node.js (Core Module) — _Bukan_.
-2. Mencari folder `./node_modules/lodash/` di direktori saat ini.
-3. Jika tidak ditemukan, naik satu tingkat ke `../node_modules/lodash/` hingga mencapai root sistem.
-4. Membaca berkas `package.json` milik `lodash` untuk mengetahui berkas entrypoint utama yang harus dimuat.
-
----
-
-### Pembahasan Praktik Menggunakan Pustaka Populer
-
-#### 1. Manipulasi String & Koleksi dengan `lodash`
-
-```javascript
-import _ from 'lodash';
-
-const rawName = 'joko santoso backend developer';
-
-// Mengubah menjadi Title Case
-console.log(_.startCase(rawName)); // 'Joko Santoso Backend Developer'
-
-// Mengubah menjadi UPPERCASE
-console.log(_.upperCase(rawName)); // 'JOKO SANTOSO BACKEND DEVELOPER'
-
-// Mengambil nilai unik dari array
-console.log(_.uniq([1, 2, 2, 3, 4, 4, 5])); // [1, 2, 3, 4, 5]
-```
-
-#### 2. Format Waktu dengan `moment`
-
-```javascript
-import moment from 'moment';
-
-const now = moment().format('YYYY-MM-DD HH:mm:ss');
-console.log('Waktu saat ini:', now);
-```
-
----
-
-## 3. 💻 Kode Praktik Terpadu
-
-Berkas praktik pada subtopik ini:
-- [`lodash.js`](lodash.js): Demonstrasi pemanggilan fungsi manipulasi huruf kapital `_.upperCase()`.
-- [`moment.js`](moment.js): Demonstrasi pemformatan tanggal dan waktu modern.
-- [`package-library.js`](package-library.js): Demonstrasi konsumsi library buatan sendiri yang dipasang dari NPM.
-
-Jalankan demonstrasi secara langsung di terminal Anda:
+- `<pkg>` (string, required): Nama paket pustaka yang akan dipasang.
+- `--save-dev` / `-D` (flag, optional): Menyimpan dependensi ke dalam blok `devDependencies`.
+- `--save-exact` / `-E` (flag, optional): Menyimpan nomor versi persis tanpa simbol caret `^`.
+- **Returns:** pembaruan berkas `package.json` dan pembaharuan pohon `node_modules`.
 
 ```bash
-# Menjalankan demonstrasi lodash
-node 02-package-management/03-third-party-packages/lodash.js
-
-# Menjalankan demonstrasi moment
-node 02-package-management/03-third-party-packages/moment.js
+npm install dotenv --save-exact
+# Output: added 1 package in 0.4s
 ```
 
----
+### `npm audit`
 
-## 4. 💡 Panduan Praktis & Studi Kasus
+Perintah ini menganalisis seluruh dependensi terhadap database kerentanan keamanan (*Advisory DB*).
 
-### 🏢 Real-World Use Case: Menjaga Keamanan Dependensi dengan `npm audit`
-
-Di industri, ketergantungan terhadap ratusan paket pihak ketiga rentan terhadap serangan _Supply Chain Attack_. Rutin jalankan audit keamanan:
+- `--audit-level` (string, optional, default `'low'`): Batas minimum level keparahan yang dilaporkan (`low`, `moderate`, `high`, `critical`).
+- `--json` (flag, optional): Menampilkan keluaran laporan dalam format JSON terstruktur untuk otomasi pipa CI.
+- **Returns:** kode keluar terminal (exit code 0 jika bersih, non-zero jika ditemukan kerentanan).
 
 ```bash
-# Memindai laporan kerentanan keamanan CVE
-npm audit
-
-# Memperbarui otomatis paket rentan ke versi yang aman
-npm audit fix
+npm audit --audit-level=high
+# Output: found 0 vulnerabilities
 ```
 
-### ⚠️ Common Pitfalls
+### `npm ci`
 
-- **Meng-commit Folder `node_modules/` ke Git**: Folder `node_modules` dapat berukuran ratusan MB. Selalu pastikan `node_modules/` tertulis di berkas `.gitignore`. Siapa pun yang men-clone repositori Anda cukup menjalankan `npm install`.
-- **Memasang Paket yang Sudah Tidak Aktif Dirawat (Abandoned)**: Menggunakan paket yang belum diupdate selama bertahun-tahun berisiko tinggi memiliki celah keamanan yang tidak tertambal.
+Perintah ini melakukan instalasi bersih yang sepenuhnya deterministik langsung dari `package-lock.json`.
 
-### 🌟 Best Practice
+- `--omit=dev` (flag, optional): Mengabaikan instalasi devDependencies untuk optimasi server produksi.
+- **Returns:** penataan ulang direktori `node_modules` yang identik dengan file lockfile.
 
-- **Gunakan Tree Shaking Jika Memungkinkan**: Jika hanya membutuhkan satu fungsi, impor fungsi secara spesifik agar tidak memuat seluruh pustaka ke dalam memori aplikasi.
+```bash
+npm ci --omit=dev
+# Output: added 24 packages in 0.8s
+```
+
+## Examples
+
+### 1. Evaluasi Kebutuhan Paket
+
+```js title="src/evaluation.mjs"
+// run: node src/evaluation.mjs
+console.log('Third-party package evaluation and usage demonstration');
+// Output: Third-party package evaluation and usage demonstration
+```
+
+## Real-World Use Case
+
+**Tooling**
+
+**Masalah:** pipeline CI/CD di GitHub Actions memakan waktu terlalu lama dan rentan menghasilkan build yang tidak konsisten jika developer lain memperbarui `package.json` tanpa sengaja.
+**Solusi:** gunakan perintah `npm ci` di server pipeline alih-alih `npm install` agar instalasi selalu deterministik dan cepat.
+
+```bash
+# Script CI/CD Pipeline
+npm ci
+npm test
+# Output: clean install verified, test suite executed successfully
+```
+
+## Pitfalls
+
+- Menjalankan `npm audit fix --force` secara sembarangan, yang dapat menaikkan versi MAJOR paket dan menimbulkan breaking changes fatal.
+  ```bash
+  # ❌ Incorrect: risk of breaking changes from unreviewed major updates
+  # npm audit fix --force
+
+  # ✅ Correct: review vulnerabilities first and bump selectively
+  npm audit
+  npm update dotenv
+  ```
+- Menginstal library eksternal berlebihan untuk utilitas sederhana yang sudah disediakan native oleh Node.js modern.
+  ```js
+  // ❌ Incorrect: adding 3rd party dependency for uuid
+  // import { v4 as uuidv4 } from 'uuid';
+
+  // ✅ Correct: use built-in node:crypto
+  import crypto from 'node:crypto';
+  const id = crypto.randomUUID();
+  console.log('Native UUID generated:', typeof id === 'string');
+  // Output: Native UUID generated: true
+  ```
+
+## References
+
+- [NPM Docs: npm audit](https://docs.npmjs.com/cli/v10/commands/npm-audit)
+- [NPM Docs: npm ci](https://docs.npmjs.com/cli/v10/commands/npm-ci)
 
 ---
 
-## 5. ✍️ Latihan Mandiri
-
-1. Pasang paket `uuid` menggunakan perintah `npm install uuid`. Buat skrip yang menghasilkan 5 nomor ID unik acak versi 4 (`uuidv4()`).
-2. Gunakan `npm audit` untuk memastikan seluruh paket di modul ini bersih dari kerentanan kritis.
-
----
-
-## 6. 🧭 Navigasi
-
-- ⬅️ **Sebelumnya:** [02 - Semantic Versioning & Dependencies Rule](../02-dependencies-and-versioning/README.md)
-- ➡️ **Selanjutnya:** [04 - Membangun & Publikasi Library NPM](../04-publishing-npm-library/README.md)
-- 🏠 **Daftar Isi Modul 02:** [README Modul 02](../README.md)
-- 📑 **Daftar Isi Utama:** [Kembali ke Root README](../../README.md)
-
+Sebelumnya: [02 - Dependencies & Versioning](../02-dependencies-versioning/README.md) | Berikutnya: [04 - Publish Library](../04-publish-library/README.md)
