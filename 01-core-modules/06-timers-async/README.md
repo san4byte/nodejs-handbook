@@ -71,7 +71,7 @@ process.nextTick((scope) => {
 
 ### `als.run(store, callback, ...args)`
 
-Metode kelas `AsyncLocalStorage` ini mengikat data konteks ke seluruh rantai eksekusi asinkron di dalam cakupan callback.
+Method class `AsyncLocalStorage` ini mengikat data konteks ke seluruh rantai eksekusi asinkron di dalam cakupan callback.
 
 - `store` (any, required): Objek konteks yang disimpan sepanjang siklus eksekusi asinkron.
 - `callback` ((...args: any[]) => any, required): Fungsi asinkron yang dijalankan dengan akses ke `store`.

@@ -11,7 +11,7 @@
 
 ## Referensi
 
-Daftar kelas dan metode engine basis data:
+Daftar class dan method engine basis data:
 
 | API / Fitur | Fungsi |
 |---|---|

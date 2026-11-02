@@ -1,6 +1,6 @@
 # Events (EventEmitter)
 
-> Modul `node:events` menyediakan kelas `EventEmitter`, pondasi inti komunikasi asinkron berbasis publish/subscribe di Node.js yang dipakai oleh Streams, HTTP server, dan socket.
+> Modul `node:events` menyediakan class `EventEmitter`, pondasi inti komunikasi asinkron berbasis publish/subscribe di Node.js yang dipakai oleh Streams, HTTP server, dan socket.
 
 ## Core Concepts
 
@@ -11,7 +11,7 @@
 
 ## Referensi
 
-Daftar metode kelas `EventEmitter` yang sering digunakan:
+Daftar method class `EventEmitter` yang sering digunakan:
 
 | API / Fitur | Fungsi |
 |---|---|

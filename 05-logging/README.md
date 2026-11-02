@@ -11,7 +11,7 @@
 
 ## Referensi
 
-Daftar kelas dan properti sistem logging:
+Daftar class dan properti sistem logging:
 
 | API / Fitur | Fungsi |
 |---|---|
@@ -21,7 +21,7 @@ Daftar kelas dan properti sistem logging:
 
 ### `new Logger(options?)`
 
-Kelas ini mengelola alur pencatatan, pemfilteran level, dan distribusi pesan log ke berbagai media transport.
+Class ini mengelola alur pencatatan, pemfilteran level, dan distribusi pesan log ke berbagai media transport.
 
 - `options` (LoggerOptions, optional): Objek konfigurasi logger:
   - `level` (string, optional, default `'info'`): Ambang batas level log (`'error'`, `'warn'`, `'info'`, `'debug'`).

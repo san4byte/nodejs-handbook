@@ -6,7 +6,7 @@
 
 - Windows memakai backslash (`\`), sedangkan POSIX memakai slash (`/`). Jangan lakukan konkatenasi string manual; gunakan `path.join()`.
 - `path.resolve()` selalu mengembalikan path absolut berbasis `process.cwd()`.
-- Kelas `URL` dan `URLSearchParams` adalah standar global WHATWG yang kompatibel dengan browser.
+- Class `URL` dan `URLSearchParams` adalah standar global WHATWG yang kompatibel dengan browser.
 - Gunakan `import.meta.dirname` di ES Modules sebagai pengganti `__dirname`.
 
 ## Referensi
