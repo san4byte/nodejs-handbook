@@ -1,11 +1,14 @@
+// run: node src/process.mjs --port 8080
 import process from 'node:process';
 
-const args = process.argv.slice(2);
-const port = Number(process.env.PORT || args[1]) || 3000;
+const userArgs = process.argv.slice(2);
 const env = process.env.NODE_ENV || 'development';
 
 console.log('PID is number:', typeof process.pid === 'number');
+// Output: PID is number: true
 console.log('Platform:', process.platform);
-console.log('Target Port:', port);
+// Output: Platform: linux
+console.log('Raw Arguments:', userArgs);
+// Output: Raw Arguments: [ '--port', '8080' ]
 console.log('Environment:', env);
-console.log('Raw Arguments:', args);
+// Output: Environment: development

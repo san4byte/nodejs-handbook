@@ -38,13 +38,14 @@ console.log('Slept 50ms');
 
 ### `util.parseArgs(config)`
 
-Fungsi ini membedah argumen CLI menjadi pasangan opsi yang aman dan tervalidasi.
+Fungsi bawaan `node:util` (Node.js v18.3.0+, stabil di v20.0.0+) ini membedah argumen baris perintah dari `process.argv` menjadi objek nilai terstruktur berbasis skema opsi yang dideklarasikan secara eksplisit. Gunakan fungsi ini sebagai pengganti pembacaan `process.argv` secara manual agar parsing aman terhadap urutan dan tipe argumen.
 
-- `config` (object, required): Objek konfigurasi parsing argumen CLI:
-  - `args` (string[], optional, default `process.argv.slice(2)`): Deretan string argumen input.
-  - `options` (object, optional): Kamus opsi konfigurasi dengan tipe `'string'` atau `'boolean'`, alias `short`, dan `default`.
-  - `allowPositionals` (boolean, optional, default `false`): Izin menerima argumen posisi bebas non-flag.
-- **Returns:** object, berisi `{ values, positionals }`.
+- `config` (object, opsional): objek konfigurasi parsing:
+  - `args` (string[], opsional, default `process.argv.slice(2)`): array argumen yang akan diparse.
+  - `options` (object, opsional): definisi opsi — setiap key adalah nama opsi (long flag), dengan properti `type` (`'string'` atau `'boolean'`), `short` (alias karakter tunggal), `default`, dan `multiple` (boolean, mengumpulkan nilai ke array jika `true`).
+  - `strict` (boolean, opsional, default `true`): melempar error jika argumen tidak dikenal atau tipe tidak sesuai.
+  - `allowPositionals` (boolean, opsional, default `false`): mengizinkan argumen posisi bebas non-flag.
+- **Returns:** `{ values: object, positionals: string[] }`, nilai opsi yang berhasil diparsing beserta argumen posisionalnya.
 
 ```js
 import util from 'node:util';
@@ -58,8 +59,12 @@ const { values } = util.parseArgs({
   },
 });
 
-console.log(values);
-// Output: { port: '8080', dev: true, verbose: true }
+console.log('Port:', Number(values.port));
+// Output: Port: 8080
+console.log('Dev mode:', values.dev);
+// Output: Dev mode: true
+console.log('Verbose:', values.verbose);
+// Output: Verbose: true
 ```
 
 ### `util.styleText(format, text)`
