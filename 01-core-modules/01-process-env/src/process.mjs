@@ -12,3 +12,11 @@ console.log('Raw Arguments:', userArgs);
 // Output: Raw Arguments: [ '--port', '8080' ]
 console.log('Environment:', env);
 // Output: Environment: development
+
+process.env.APP_NAME = 'PaymentGateway';
+process.env.APP_PORT = '3000';
+console.log(process.env.WKWKWKW); // undefined
+console.log(process.env.APP_PORT); // 3000
+
+const array = ['AB', 'CD'];
+console.log(array.join(', '));
